@@ -1,0 +1,22 @@
+# Orvix
+
+> Orvix est une plateforme moderne de streaming multimédia haute définition (Full HD 1080p). Elle propose un catalogue complet de films, séries TV et chaînes en direct en versions françaises (VF) et sous-titrées (VOSTFR). Interface épurée et ultra-rapide, compatible multi-appareils (desktop, mobile, TV), intégrant des lecteurs premium et des Watch Parties synchronisées.
+
+## Pages principales
+
+- [Accueil](/) : page d'accueil avec sélections, tendances et nouveautés en streaming HD
+- [Films](/movies) : catalogue complet de films classés par genre, popularité et date
+- [Séries TV](/tv-shows) : catalogue des séries télévisées, saisons et épisodes en VF et VOSTFR
+- [Recherche](/search) : moteur de recherche rapide multimédia avec filtres avancés
+- [TV en direct](/live-tv) : chaînes de télévision en direct
+- [Collections](/collections) : collections thématiques et franchises de cinéma
+- [Roulette](/roulette) : générateur aléatoire de films et séries selon vos critères
+- [Watch Parties](/watchparty/list) : salon de visionnage synchronisé entre amis avec chat en temps réel
+
+## Fonctionnalités Clés
+
+- **Qualité 1080p Full HD** : Priorité aux flux vidéo haute définition et lecteurs multi-sources.
+- **Zéro Inscription Obligatoire** : Accès direct au catalogue sans barrière.
+- **Lecteur Intelligent** : Détection et bascule automatique sur le meilleur lecteur disponible avec fallback intégré.
+- **Multilingue** : Choix instantané entre version française (VF) et version originale sous-titrée (VOSTFR).
+- **Mode Mobile & PWA** : Installation fluide sur iOS et Android comme application native.

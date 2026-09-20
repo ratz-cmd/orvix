@@ -1,0 +1,1542 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+google-cast-launcher {
+  display: inline-flex !important;
+  max-width: 24px;
+  max-height: 24px;
+  overflow: hidden;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Carousels — couper les hover flips pendant tout scroll actif
+   ──────────────────────────────────────────────────────────────────────────
+   Quand le carousel scrolle (drag pointeur, wheel horizontal, scrollPrev/Next),
+   les cards défilent sous le curseur immobile. Chaque slide qui passe sous
+   le curseur déclenche un :hover → cycle Layerize+Paint au compositor → jank.
+
+   Deux sources indépendantes peuvent activer la suppression :
+   - `body.is-scrolling`     : gérée par SmoothScroll.tsx (timer 150ms idle
+                                après le dernier wheel/touchmove/keydown vertical)
+   - `body.embla-scrolling`  : gérée par les carousels Embla (compteur
+                                ref-counted, scroll → begin, settle → end).
+                                Lift INSTANTANÉ quand la vélocité retombe à 0
+                                → hover dispo dès la fin du scroll horizontal,
+                                pas de délai d'idle.
+
+   Pendant ce temps, on coupe pointer-events sur tous les slides Embla,
+   ce qui empêche le navigateur de tester le hover et de déclencher des
+   transitions/repaints. */
+body.is-scrolling .embla-slide,
+body.embla-scrolling .embla-slide {
+  pointer-events: none;
+}
+
+@layer base {
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+      "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  }
+}
+
+@keyframes animated-border-spin {
+  from {
+    transform: translate3d(-50%, -50%, 0) rotate(0deg);
+  }
+
+  to {
+    transform: translate3d(-50%, -50%, 0) rotate(360deg);
+  }
+}
+
+.animated-border-card {
+  --border-orbit-size: 200%;
+  --_card-radius: 0.75rem;
+  --highlight-gradient: conic-gradient(from 0deg,
+      var(--highlight-solid),
+      var(--highlight-soft) 10%,
+      transparent 20%,
+      transparent 80%,
+      var(--highlight-soft) 90%,
+      var(--highlight-solid));
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--_card-radius);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+}
+
+.animated-border-card::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--border-orbit-size);
+  height: var(--border-orbit-size);
+  border-radius: 999px;
+  background: var(--border-color, var(--highlight-gradient));
+  transform: translate3d(-50%, -50%, 0) rotate(0deg);
+  opacity: var(--border-visibility, 0);
+  transition: opacity 160ms ease-out;
+  pointer-events: none;
+  z-index: -2;
+}
+
+.animated-border-card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: calc(var(--_card-radius) - 1px);
+  background: var(--card-surface, rgb(var(--background)));
+  pointer-events: none;
+  z-index: -1;
+}
+
+.animated-border-card--animated::before {
+  animation: animated-border-spin var(--border-duration, 6s) linear infinite;
+  animation-play-state: var(--border-play-state, running);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated-border-card--animated::before {
+    animation: none;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Reduced-motion global — kill switch a11y
+   ──────────────────────────────────────────────────────────────────────────
+   Pattern recommandé W3C/MDN : on ne supprime pas les transitions/animations
+   (qui cassent souvent l'UI — un menu qui s'ouvre attend la fin de la
+   transition), on les ramène à ~instantané (0.01ms). Itération à 1 pour les
+   keyframes infinies (pulse, spin, particles).
+
+   Lenis et HeroSlider lisent déjà `prefers-reduced-motion` côté JS pour se
+   couper proprement ; cette règle CSS attrape tout le reste (Tailwind animate-*,
+   framer-motion sans `useReducedMotion`, transitions ad-hoc) en une passe.
+
+   Sources :
+   - https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions
+   - https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion
+   ────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes background-pan {
+  0% {
+    background-position: 0% center;
+  }
+
+  50% {
+    background-position: 100% center;
+  }
+
+  100% {
+    background-position: 0% center;
+  }
+}
+
+.animated-gradient-bg {
+  background-size: 200% 200%;
+  animation: background-pan 15s ease-in-out infinite;
+}
+
+/* Reveal & Hide Water Drop Animations */
+@keyframes reveal-drop {
+  from {
+    clip-path: ellipse(1% 1% at 50% 0%);
+  }
+
+  to {
+    clip-path: ellipse(130% 130% at 50% 50%);
+  }
+}
+
+@keyframes hide-drop {
+  from {
+    clip-path: ellipse(130% 130% at 50% 50%);
+  }
+
+  to {
+    clip-path: ellipse(1% 1% at 50% 0%);
+  }
+}
+
+.animate-reveal-drop {
+  /* Smoother, more organic "ease out" curve */
+  animation: reveal-drop 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.animate-hide-drop {
+  /* Corresponding "ease in" curve for a natural disappearance */
+  animation: hide-drop 0.6s cubic-bezier(0.8, 0, 0.8, 0.2) forwards;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 212.7 26.8% 83.9%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 0 0% 0%;
+    --foreground: 210 40% 98%;
+
+    --card: 0 0% 0%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 0 0% 0%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/*
+ * Reserve scrollbar gutter even when a modal/popup opens — prevents the
+ * "header shifts right" jump when body `overflow:hidden` removes the native
+ * scrollbar. Mouse-pointer devices only — touch devices have no native
+ * scrollbar taking space.
+ */
+@media (hover: hover) and (pointer: fine) {
+  html {
+    scrollbar-gutter: stable;
+  }
+}
+
+:root {
+  --primary-color: #2563eb;
+  --primary-hover: #1d4ed8;
+  --background-dark: #000000;
+  --text-light: #f3f4f6;
+  --text-muted: #9ca3af;
+  --color-pantone-50: #e6f0f9;
+  --color-pantone-100: #cce1f3;
+  --color-pantone-200: #99c2e8;
+  --color-pantone-300: #66a4dc;
+  --color-pantone-400: #3385d1;
+  --color-pantone-500: #0066c5;
+  --color-pantone-600: #0054A7;
+  --color-pantone-700: #004386;
+  --color-pantone-800: #003265;
+  --color-pantone-900: #002143;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes flash {
+
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes supportPopup {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(30px);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-5px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-support-popup {
+  animation: supportPopup 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.arrow-flash {
+  animation: flash 2s ease-in-out infinite;
+}
+
+body {
+  overflow-x: clip;
+  width: 100vw;
+  position: relative;
+  background-color: var(--background-dark);
+  color: var(--text-light);
+  animation: fadeIn 0.5s ease-out;
+}
+
+#root {
+  overflow-x: clip;
+  width: 100%;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-rotate {
+  animation: rotate 2s linear infinite;
+}
+
+.btn-toggle {
+  padding: 0.625rem 1.25rem;
+  background-color: var(--primary-color);
+  color: var(--text-light);
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-toggle:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+.btn-toggle:active {
+  transform: translateY(0);
+}
+
+.ad-blocker-notice {
+  background-color: var(--primary-color);
+  color: var(--text-light);
+  text-align: center;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  width: 100%;
+  position: relative;
+  z-index: 51;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: slideDown 0.5s ease-out;
+  background-image: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite linear;
+}
+
+.btn-toggle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.5s;
+}
+
+.btn-toggle:hover::after {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.slick-prev:before,
+.slick-next:before {
+  color: var(--primary-color);
+  font-size: 1.5rem;
+  transition: all 0.3s ease;
+  opacity: 0.7;
+}
+
+.slick-prev:hover:before,
+.slick-next:hover:before {
+  color: var(--primary-hover);
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+.slick-slide>div {
+  margin: 0 0.3125rem;
+  transition: transform 0.3s ease;
+}
+
+.slick-slide:hover>div {
+  transform: scale(1.05);
+}
+
+
+.media-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.media-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+  .btn-toggle {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .ad-blocker-notice {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Custom Ultra-Modern Scrollbar Styles */
+/* Works on Firefox */
+* {
+  scrollbar-width: thin;
+  /* Keep it thin */
+  scrollbar-color: #4b5563 transparent;
+  /* thumb track - gray-600, transparent track */
+}
+
+/* Works on Chrome, Edge, and Safari */
+::-webkit-scrollbar {
+  width: 4px;
+  /* Even thinner scrollbar */
+  height: 4px;
+  /* Even thinner horizontal scrollbar */
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  /* Make track invisible */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  /* gray-600 - Subtle gray thumb */
+  border-radius: 2px;
+  /* Minimal rounding */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280;
+  /* gray-500 - Slightly lighter on hover */
+}
+
+/* Style spécifique pour la scrollbar du menu de paramètres */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(220, 38, 38, 0.5);
+  /* Rouge semi-transparent */
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(220, 38, 38, 0.8);
+  /* Rouge plus visible au survol */
+}
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(220, 38, 38, 0.5) rgba(0, 0, 0, 0.1);
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.platform-link {
+  position: relative;
+  z-index: 1;
+  aspect-ratio: 1;
+}
+
+.platform-link:hover {
+  z-index: 50;
+}
+
+.platform-link video {
+  pointer-events: none;
+}
+
+.platform-image-container {
+  position: relative;
+  width: 100%;
+  transition: all 0.3s ease;
+  background: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.platform-image-container:hover {
+  position: absolute;
+  z-index: 1000;
+}
+
+.platform-image-container video {
+  pointer-events: none;
+}
+
+.platform-image-container::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.platform-image-container:hover::after {
+  opacity: 1;
+  z-index: 999;
+}
+
+.platform-image-container img,
+.platform-image-container video {
+  border-radius: 1rem;
+}
+
+.platforms-container {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.provider-intro-video {
+  animation: fadeOut 0.5s ease-out;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+.provider-intro {
+  animation: fadeOut 0.5s ease-out forwards;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+.provider-content {
+  animation: fadeIn 0.5s ease-in forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+.fade-out {
+  animation: fadeOut 0.5s ease-out forwards;
+}
+
+.profile-image-upload {
+  position: relative;
+  cursor: pointer;
+}
+
+.profile-image-upload:hover .overlay {
+  opacity: 1;
+}
+
+.profile-image-upload .overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 9999px;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+
+@keyframes fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+  }
+}
+
+.animate-fall {
+  animation: fall 5s linear;
+}
+
+#snow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+#snow canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Animations pour l'intro Orvix */
+@keyframes fadeout {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes orvixPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes orvixPulseMed {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes orvixReveal {
+  0% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes orvixShine {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes orvixShineFast {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes gentleDrift {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.6;
+  }
+
+  33% {
+    transform: translate(-8px, 8px) scale(1.05);
+    opacity: 0.7;
+  }
+
+  66% {
+    transform: translate(8px, -8px) scale(1.1);
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.6;
+  }
+}
+
+@keyframes gentleDriftAlt {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+
+  33% {
+    transform: translate(15px, 0px) scale(1.05);
+    opacity: 0.7;
+  }
+
+  66% {
+    transform: translate(0px, 10px) scale(1.1);
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+}
+
+@keyframes lineDriftUp {
+  0% {
+    transform: translateY(0);
+    opacity: 0.2;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: translateY(-30px);
+    opacity: 0.2;
+  }
+}
+
+@keyframes lineDriftDown {
+  0% {
+    transform: translateY(0);
+    opacity: 0.2;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: translateY(30px);
+    opacity: 0.2;
+  }
+}
+
+@keyframes orvixFlare {
+  0% {
+    opacity: 0.4;
+    transform: translate(0, 0) scale(0.8);
+  }
+
+  50% {
+    opacity: 0.6;
+    transform: translate(-15px, 15px) scale(1.2);
+  }
+
+  100% {
+    opacity: 0.4;
+    transform: translate(0, 0) scale(0.8);
+  }
+}
+
+@keyframes orvixFlareAlt {
+  0% {
+    opacity: 0.4;
+    transform: translate(0, 0) scale(0.8);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: translate(15px, -15px) scale(1.2);
+  }
+
+  100% {
+    opacity: 0.4;
+    transform: translate(0, 0) scale(0.8);
+  }
+}
+
+@keyframes orvixFlash {
+  0% {
+    opacity: 0.3;
+    transform: scaleX(0.8);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: scaleX(1.1);
+  }
+
+  100% {
+    opacity: 0.3;
+    transform: scaleX(0.8);
+  }
+}
+
+@keyframes orvixFlashAlt {
+
+  0%,
+  100% {
+    background-color: rgba(220, 38, 38, 0);
+  }
+
+  2%,
+  5% {
+    background-color: rgba(220, 38, 38, 0.03);
+  }
+
+  3% {
+    background-color: rgba(220, 38, 38, 0.05);
+  }
+}
+
+
+/* Classes d'animation restaurées */
+.animate-fadeout {
+  animation: fadeout 1s forwards;
+}
+
+.animate-pulse {
+  animation: orvixPulse 1.5s ease-in-out;
+}
+
+.animate-pulse-med {
+  animation: orvixPulseMed 2s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: orvixPulse 2.5s ease-in-out infinite;
+}
+
+.animate-orvix-reveal {
+  animation: orvixReveal 0.8s ease-out;
+}
+
+.animate-orvix-shine {
+  animation: orvixShine 2s linear infinite;
+}
+
+.animate-orvix-shine-fast {
+  animation: orvixShineFast 1.5s linear infinite;
+}
+
+.animate-gentle-drift {
+  animation: gentleDrift 5s ease-in-out infinite;
+}
+
+.animate-gentle-drift-alt {
+  animation: gentleDriftAlt 6s ease-in-out infinite;
+}
+
+.animate-line-drift-up {
+  animation: lineDriftUp 8s ease-in-out infinite;
+}
+
+.animate-line-drift-down {
+  animation: lineDriftDown 8s ease-in-out infinite;
+}
+
+.animate-orvix-flare {
+  animation: orvixFlare 3s ease-in-out infinite;
+}
+
+.animate-orvix-flare-alt {
+  animation: orvixFlareAlt 4s ease-in-out infinite;
+}
+
+.animate-orvix-flash {
+  animation: orvixFlash 2s ease-in-out infinite;
+}
+
+.animate-orvix-flash-alt {
+  animation: orvixFlashAlt 3s ease-in-out infinite;
+}
+
+/* Animations rayons lumineux */
+@keyframes rayDrift1 {
+  0% {
+    transform: rotate(45deg) translateY(0);
+    opacity: 0.05;
+  }
+
+  50% {
+    transform: rotate(45deg) translateY(-20px);
+    opacity: 0.08;
+  }
+
+  100% {
+    transform: rotate(45deg) translateY(0);
+    opacity: 0.05;
+  }
+}
+
+@keyframes rayDrift2 {
+  0% {
+    transform: rotate(-45deg) translateY(0);
+    opacity: 0.04;
+  }
+
+  50% {
+    transform: rotate(-45deg) translateY(25px);
+    opacity: 0.07;
+  }
+
+  100% {
+    transform: rotate(-45deg) translateY(0);
+    opacity: 0.04;
+  }
+}
+
+@keyframes rayFade {
+
+  0%,
+  100% {
+    opacity: 0.03;
+  }
+
+  50% {
+    opacity: 0.08;
+  }
+}
+
+.animate-ray-drift-1 {
+  animation: rayDrift1 8s ease-in-out infinite;
+}
+
+.animate-ray-drift-2 {
+  animation: rayDrift2 9s ease-in-out infinite;
+}
+
+.animate-ray-fade {
+  animation: rayFade 5s ease-in-out infinite;
+}
+
+.shadow-glow-red {
+  box-shadow: 0 0 15px 1px rgba(239, 68, 68, 0.5);
+}
+
+.bg-gradient-radial {
+  background-image: radial-gradient(var(--tw-gradient-stops));
+}
+
+/* Animations pour les likes et dislikes */
+@keyframes likeAnimation {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.5);
+    color: rgb(59, 130, 246);
+    /* blue-500 */
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes dislikeAnimation {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.5);
+    color: rgb(239, 68, 68);
+    /* red-500 */
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-like {
+  animation: likeAnimation 0.5s ease;
+}
+
+.animate-dislike {
+  animation: dislikeAnimation 0.5s ease;
+}
+
+/* Animation pour le compteur de likes/dislikes */
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 0.5s ease;
+}
+
+/* Fill effect pour les icônes like/dislike lorsqu'ils sont actifs */
+.fill-current {
+  fill: currentColor;
+}
+
+/* AdFreePlayerAds component styles */
+.ad-free-popup {
+  z-index: 9999 !important;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Avatar modal overlay - highest z-index */
+.avatar-modal-overlay {
+  z-index: 999999 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ad-free-popup-content {
+  background-color: #1f2937;
+  border-radius: 0.5rem;
+  max-width: 32rem;
+  width: 100%;
+  padding: 1.5rem;
+  position: relative;
+  border: 1px solid #10b981;
+}
+
+.ad-free-popup-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: #9ca3af;
+  transition: color 0.2s;
+}
+
+.ad-free-popup-close:hover {
+  color: #f9fafb;
+}
+
+.ad-free-popup-title {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #10b981;
+}
+
+.ad-free-popup-content-text {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  color: #d1d5db;
+}
+
+.ad-free-popup-ad-container {
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ad-free-popup-ad-text {
+  font-weight: 600;
+  text-align: center;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.ad-free-popup-ad-type {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.ad-free-popup-button {
+  margin-top: 1.5rem;
+  width: 100%;
+  background-color: #10b981;
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  transition-property: background-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.ad-free-popup-button:hover {
+  background-color: #059669;
+}
+
+.bg-pantone-100\/20 {
+  background-color: rgba(204, 225, 243, 0.2);
+}
+
+.bg-pantone-600 {
+  background-color: var(--color-pantone-600);
+}
+
+.hover\:bg-pantone-700:hover {
+  background-color: var(--color-pantone-700);
+}
+
+.focus-visible\:outline-pantone-700:focus-visible {
+  outline-color: var(--color-pantone-700);
+}
+
+.bg-page-background {
+  background-color: #121212;
+}
+
+html,
+body,
+#root {
+  /* overscroll-behavior: contain; */
+  /* height: 100%; */
+  margin: 0;
+  padding: 0;
+}
+
+/* Styles pour le header réorganisé */
+.header-left-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.header-right-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Animation pour le logo ORVIX */
+@keyframes shine-slow {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shine-slow {
+  background-size: 200% 100%;
+  animation: shine-slow 3s linear infinite;
+}
+
+/* Tooltip styles */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltip-text {
+  visibility: hidden;
+  width: 120px;
+  background-color: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -60px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.tooltip .tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+}
+
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* ─── react-colorful (Settings background customization) ─────────────────
+   Override la taille par défaut (200×200) pour s'intégrer dans le panneau
+   compact, et arrondit les bords pour matcher le reste de l'UI. Le picker
+   est inline (pas de popup natif laggy) et fonctionne en GPU. */
+.settings-color-picker .react-colorful {
+  width: 200px;
+  height: 160px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.settings-color-picker .react-colorful__saturation {
+  border-radius: 12px 12px 0 0;
+  border-bottom: none;
+}
+
+.settings-color-picker .react-colorful__hue {
+  height: 16px;
+  border-radius: 0 0 12px 12px;
+}
+
+.settings-color-picker .react-colorful__pointer {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+@media (min-width: 640px) {
+  .settings-color-picker .react-colorful {
+    width: 220px;
+    height: 180px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Coins carrés (Paramètres > Apparence)
+   Classe posée sur <html> au boot (main.tsx) et togglée live depuis
+   SettingsPage. !important en feuille de style bat les styles inline
+   React (React n'émet jamais de !important inline), donc couvre aussi
+   Embla, les cards, avatars, scrollbars, pseudo-éléments…
+   ═══════════════════════════════════════════════════════════════ */
+.square-corners *,
+.square-corners *::before,
+.square-corners *::after {
+  border-radius: 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Plein écran du lecteur porté par le conteneur racine de l'app
+   (#orvix-fullscreen-host, voir utils/playerFullscreenPersistence.ts).
+
+   L'élément plein écran doit survivre au remontage du lecteur d'un
+   épisode à l'autre — sinon le navigateur quitte le plein écran, et
+   le rétablir exigerait une nouvelle activation utilisateur, que
+   Firefox n'accorde que dans un vrai gestionnaire d'événement.
+   L'hôte étant la racine de l'app, c'est au lecteur d'occuper
+   lui-même tout l'écran.
+   ═══════════════════════════════════════════════════════════════ */
+#orvix-fullscreen-host:fullscreen,
+#orvix-fullscreen-host:fullscreen {
+  /* Le lecteur est en position: fixed ; rien ne doit le rogner. */
+  overflow: visible;
+  background: #000;
+}
+
+/* Anciens moteurs : un sélecteur inconnu invalide toute la règle, d'où les
+   déclarations séparées plutôt qu'une liste de sélecteurs. */
+#orvix-fullscreen-host:-webkit-full-screen,
+#orvix-fullscreen-host:-webkit-full-screen {
+  overflow: visible;
+  background: #000;
+}
+
+#orvix-fullscreen-host:-moz-full-screen,
+#orvix-fullscreen-host:-moz-full-screen {
+  overflow: visible;
+  background: #000;
+}
+
+.video-container.player-fullscreen-fill {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border-radius: 0;
+  background: #000;
+  /* Au-dessus des overlays de la page lecteur (z-index max ~10002). */
+  z-index: 2147483000;
+}
+
+.video-container.player-fullscreen-fill video {
+  width: 100%;
+  height: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Racine des portails (menus, listes de sélection, modales)
+
+   Voir utils/overlayPortal.ts : un élément en plein écran est seul
+   peint, avec sa descendance. Les surcouches portées dans `body`
+   restaient donc invisibles. Elles partagent maintenant cette
+   racine, que le module déplace dans l'élément plein écran.
+
+   Hors plein écran, `display: contents` ne génère aucune boîte :
+   les enfants se comportent comme s'ils étaient dans `body`, donc
+   rien ne change pour l'affichage habituel.
+   ═══════════════════════════════════════════════════════════════ */
+#orvix-overlay-root,
+#orvix-overlay-root {
+  display: contents;
+}
+
+#orvix-overlay-root[data-fullscreen='true'],
+#orvix-overlay-root[data-fullscreen='true'] {
+  display: block;
+  position: fixed;
+  inset: 0;
+  /* Au-dessus du lecteur, qui monte déjà à 2147483000 en plein écran. */
+  z-index: 2147483647;
+  /* Sinon la racine, qui couvre l'écran, avalerait les clics sur les
+     contrôles du lecteur même sans surcouche ouverte. */
+  pointer-events: none;
+}
+
+#orvix-overlay-root[data-fullscreen='true'] > *,
+#orvix-overlay-root[data-fullscreen='true'] > * {
+  pointer-events: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Titres de section — lisibilité de la sélection
+
+   Ces titres sont un dégradé découpé sur le texte
+   (`background-clip: text` + `color: transparent`). Sélectionnés,
+   il ne restait qu'un rectangle de surlignage vide : le texte était
+   bien copié, mais invisible pendant la sélection. On lui redonne
+   une couleur pleine. Posé ici, et non dans le bloc de styles d'une
+   page, parce que la même classe sert sur l'accueil, Films, Animés
+   et les pages fournisseur.
+   ═══════════════════════════════════════════════════════════════ */
+.section-title::selection,
+.section-title *::selection {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  background: rgba(239, 68, 68, 0.45);
+}

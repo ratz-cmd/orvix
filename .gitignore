@@ -1,0 +1,105 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Auto-generated entries
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+*.log
+
+# Environment files
+.env
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Sensitive files (auto-detected)
+.env
+dist
+node_modules
+.env
+
+# Project runtime caches and local data
+API/cache/
+API/data/
+API/Mainapi/cache/
+API/Mainapi/data/
+API/Mainapi/darkino-backups
+
+# Discord bot (private; published separately)
+API/BOT/
+
+# Fichiers du dépôt privé jamais publiés ici (garde-fou de synchro)
+API/Mainapi/cinepulse_accounts.json
+API/Mainapi/mirror.sqlite*
+docs/
+extension/Chrome/Chrome.zip
+movix-mcp/
+movix-mcp-http/
+API/Mainapi/public/oauth-icons/
+API/Mainapi/exportscripts/
+
+# Claude Code / superpowers local state
+.claude/
+.superpowers/
+
+# Python artifacts
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Secrets de signature — ce dépôt est public
+#
+# app/.gitignore couvre déjà l'application, mais ces règles-ci valent pour tout
+# le dépôt : une synchro depuis le dépôt privé qui copierait un répertoire au
+# lieu des fichiers suivis par git publierait la clé de release et son mot de
+# passe. La seule protection ne doit pas être la prudence de celui qui synchronise.
+*.keystore
+!debug.keystore
+*.jks
+*.p12
+*.mobileprovision
+keystore.properties
+signing.properties
+release-signing.properties

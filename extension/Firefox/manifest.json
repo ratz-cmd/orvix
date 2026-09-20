@@ -1,0 +1,62 @@
+{
+  "manifest_version": 3,
+  "name": "Orvix Proxy Extension",
+  "version": "1.6.4",
+  "description": "Extension proxy pour Live TV Orvix - Contourne CORS, injecte les headers et extrait les sources",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "orvix-extension@orvix.local",
+      "strict_min_version": "109.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "icons": {
+    "16": "orvix.png",
+    "48": "orvix.png",
+    "128": "orvix.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "orvix.png",
+      "48": "orvix.png",
+      "128": "orvix.png"
+    },
+    "default_title": "Orvix Extension"
+  },
+  "permissions": [
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "alarms",
+    "storage"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "scripts": ["fsvid-vidzy-quickjs.js", "extractors.js", "background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "content.js",
+        "injected.js",
+        "extractors.js",
+        "fsvid-vidzy-quickjs.js",
+        "popup.html",
+        "popup.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

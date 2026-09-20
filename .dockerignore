@@ -1,0 +1,67 @@
+# === Dépendances et builds (régénérés dans le builder) ===
+node_modules
+**/node_modules
+dist
+dist-ssr
+build
+
+# === Git / CI ===
+.git
+.gitignore
+.gitattributes
+.github
+
+# === Backends séparés (pas besoin pour le front) ===
+API
+extension
+userscript
+wasm
+PreMid
+cloudflareproxy
+others
+docs
+
+# === App React Native mobile ===
+app
+
+# === Cloudflare Functions — sauf le helper utilisé par server/ ===
+functions
+!functions/_lib
+!functions/_lib/socialPreview.js
+
+# === Logs, dumps, artefacts locaux ===
+*.log
+*.txt
+!*.example
+crashreport.txt
+deployment-*.txt
+
+# === Env / secrets ===
+.env
+.env.*
+!.env.example
+
+# === Éditeurs / OS ===
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# === Images lourdes inutiles au build ===
+movix.png
+
+# === Docs ===
+*.md
+!README.md
+
+# === Cache Vite local ===
+.vite
+node_modules/.vite
+
+# === Next.js legacy (non utilisé) ===
+next.config.js
+
+# === Tests / scripts ad-hoc ===
+xtream_concurrency_test.py
