@@ -217,7 +217,11 @@ export const isFsvidExtractionEnabled = () => isM3u8ExtractorEnabled('fsvid');
 export const isVidmolyExtractionEnabled = () => isM3u8ExtractorEnabled('vidmoly');
 export const isSibnetExtractionEnabled = () => isM3u8ExtractorEnabled('sibnet');
 export const isDoodStreamExtractionEnabled = () => isM3u8ExtractorEnabled('doodstream');
-export const isSeekStreamingExtractionEnabled = () => false; // Désactivé : SeekStreaming reste un lecteur normal indépendant au premier plan
+// SeekStreaming : activé comme les autres. L'embed public est bourré de
+// publicités et de redirections ; on préfère extraire le .m3u8 (API
+// /api/v1/video, déchiffrée en AES-CBC) et le lire dans le lecteur Orvix.
+// Reste désactivable par l'utilisateur dans Réglages › Extraction.
+export const isSeekStreamingExtractionEnabled = () => isM3u8ExtractorEnabled('seekstreaming');
 export const isLuluStreamExtractionEnabled = () => isM3u8ExtractorEnabled('lulustream');
 export const isVeevExtractionEnabled = () => isM3u8ExtractorEnabled('veev');
 export const isVidaraExtractionEnabled = () => isM3u8ExtractorEnabled('vidara');

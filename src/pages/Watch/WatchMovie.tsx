@@ -10,6 +10,8 @@ import { useAdFreePopup } from '../../context/AdFreePopupContext';
 import AdFreePlayerAds from '../../components/AdFreePlayerAds';
 import { extractM3u8FromEmbed, extractUqloadFile, extractVidzyM3u8, extractFsvidM3u8, extractDoodStreamFile, isDoodStreamExtractionEnabled, registerServerResolvedSources, type M3u8Result } from '../../utils/extractM3u8';
 import { isSeekStreamingEmbedUrl, type SeekStreamingHlsSource } from '../../utils/seekStreamingCandidates';
+import { useAdFreeAutoExtraction } from '../../hooks/useAdFreeAutoExtraction';
+import type { ExtractedPlayback } from '../../hooks/useAdFreeAutoExtraction';
 import { runExtractionPass } from '../../utils/runExtractionPass';
 import { pickAutoSelectedSource, sortHostersByPriority, type SourceAvailability } from '../../utils/sourceAutoSelect';
 import type { TopLevelSourceId } from '../../types/sourcePriority';
@@ -2934,6 +2936,33 @@ const WatchMovie: React.FC = () => {
         return undefined;
     }
   })();
+
+  /**
+   * Un lecteur tiers vient d'être extrait (SeekStreaming, Voe, Uqload…) :
+   * son flux direct est relu dans le lecteur Orvix natif — aucune publicité,
+   * interface française, Super Résolution 2K pour les VIP.
+   */
+  const handleAutoExtractedPlayback = useCallback((playback: ExtractedPlayback) => {
+    setNexusHlsSources(prev => {
+      const known = new Set(prev.map(source => source.url));
+      const additions = playback.candidates
+        .filter(candidate => !known.has(candidate.url))
+        .map(candidate => ({ url: candidate.url, label: candidate.label }));
+      return additions.length > 0 ? [...additions, ...prev] : prev;
+    });
+    setSelectedNexusHlsSource(0);
+    setVideoSource(playback.url);
+    setEmbedUrl(null);
+    setEmbedType(null);
+    setSelectedSource('nexus_hls');
+    currentSourceRef.current = 'nexus_hls';
+  }, []);
+
+  useAdFreeAutoExtraction({
+    embedUrl,
+    embedType,
+    onExtracted: handleAutoExtractedPlayback,
+  });
 
   return (
     <div style={{ minHeight: 'calc(var(--vh, 1vh) * 100)', overflow: 'hidden' }} className="w-full bg-black overflow-hidden fixed inset-0">

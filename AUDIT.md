@@ -658,3 +658,53 @@ constantes vont ensemble.
 | Tests API | `node --test` sur `API/Mainapi` | ⚠️ **non concluant ici** : `better-sqlite3`, `sqlite3`, `cycletls` et `impit` ne se compilent pas dans cet environnement (proxy TLS), donc les 63 échecs initiaux restent inexploités. À lancer sur une machine avec toolchain — c'est le point 7 du plan. |
 | Typecheck / lint | `tsc -b`, `eslint .` | inchangés (points 8 et 9 du plan) |
 
+---
+
+## ✅ Appliqué dans cette passe (chantiers produit : lecteur, 2K VIP, sans pub)
+
+Ces trois chantiers répondent à une demande produit, pas à l'audit. Ils sont sur la même
+branche `arena/01a0bebd-orvix`.
+
+### 1. Qualité minimale du lecteur — fini le 340p
+
+| Élément | Détail |
+| --- | --- |
+| Politique | `src/utils/playbackQuality.ts` : plancher **480p**, cible **1440p VIP** / 1080p sinon, gammes et messages en français |
+| Sélection de piste | `selectLevelForPreference()` accepte un plancher ; en mode « auto », hls.js reçoit `config.minAutoBitrate` calculé par `computeMinAutoBitrate()` (`src/utils/hlsQuality.ts`) pour que l'ABR ne redescende plus sur les pistes 240p/340p tant qu'une meilleure existe |
+| Signalement | Bandeau FR dans le lecteur (`watch.qualityFloorTitle`) quand la source entière plafonne sous le seuil, avec invitation à changer de piste ou de source |
+| Effet | Le lecteur démarre sur 720p/1080p quand le manifeste les propose, au lieu de la première piste de la liste |
+
+### 2. Super Résolution 2K locale (VIP, 1080p → 2560 × 1440)
+
+Tout le traitement se fait sur la machine du membre : **le serveur ne reçoit aucune frame**.
+
+| Élément | Détail |
+| --- | --- |
+| Politique | `src/utils/upscalingPolicy.ts` : éligibilité (VIP, PC, WebGL dispo, hors PiP/onglet caché), cible 2K au ratio de la source, taille de rendu bornée par l'écran, dégradation automatique si le GPU dépasse le budget |
+| Moteur | `src/utils/videoUpscaler.ts` : WebGL 2 (repli WebGL 1), deux passes — agrandissement bilinéaire ou **bicubique Catmull-Rom**, puis accentuation adaptative **RCAS**. Aucun import React, testable hors navigateur |
+| Intégration | Canvas superposé à la vidéo dans `HLSPlayer`, boucle `requestVideoFrameCallback`, cadrage `object-fit` reproduit exactement, indicateur « 2K VIP », budget GPU mesuré et cible abaissée automatiquement si besoin |
+| Repli | L'ancien filtre SVG `feConvolveMatrix` reste disponible quand WebGL échoue, et ne s'empile plus avec le shader |
+| Défaut | Un VIP reçoit le mode « Standard 1440p » d'office (désactivable), les autres restent en natif |
+
+### 3. Lecteurs tiers extraits → lecture Orvix sans publicité
+
+| Élément | Détail |
+| --- | --- |
+| Activation | `isSeekStreamingExtractionEnabled()` n'est plus figé à `false` : il suit la préférence utilisateur `seekstreaming` (activée par défaut) |
+| Service | `src/utils/onTheFlyExtract.ts` : détection d'hébergeur extractible, extension d'abord, backend `/api/extract` ensuite, remontée des pistes (qualités) et délai strict |
+| Bascule | `src/hooks/useAdFreeAutoExtraction.ts` branché dans `WatchMovie` et `WatchTv` : extraction dès qu'un embed extractible est choisi, puis lecture dans le lecteur Orvix (`nexus_hls`) ; résultat mémorisé, une seule tentative par URL, échec = iframe conservée |
+| Contrôle utilisateur | Toast « Publicités supprimées » avec action « Revenir au lecteur tiers » (préférence `orvix_ad_free_autoplay`, désactivable) |
+| Serveur | Rien de lourd : `POST /api/extract` télécharge la page d'embed (~50 Ko) et renvoie l'URL du flux. Le relais `/api/extract/stream` n'existe que pour les hébergeurs qui exigent un `Referer` (mobile/TV) ; il relaie les octets, il ne transcode pas. L'upscaling, lui, ne passe jamais par là |
+
+### Vérifications de cette passe produit
+
+| Vérification | Commande | Résultat |
+| --- | --- | --- |
+| Politique de qualité | `node --test tests/playbackQuality.test.mjs` | ✅ 10/10 |
+| Super Résolution | `node --test tests/upscalingPolicy.test.mjs` | ✅ 10/10 |
+| Contrat de câblage du lecteur | `node --test src/components/__tests__/hlsPlayerUpscaleWiring.test.mjs` | ✅ 6/6 |
+| Extracteur SeekStream réel (bac à sable `vm`, payload AES-CBC) | `node --test tests/seekStreamingExtractor.test.mjs` | ✅ 5/5 |
+| Extraction à la volée + préférence sans pub | `node --test tests/onTheFlyExtract.test.mjs` | ✅ 6/6 |
+| Chaîne pages Watch → lecteur natif | `node --test tests/adFreeAutoExtractionWiring.test.mjs` | ✅ 5/5 |
+| Typecheck / build | `npx tsc --noEmit`, `npm run build` | ✅ les deux passent |
+| Suites existantes | `node --test tests/*.test.mjs`, `cd app && node --test tests/*.test.mjs` | ✅ aucun nouvel échec (9 et 5 échecs préexistants, identiques à HEAD) |
