@@ -7,7 +7,7 @@
  *   - les sources externes (AniSkip, SkipDB, IntroDB, TheIntroDB) sont lentes,
  *     communes a tous les utilisateurs et quasi immuables : leurs propositions
  *     BRUTES sont mises en cache Redis par (contenu, duree).
- *   - la source Movix lit notre propre base et change a chaque vote : elle est
+ *   - la source Orvix lit notre propre base et change a chaque vote : elle est
  *     interrogee a chaque requete, puis fusionnee avec le cache.
  *
  * C'est pour cela que le cache contient des candidats bruts et non le consensus
@@ -41,7 +41,7 @@ const TOTAL_BUDGET_MS = 7000;
  * La duree vient du client et entre dans la cle de cache : sans plafond,
  * incrementer `duration` de seconde en seconde suffit a provoquer un defaut de
  * cache a chaque appel, donc jusqu'a quatre requetes sortantes vers des
- * services communautaires gratuits — et l'IP de Movix bannie de ses propres
+ * services communautaires gratuits — et l'IP de Orvix bannie de ses propres
  * sources. Huit encodages couvrent largement les differences entre hebergeurs.
  */
 const MAX_KNOWN_DURATIONS = 8;
@@ -165,7 +165,7 @@ async function resolveSegments({ mediaType, tmdbId, season, episode, duration })
 
   if (reconciled.throttled) {
     // Budget d'encodages epuise pour ce contenu : les sources externes ne sont
-    // pas interrogees et rien n'est mis en cache. La source Movix, elle, reste
+    // pas interrogees et rien n'est mis en cache. La source Orvix, elle, reste
     // servie : elle lit notre propre base et ne coute rien a personne.
     externalResult = {
       candidates: [],
@@ -187,7 +187,7 @@ async function resolveSegments({ mediaType, tmdbId, season, episode, duration })
     );
   }
 
-  // Sources vivantes (la communaute Movix) : jamais mises en cache, sans quoi
+  // Sources vivantes (la communaute Orvix) : jamais mises en cache, sans quoi
   // une proposition tout juste adoptee resterait invisible quinze jours.
   const liveResult = await runProviders(
     PROVIDERS.filter((provider) => provider.cacheable === false),

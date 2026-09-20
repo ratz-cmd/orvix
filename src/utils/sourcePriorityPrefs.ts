@@ -8,7 +8,7 @@ import {
 } from '../types/sourcePriority';
 
 const STORAGE_KEY = 'settings_source_priority_prefs';
-const CHANGE_EVENT = 'movix-source-priority-changed';
+const CHANGE_EVENT = 'orvix-source-priority-changed';
 
 /**
  * Version du schéma persistée dans localStorage.

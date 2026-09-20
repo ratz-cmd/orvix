@@ -1,6 +1,6 @@
-# Frontend Movix
+# Frontend Orvix
 
-Le frontend Movix porte l'expérience utilisateur complète : navigation dans le catalogue, pages détails, lecture vidéo, Live TV, WatchParty, profils, listes partagées, Wishboard, VIP et Wrapped.
+Le frontend Orvix porte l'expérience utilisateur complète : navigation dans le catalogue, pages détails, lecture vidéo, Live TV, WatchParty, profils, listes partagées, Wishboard, VIP et Wrapped.
 
 Le point important pour contribuer ici : `src/App.tsx` ne fait pas que router. Il centralise aussi plusieurs comportements transverses, dont la persistance locale et la sync de certains morceaux de `localStorage` vers `POST /api/sync`.
 
@@ -80,7 +80,7 @@ Le routeur principal est dans `src/App.tsx`. Les grandes familles de routes sont
 
 ## État global
 
-Movix n'utilise ni Redux ni Zustand. L'état global passe surtout par React Context, le stockage local et quelques synchronisations backend.
+Orvix n'utilise ni Redux ni Zustand. L'état global passe surtout par React Context, le stockage local et quelques synchronisations backend.
 
 Les contexts à connaître en premier :
 

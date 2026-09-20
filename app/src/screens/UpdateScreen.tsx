@@ -256,7 +256,7 @@ export default function UpdateScreen({
         {stage === 'need_permission' && (
           <>
             <Text style={styles.statusText}>
-              Autorise Movix à installer des APK pour continuer.
+              Autorise Orvix à installer des APK pour continuer.
             </Text>
             <TouchableOpacity
               onPress={onOpenSettings}

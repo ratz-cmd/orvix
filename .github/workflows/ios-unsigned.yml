@@ -111,7 +111,7 @@ jobs:
       - name: Upload the resolved Podfile.lock
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: Movix-Podfile-lock-${{ steps.artifact.outputs.version }}-${{ github.run_number }}
+          name: Orvix-Podfile-lock-${{ steps.artifact.outputs.version }}-${{ github.run_number }}
           path: app/ios/Podfile.lock
           if-no-files-found: error
 
@@ -147,8 +147,8 @@ jobs:
         working-directory: app/ios
         run: |
           xcodebuild build \
-            -workspace Movix.xcworkspace \
-            -scheme Movix \
+            -workspace Orvix.xcworkspace \
+            -scheme Orvix \
             -configuration Debug \
             -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}" \
             -derivedDataPath "$GITHUB_WORKSPACE/app/build/dd-simulator" \
@@ -165,8 +165,8 @@ jobs:
         working-directory: app/ios
         run: |
           xcodebuild build \
-            -workspace Movix.xcworkspace \
-            -scheme Movix \
+            -workspace Orvix.xcworkspace \
+            -scheme Orvix \
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -derivedDataPath "$GITHUB_WORKSPACE/app/build/dd" \
@@ -181,7 +181,7 @@ jobs:
       - name: Package the unsigned IPA
         working-directory: app
         env:
-          IOS_APP_PATH: build/dd/Build/Products/Release-iphoneos/Movix.app
+          IOS_APP_PATH: build/dd/Build/Products/Release-iphoneos/Orvix.app
           IOS_OUTPUT_DIR: build/unsigned-ipa
         run: bash scripts/package-unsigned-ios.sh
 
@@ -191,26 +191,26 @@ jobs:
         id: validate
         working-directory: app
         run: |
-          APP="build/dd/Build/Products/Release-iphoneos/Movix.app"
-          PAYLOAD="build/unsigned-ipa/Payload/Movix.app"
+          APP="build/dd/Build/Products/Release-iphoneos/Orvix.app"
+          PAYLOAD="build/unsigned-ipa/Payload/Orvix.app"
           /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist"
           MIN_OS="$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$APP/Info.plist")"
           echo "min_os=$MIN_OS" >> "$GITHUB_OUTPUT"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")" = "${{ steps.artifact.outputs.version }}"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")" = "${{ steps.artifact.outputs.build_number }}"
-          lipo -archs "$APP/Movix" | tr ' ' '\n' | grep -qw arm64
+          lipo -archs "$APP/Orvix" | tr ' ' '\n' | grep -qw arm64
           test ! -e "$PAYLOAD/_CodeSignature"
           test ! -e "$PAYLOAD/embedded.mobileprovision"
-          unzip -t build/unsigned-ipa/Movix-unsigned.ipa
-          (cd build/unsigned-ipa && shasum -a 256 -c Movix-unsigned.ipa.sha256)
+          unzip -t build/unsigned-ipa/Orvix-unsigned.ipa
+          (cd build/unsigned-ipa && shasum -a 256 -c Orvix-unsigned.ipa.sha256)
 
       - name: Upload the unsigned IPA
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: Movix-unsigned-${{ steps.artifact.outputs.version }}-${{ github.run_number }}
+          name: Orvix-unsigned-${{ steps.artifact.outputs.version }}-${{ github.run_number }}
           path: |
-            app/build/unsigned-ipa/Movix-unsigned.ipa
-            app/build/unsigned-ipa/Movix-unsigned.ipa.sha256
+            app/build/unsigned-ipa/Orvix-unsigned.ipa
+            app/build/unsigned-ipa/Orvix-unsigned.ipa.sha256
           if-no-files-found: error
 
   # Seul ce job ecrit dans le depot, et il ne consomme que l'artefact produit
@@ -236,12 +236,12 @@ jobs:
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: Movix-unsigned-${{ needs.build.outputs.version }}-${{ github.run_number }}
+          name: Orvix-unsigned-${{ needs.build.outputs.version }}-${{ github.run_number }}
           path: dist
 
       - name: Verify the checksum before publishing
         working-directory: dist
-        run: shasum -a 256 -c Movix-unsigned.ipa.sha256
+        run: shasum -a 256 -c Orvix-unsigned.ipa.sha256
 
       # Les sources des stores sont régénérées à chaque publication : une pour
       # AltStore et SideStore (même format JSON pour les deux), une pour
@@ -254,10 +254,10 @@ jobs:
           IOS_SOURCE_VERSION: ${{ needs.build.outputs.version }}
           IOS_SOURCE_BUILD_NUMBER: ${{ needs.build.outputs.build_number }}
           IOS_SOURCE_MIN_OS: ${{ needs.build.outputs.min_os }}
-          IOS_SOURCE_IPA_PATH: dist/Movix-unsigned.ipa
+          IOS_SOURCE_IPA_PATH: dist/Orvix-unsigned.ipa
           IOS_SOURCE_DATE: ${{ github.event.head_commit.timestamp }}
           IOS_SOURCE_DOWNLOAD_URL: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/orvix-ios-unsigner.ipa
-          IOS_SOURCE_ICON_URL: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/ios/Movix/Images.xcassets/AppIcon.appiconset/icon-1024.png
+          IOS_SOURCE_ICON_URL: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/ios/Orvix/Images.xcassets/AppIcon.appiconset/icon-1024.png
           IOS_SOURCE_NOTES_URL: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}
           IOS_SOURCE_OUTPUT: app/orvix-ios-source.json
           IOS_SCARLET_OUTPUT: app/orvix-scarlet-source.json
@@ -270,7 +270,7 @@ jobs:
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          install -m 644 dist/Movix-unsigned.ipa app/orvix-ios-unsigner.ipa
+          install -m 644 dist/Orvix-unsigned.ipa app/orvix-ios-unsigner.ipa
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- app/orvix-ios-unsigner.ipa app/orvix-ios-source.json app/orvix-scarlet-source.json
@@ -307,7 +307,7 @@ jobs:
         working-directory: dist
         run: |
           gh release create "${GITHUB_REF_NAME}" \
-            Movix-unsigned.ipa \
-            Movix-unsigned.ipa.sha256 \
-            --title "Movix ${{ needs.build.outputs.version }} (iOS, non signee)" \
-            --notes "IPA non signee. Son installation est impossible tant qu'un utilisateur ne l'a pas signee par ses propres moyens. Verifiez l'archive avec: shasum -a 256 -c Movix-unsigned.ipa.sha256 — Source AltStore/SideStore : https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/orvix-ios-source.json — Source Scarlet : https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/orvix-scarlet-source.json"
+            Orvix-unsigned.ipa \
+            Orvix-unsigned.ipa.sha256 \
+            --title "Orvix ${{ needs.build.outputs.version }} (iOS, non signee)" \
+            --notes "IPA non signee. Son installation est impossible tant qu'un utilisateur ne l'a pas signee par ses propres moyens. Verifiez l'archive avec: shasum -a 256 -c Orvix-unsigned.ipa.sha256 — Source AltStore/SideStore : https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/orvix-ios-source.json — Source Scarlet : https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/orvix-scarlet-source.json"

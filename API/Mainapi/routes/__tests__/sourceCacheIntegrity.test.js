@@ -377,7 +377,7 @@ test('Cpasmal keeps playable cached links when a background refresh is empty', a
   const redisPath = path.join(__dirname, '..', '..', 'config', 'redis.js');
   const tmdbCachePath = path.join(__dirname, '..', '..', 'utils', 'tmdbCache.js');
   const redisLockPath = path.join(__dirname, '..', '..', 'utils', 'redisLock.js');
-  const cacheDir = await fs.mkdtemp(path.join(os.tmpdir(), 'movix-cpasmal-cache-'));
+  const cacheDir = await fs.mkdtemp(path.join(os.tmpdir(), 'orvix-cpasmal-cache-'));
   const cacheKey = 'movie_42';
   const cacheFile = path.join(cacheDir, `${cacheKey}.json`);
   const cached = {
@@ -463,7 +463,7 @@ test('Cpasmal cannot overwrite a concurrently refreshed playable cache with an o
   const redisPath = path.join(__dirname, '..', '..', 'config', 'redis.js');
   const tmdbCachePath = path.join(__dirname, '..', '..', 'utils', 'tmdbCache.js');
   const redisLockPath = path.join(__dirname, '..', '..', 'utils', 'redisLock.js');
-  const cacheDir = await fs.mkdtemp(path.join(os.tmpdir(), 'movix-cpasmal-race-'));
+  const cacheDir = await fs.mkdtemp(path.join(os.tmpdir(), 'orvix-cpasmal-race-'));
   const cacheKey = 'movie_42';
   const cacheFile = path.join(cacheDir, `${cacheKey}.json`);
   const playable = {

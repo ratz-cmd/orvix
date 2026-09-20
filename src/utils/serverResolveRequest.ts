@@ -29,8 +29,8 @@ function hasLocalBridge(): boolean {
   if (typeof window === 'undefined') return false;
   const w = window as any;
   return Boolean(
-    (w.hasOrvixNexusExtractor || w.hasMovixNexusExtractor || w.hasOrvixExtension || w.hasMovixExtension) &&
-    (w.orvixExtractM3u8 || w.movixExtractM3u8 || w.orvixExtractAllM3u8 || w.movixExtractAllM3u8)
+    (w.hasOrvixNexusExtractor || w.hasOrvixNexusExtractor || w.hasOrvixExtension || w.hasOrvixExtension) &&
+    (w.orvixExtractM3u8 || w.orvixExtractM3u8 || w.orvixExtractAllM3u8 || w.orvixExtractAllM3u8)
   );
 }
 

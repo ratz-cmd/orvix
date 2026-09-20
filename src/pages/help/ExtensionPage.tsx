@@ -4,7 +4,7 @@ import { Puzzle, AlertTriangle } from 'lucide-react';
 import TutoLayout, { TutoSection } from '../../components/TutoLayout';
 import TutoLink from '../../components/TutoLink';
 
-const ORVIX_OPEN_SOURCE_GITHUB_URL = 'https://github.com/orvixcorp/OrvixOpenSource';
+const ORVIX_OPEN_SOURCE_GITHUB_URL = 'https://github.com/orvixcorp/orvix';
 
 const ExtensionPage: React.FC = () => {
   const { t } = useTranslation();

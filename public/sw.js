@@ -108,7 +108,7 @@ async function handleTmdbImage(req) {
 // Un déploiement change les hashs, donc les nouvelles URLs manquent au cache et
 // sont récupérées normalement. Les anciennes n'y sont plus référencées : d'où
 // l'éviction FIFO ci-dessous, sans quoi le cache grossirait à chaque build.
-const ASSET_CACHE_NAME = 'movix-assets-v1';
+const ASSET_CACHE_NAME = 'orvix-assets-v1';
 const ASSET_PATH_PREFIX = '/assets/';
 const ASSET_CACHE_MAX_ENTRIES = 160;
 const ASSET_CACHE_TRIM_SAMPLE_RATE = 1 / 10;
@@ -158,7 +158,7 @@ function isLocalHost(hostname) {
 
 function parseConfig(text) {
   // Deux formats supportés :
-  // - JSON : {"mirrors":["movix.health",...]}  (dpaste.org, gist raw, etc.)
+  // - JSON : {"mirrors":["orvix.health",...]}  (dpaste.org, gist raw, etc.)
   // - HTML : page rendue rentry.co/<slug> — on extrait les hostnames des <a href>
   //   à l'intérieur du <article>. Rentry.co exige un access code pour /raw
   //   depuis un durcissement anti-abuse ; on parse le HTML rendu à la place.
@@ -241,7 +241,7 @@ function renderRedirectPage(url) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="refresh" content="0; url=${safe}">
-  <title>Movix — Redirection</title>
+  <title>Orvix — Redirection</title>
   <link rel="canonical" href="${safe}">
   <style>
     html, body { margin: 0; padding: 0; height: 100%; background: #000; color: #fff;
@@ -260,7 +260,7 @@ function renderRedirectPage(url) {
 </head>
 <body>
   <div class="wrap">
-    <div class="logo">MOVIX</div>
+    <div class="logo">ORVIX</div>
     <div class="spinner"></div>
     <p>Redirection vers notre nouveau domaine…</p>
     <p><a href="${safe}">Cliquer ici si rien ne se passe</a></p>
@@ -285,7 +285,7 @@ function render503Page() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Movix — Indisponible</title>
+  <title>Orvix — Indisponible</title>
   <style>
     html, body { margin: 0; padding: 0; height: 100%; background: #000; color: #fff;
       font-family: system-ui, -apple-system, sans-serif; display: grid; place-items: center; }
@@ -299,11 +299,11 @@ function render503Page() {
 </head>
 <body>
   <div class="wrap">
-    <div class="logo">MOVIX</div>
+    <div class="logo">ORVIX</div>
     <h1>Site temporairement indisponible</h1>
     <p>Tous nos domaines connus sont inaccessibles depuis votre connexion.</p>
     <p>Rejoins notre canal Telegram pour recevoir l'adresse du nouveau domaine.</p>
-    <a href="https://t.me/movix_site">Ouvrir Telegram</a>
+    <a href="https://t.me/orvix_site">Ouvrir Telegram</a>
   </div>
 </body>
 </html>`;
@@ -352,10 +352,10 @@ self.addEventListener('push', (event) => {
   const data = event.data.json();
   const baseUrl = self.location.origin;
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Movix', {
+    self.registration.showNotification(data.title || 'Orvix', {
       body: data.body || '',
-      icon: data.icon ? new URL(data.icon, baseUrl).href : `${baseUrl}/movix-192.png`,
-      badge: `${baseUrl}/movix-192.png`,
+      icon: data.icon ? new URL(data.icon, baseUrl).href : `${baseUrl}/orvix-192.png`,
+      badge: `${baseUrl}/orvix-192.png`,
       image: data.image || undefined,
       data: data.data || {},
     })
@@ -536,7 +536,7 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('message', async (event) => {
   const data = event.data;
-  if (!data || (data.type !== 'ORVIX_FORCE_REDIRECT' && data.type !== 'MOVIX_FORCE_REDIRECT')) return;
+  if (!data || (data.type !== 'ORVIX_FORCE_REDIRECT' && data.type !== 'ORVIX_FORCE_REDIRECT')) return;
   if (isLocalHost(self.location.hostname)) return;
   try {
     // Garde-fou : la page peut compter ses erreurs de manière trop
@@ -555,6 +555,6 @@ self.addEventListener('message', async (event) => {
       via: 'sw-message',
     });
     event.source?.postMessage({ type: 'ORVIX_REDIRECT_TO', url });
-    event.source?.postMessage({ type: 'MOVIX_REDIRECT_TO', url });
+    event.source?.postMessage({ type: 'ORVIX_REDIRECT_TO', url });
   } catch {}
 });

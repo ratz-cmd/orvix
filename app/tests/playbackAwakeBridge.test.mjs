@@ -38,7 +38,7 @@ async function loadPlaybackAwakeService(nativeModule) {
 test('injected playback-awake shim posts one message only for active-state transitions and can force false', async () => {
   const shim = await read('src/injection/playback-awake-shim.ts');
 
-  assert.match(shim, /MovixAndroidPlaybackAwake/);
+  assert.match(shim, /OrvixAndroidPlaybackAwake/);
   assert.match(shim, /PLAYBACK_AWAKE_SET/);
   assert.match(shim, /if \(active === lastActive\) return/);
   assert.match(shim, /setActive\(false\)/);
@@ -105,9 +105,9 @@ test('owner API falls back only for local playback on legacy native modules', as
 
 test('iOS native playback-awake module validates owners and serializes state on main', async () => {
   const [swift, objc, swiftTests] = await Promise.all([
-    readOptional('ios/Movix/Playback/PlaybackAwakeModule.swift'),
-    readOptional('ios/Movix/Playback/PlaybackAwakeModule.m'),
-    readOptional('ios/MovixTests/PlaybackAwakeModuleTests.swift'),
+    readOptional('ios/Orvix/Playback/PlaybackAwakeModule.swift'),
+    readOptional('ios/Orvix/Playback/PlaybackAwakeModule.m'),
+    readOptional('ios/OrvixTests/PlaybackAwakeModuleTests.swift'),
   ]);
 
   assert.match(swift, /@objc\(PlaybackAwake\)/);
@@ -162,10 +162,10 @@ test('cast and PiP claim their own awake owner around the local playback one', a
 test('Android native playback-awake module mirrors the iOS owner semantics', async () => {
   const [kotlin, kotlinTests] = await Promise.all([
     readOptional(
-      'android/app/src/main/java/com/movix/app/playback/PlaybackAwakeModule.kt',
+      'android/app/src/main/java/com/orvix/app/playback/PlaybackAwakeModule.kt',
     ),
     readOptional(
-      'android/app/src/test/java/com/movix/app/playback/PlaybackAwakeModuleTest.kt',
+      'android/app/src/test/java/com/orvix/app/playback/PlaybackAwakeModuleTest.kt',
     ),
   ]);
 

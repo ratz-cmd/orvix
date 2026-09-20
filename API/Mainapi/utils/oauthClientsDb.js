@@ -185,7 +185,7 @@ function invalidateCache() {
 }
 
 // ─── Cross-worker cache invalidation (Redis pub/sub) ─────────────────────
-// Movix runs in Node cluster mode (server.js): each worker has its own
+// Orvix runs in Node cluster mode (server.js): each worker has its own
 // in-process `memCache`. A DB mutation only reloads the worker that handled
 // it — other workers keep serving stale OAuth clients until they reboot.
 // After every mutation we publish on a Redis channel so all workers reload.

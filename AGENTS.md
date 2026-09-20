@@ -1,4 +1,4 @@
-# AGENTS.md - Movix
+# AGENTS.md - Orvix
 
 ## Consignes Codex et documentation
 
@@ -20,7 +20,7 @@ Commencer par le [README principal](README.md), puis lire seulement la documenta
 
 ## Overview
 
-Movix is a French streaming platform monorepo: React 18 + TypeScript frontend (Vite), Node.js/Express + Python backends, browser extensions, Rust WASM sync engine, and Cloudflare Workers.
+Orvix is a French streaming platform monorepo: React 18 + TypeScript frontend (Vite), Node.js/Express + Python backends, browser extensions, Rust WASM sync engine, and Cloudflare Workers.
 
 ## Setup
 

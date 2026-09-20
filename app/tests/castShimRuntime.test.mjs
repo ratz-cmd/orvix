@@ -29,8 +29,8 @@ function createShimHarness(buildCastShim, resolver, responder = () => ({})) {
     }
   }
   const window = {
-    __MOVIX_ANDROID_CAST_INSTALLED__: false,
-    __MOVIX_PREPARE_CAST_SOURCE__: resolver,
+    __ORVIX_ANDROID_CAST_INSTALLED__: false,
+    __ORVIX_PREPARE_CAST_SOURCE__: resolver,
     addEventListener(type, handler) {
       if (!listeners.has(type)) listeners.set(type, new Set());
       listeners.get(type).add(handler);
@@ -52,7 +52,7 @@ function createShimHarness(buildCastShim, resolver, responder = () => ({})) {
         queueMicrotask(() => {
           const response = responder(message);
           if (response === undefined) return;
-          window.dispatchEvent(new CustomEvent('__MOVIX_CAST_SHIM__', {
+          window.dispatchEvent(new CustomEvent('__ORVIX_CAST_SHIM__', {
             detail: {
               kind: 'RESPONSE',
               id: message.id,
@@ -99,7 +99,7 @@ test('loadMedia rejects without loading and reports a bounded preparation diagno
   const harness = createShimHarness(buildCastShim);
 
   await assert.rejects(
-    harness.window.MovixAndroidCast.loadMedia('https://cdn.example/master.m3u8', 'Title'),
+    harness.window.OrvixAndroidCast.loadMedia('https://cdn.example/master.m3u8', 'Title'),
     /source preparation/i,
   );
   assert.deepEqual(harness.posted, [{
@@ -123,7 +123,7 @@ test('loadMedia posts one structured prepared source payload', async () => {
   });
   const harness = createShimHarness(buildCastShim, resolver);
 
-  const pending = harness.window.MovixAndroidCast.loadMedia(
+  const pending = harness.window.OrvixAndroidCast.loadMedia(
     'https://cdn.example/master.m3u8',
     'Title',
     'https://image.example/poster.jpg',
@@ -158,7 +158,7 @@ test('captures the original native sender and attaches a closure-only capability
   const intercepted = [];
 
   harness.window.ReactNativeWebView.postMessage = raw => intercepted.push(raw);
-  await harness.window.MovixAndroidCast.play();
+  await harness.window.OrvixAndroidCast.play();
 
   assert.equal(intercepted.length, 0);
   assert.equal(harness.registrations.length, 2);
@@ -178,7 +178,7 @@ test('re-announces the Cast capability immediately before every native command',
   const harness = createShimHarness(buildCastShim, () => null);
 
   assert.equal(harness.registrations.length, 1);
-  await harness.window.MovixAndroidCast.play();
+  await harness.window.OrvixAndroidCast.play();
 
   assert.equal(harness.registrations.length, 2);
   assert.equal(
@@ -209,7 +209,7 @@ test('isSupported requires receiver, preparation, and LAN proxy protocol version
     resolver,
     message => message.type === 'CASTSHIM_INIT' ? supportedPayload : {},
   );
-  assert.equal(await supported.window.MovixAndroidCast.isSupported(), true);
+  assert.equal(await supported.window.OrvixAndroidCast.isSupported(), true);
 
   for (const capabilities of [
     { configured: false, receiverProtocolVersion: 1, castLanProxyVersion: 1 },
@@ -223,7 +223,7 @@ test('isSupported requires receiver, preparation, and LAN proxy protocol version
         ? { supported: true, capabilities }
         : {},
     );
-    assert.equal(await harness.window.MovixAndroidCast.isSupported(), false);
+    assert.equal(await harness.window.OrvixAndroidCast.isSupported(), false);
   }
 
   const wrongPreparationVersion = createShimHarness(
@@ -232,7 +232,7 @@ test('isSupported requires receiver, preparation, and LAN proxy protocol version
     message => message.type === 'CASTSHIM_INIT' ? supportedPayload : {},
   );
   assert.equal(
-    await wrongPreparationVersion.window.MovixAndroidCast.isSupported(),
+    await wrongPreparationVersion.window.OrvixAndroidCast.isSupported(),
     false,
   );
 });
@@ -275,7 +275,7 @@ test('controller methods post typed commands and reject native failures', async 
     }
     return {};
   });
-  const cast = harness.window.MovixAndroidCast;
+  const cast = harness.window.OrvixAndroidCast;
 
   await cast.play();
   await assert.rejects(cast.pause(), /pause rejected/);
@@ -300,7 +300,7 @@ test('subscribe emits one normalized status event and unsubscribes', async () =>
   const { buildCastShim } = await loadCastShimBuilder();
   const harness = createShimHarness(buildCastShim, () => null);
   const received = [];
-  const unsubscribe = harness.window.MovixAndroidCast.subscribe(
+  const unsubscribe = harness.window.OrvixAndroidCast.subscribe(
     status => received.push(status),
   );
   const status = {
@@ -314,12 +314,12 @@ test('subscribe emits one normalized status event and unsubscribes', async () =>
   };
 
   harness.window.dispatchEvent(new (class {
-    type = '__MOVIX_CAST_SHIM__';
+    type = '__ORVIX_CAST_SHIM__';
     detail = { kind: 'STATUS_EVENT', status };
   })());
   unsubscribe();
   harness.window.dispatchEvent(new (class {
-    type = '__MOVIX_CAST_SHIM__';
+    type = '__ORVIX_CAST_SHIM__';
     detail = { kind: 'STATUS_EVENT', status: { ...status, positionSec: 9 } };
   })());
 
@@ -350,7 +350,7 @@ test('loadMedia prepares every external text track before posting', async () => 
     return {};
   });
 
-  await harness.window.MovixAndroidCast.loadMedia(
+  await harness.window.OrvixAndroidCast.loadMedia(
     'https://cdn.example/master.m3u8',
     'Title',
     '',
@@ -397,7 +397,7 @@ test('loadMedia sends generated WebVTT inline without resolving it through a bac
     : {});
   const inlineVtt = 'WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nBonjour\n';
 
-  await harness.window.MovixAndroidCast.loadMedia(
+  await harness.window.OrvixAndroidCast.loadMedia(
     'https://cdn.example/master.m3u8',
     'Title',
     '',

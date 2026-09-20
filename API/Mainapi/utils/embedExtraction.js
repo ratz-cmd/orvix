@@ -209,7 +209,7 @@ function notifyExtractionFailure(hoster, embedUrl, { kind, label }) {
         .post(
             EXTRACTION_WEBHOOK_URL,
             {
-                username: 'Movix Extraction Monitor',
+                username: 'Orvix Extraction Monitor',
                 allowed_mentions: { parse: [] },
                 embeds: [{
                     title: `Extraction échouée — ${hoster}`,

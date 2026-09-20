@@ -23,9 +23,9 @@ export default function MirrorErrorScreen({ telegramUrl, onRetry }: Props) {
         { paddingTop: insets.top, paddingBottom: insets.bottom },
       ]}>
       <View style={styles.content}>
-        <Text style={styles.title}>Movix injoignable</Text>
+        <Text style={styles.title}>Orvix injoignable</Text>
         <Text style={styles.body}>
-          Tous les domaines Movix semblent bloqués ou hors ligne. Rejoins le
+          Tous les domaines Orvix semblent bloqués ou hors ligne. Rejoins le
           canal Telegram pour récupérer le nouveau lien officiel.
         </Text>
 

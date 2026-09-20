@@ -1,5 +1,5 @@
 /**
- * Vocabulaire commun des segments Movix.
+ * Vocabulaire commun des segments Orvix.
  *
  * Chaque fournisseur a son propre vocabulaire ; tout est ramene ici a cinq
  * types canoniques. `outro` et `credits` sont volontairement distincts : sur un
@@ -12,10 +12,10 @@ const SEGMENT_TYPES = Object.freeze(['intro', 'recap', 'outro', 'credits', 'prev
 
 /** Ordre de preference quand deux fournisseurs proposent le meme type. */
 const PROVIDER_RANK = Object.freeze({
-  // La communaute Movix passe devant tout le monde : ses releves sont faits a
-  // la milliseconde depuis le lecteur, sur les durees exactes que Movix sert,
+  // La communaute Orvix passe devant tout le monde : ses releves sont faits a
+  // la milliseconde depuis le lecteur, sur les durees exactes que Orvix sert,
   // et il faut trois avis concordants pour qu'un releve soit adopte.
-  movix: 5,
+  orvix: 5,
   // Communaute dediee aux animes, generiques releves a l'image pres.
   aniskip: 4,
   // Recale lui-meme sur la duree du flux et expose un score de consensus.
@@ -35,7 +35,7 @@ const DURATION_TOLERANCE_SEC = 5;
 const OVERLAP_MERGE_RATIO = 0.6;
 
 const UPSTREAM_TIMEOUT_MS = 6000;
-const USER_AGENT = 'Movix/1.0 (+https://movix.tax)';
+const USER_AGENT = 'Orvix/1.0 (+https://orvix.tax)';
 
 module.exports = {
   SEGMENT_TYPES,

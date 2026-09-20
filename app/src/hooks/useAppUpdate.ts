@@ -74,7 +74,7 @@ const initialState: UpdateState = {
 };
 
 function fileNameForBuild(buildNumber: number): string {
-  return `movix-android-${buildNumber}.apk`;
+  return `orvix-android-${buildNumber}.apk`;
 }
 
 type SemanticVersion = {
@@ -567,7 +567,7 @@ export function useAppUpdate(githubUrl: string | null) {
 
     try {
       const fileName = fileNameForBuild(manifest.buildNumber);
-      const title = `Mise à jour Movix ${manifest.version}`;
+      const title = `Mise à jour Orvix ${manifest.version}`;
       const { downloadId, filePath } = await enqueueDownload(
         manifest.apkUrl,
         fileName,

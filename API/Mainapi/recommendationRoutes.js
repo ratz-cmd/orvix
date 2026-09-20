@@ -1,5 +1,5 @@
 /**
- * Movix Personalized Recommendations
+ * Orvix Personalized Recommendations
  * Builds user taste profiles from viewing history and generates
  * scored recommendations via TMDB discovery + similarity APIs.
  * Includes collaborative filtering: compares user profiles to find

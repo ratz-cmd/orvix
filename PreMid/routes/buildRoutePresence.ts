@@ -28,7 +28,7 @@ export async function buildRoutePresence(
   return finalizeRoutePresence(
     context,
     createPagePresence(
-      s().browseMovix,
+      s().browseOrvix,
       context.pageTitle || '',
       context.pageImage,
     ),

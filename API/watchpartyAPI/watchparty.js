@@ -22,7 +22,7 @@ const PORT = Number(process.env.WATCHPARTY_PORT || 25566);
 const DEFAULT_CORS_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
 
 // Normalise une entrée en origine CORS (`schéma://hôte[:port]`, sans chemin).
-// Accepte aussi un domaine nu : « movix.fun » devient « https://movix.fun ».
+// Accepte aussi un domaine nu : « orvix.fun » devient « https://orvix.fun ».
 function toOrigin(value) {
   const raw = String(value ?? '').trim();
   if (!raw) return null;
@@ -34,8 +34,8 @@ function toOrigin(value) {
 }
 
 // Une entrée est une SOURCE distante (et non une origine) si c'est une URL http(s)
-// pointant vers un chemin : « https://movix.online/address.json » est une source,
-// « https://movix.fun » est une origine.
+// pointant vers un chemin : « https://orvix.online/address.json » est une source,
+// « https://orvix.fun » est une origine.
 function isRemoteOriginSource(value) {
   if (!/^https?:\/\//i.test(value)) return false;
   try {
@@ -83,7 +83,7 @@ if (WATCHPARTY_CORS_CREDENTIALS && (WATCHPARTY_REST_CORS_ORIGIN.wildcard || WATC
 }
 
 // --- Origines chargées à distance (liste de miroirs) ---
-// Format attendu, celui de https://movix.online/address.json :
+// Format attendu, celui de https://orvix.online/address.json :
 //   { "primary": { "url": "..." }, "active": [ { "url": "..." } ], "blocked": [ ... ] }
 // Seules `primary` et `active` sont retenues : un domaine listé dans `blocked`
 // ne doit plus être autorisé. Une liste JSON nue et les clés `mirrors`,

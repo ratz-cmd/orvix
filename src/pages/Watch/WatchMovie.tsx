@@ -337,7 +337,7 @@ const checkDarkinoAvailability = async (
   _updateRetryMessage?: (message: string) => void,
   _retryCount = 0
 ): Promise<DarkinoResult | false> => {
-  // Source Darkino/Nightflix retiree : endpoints api.movix.chat/api/search + /api/films/download desactives.
+  // Source Darkino/Nightflix retiree : endpoints api.orvix.chat/api/search + /api/films/download desactives.
   return false;
 };
 
@@ -664,7 +664,7 @@ const WatchMovie: React.FC = () => {
   // Ajout de l'état pour savoir si l'utilisateur a cliqué sur la pub
   const [hasClickedAd, setHasClickedAd] = useState(false);
 
-  // Movix Wrapped 2026 - Track movie viewing time
+  // Orvix Wrapped 2026 - Track movie viewing time
   useWrappedTracker({
     mode: 'viewing',
     viewingData: id ? {
@@ -2118,7 +2118,7 @@ const WatchMovie: React.FC = () => {
       if (id === '1218925' && fetchedMp4Sources.length === 0) {
         console.log(' Special case: Movie ID 1218925 - selecting custom source');
         setSelectedSource('custom');
-        setEmbedUrl('https://movix1.embedseek.com/#h6j8');
+        setEmbedUrl('https://orvix1.embedseek.com/#h6j8');
         setEmbedType('custom');
         currentSourceRef.current = 'custom';
         setOnlyVostfrAvailable(false);
@@ -2147,7 +2147,7 @@ const WatchMovie: React.FC = () => {
             // Fallback to hardcoded URL if API fails
             console.log(' API failed, using fallback URL');
             setSelectedSource('custom');
-            setEmbedUrl('https://movix1.embedseek.com/#ug3i');
+            setEmbedUrl('https://orvix1.embedseek.com/#ug3i');
             setEmbedType('custom');
             currentSourceRef.current = 'custom';
             setOnlyVostfrAvailable(false);
@@ -2156,7 +2156,7 @@ const WatchMovie: React.FC = () => {
           console.error('Error fetching custom links for movie 1311031:', error);
           // Fallback to hardcoded URL if API fails
           setSelectedSource('custom');
-          setEmbedUrl('https://movix1.embedseek.com/#ug3i');
+          setEmbedUrl('https://orvix1.embedseek.com/#ug3i');
           setEmbedType('custom');
           currentSourceRef.current = 'custom';
           setOnlyVostfrAvailable(false);
@@ -3243,7 +3243,7 @@ const WatchMovie: React.FC = () => {
                   setSelectedMp4Source(0);
                   setVideoSource(mp4Sources[0].url);
                 } else {
-                  // Fallback order: Supervideo (Omega), Multi (Coflix), Frembed, Movix (custom)
+                  // Fallback order: Supervideo (Omega), Multi (Coflix), Frembed, Orvix (custom)
                   const supervideo = omegaData ? getSupervideoFromOmega(omegaData) : null;
                   if (supervideo && omegaData) {
                     setSelectedSource('omega');

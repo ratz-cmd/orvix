@@ -54,7 +54,7 @@ test('only reuses a matching, verified APK download', () => {
     targetBuildNumber: 11,
     targetVersion: '2.5.2',
     targetSha256: 'A'.repeat(64),
-    apkFilePath: 'C:\\downloads\\movix-android-11.apk',
+    apkFilePath: 'C:\\downloads\\orvix-android-11.apk',
     startedAt: '2026-07-27T12:00:00.000Z',
   };
 
@@ -65,7 +65,7 @@ test('only reuses a matching, verified APK download', () => {
     false,
   );
   assert.equal(
-    canReusePendingApk({ ...validPending, apkFilePath: 'movix.zip' }, 11),
+    canReusePendingApk({ ...validPending, apkFilePath: 'orvix.zip' }, 11),
     false,
   );
   assert.equal(

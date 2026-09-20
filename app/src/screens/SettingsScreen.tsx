@@ -135,7 +135,7 @@ export default function SettingsScreen() {
   }, [refreshDnsState]);
 
   useEffect(() => {
-    AsyncStorage.getItem('movix_extraction_prefs').then((raw) => {
+    AsyncStorage.getItem('orvix_extraction_prefs').then((raw) => {
       if (!raw) return;
       try {
         const parsed = JSON.parse(raw);
@@ -155,7 +155,7 @@ export default function SettingsScreen() {
 
   const updateExtractionPrefs = useCallback((next: ExtractionPrefs) => {
     setExtractionPrefs(next);
-    AsyncStorage.setItem('movix_extraction_prefs', JSON.stringify(next));
+    AsyncStorage.setItem('orvix_extraction_prefs', JSON.stringify(next));
   }, []);
 
   const toggleDns = useCallback(async (value: boolean) => {
@@ -268,7 +268,7 @@ export default function SettingsScreen() {
 
       {/* Extension Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Extension Movix</Text>
+        <Text style={styles.sectionTitle}>Extension Orvix</Text>
 
         <View style={styles.card}>
           <View style={styles.row}>
@@ -285,7 +285,7 @@ export default function SettingsScreen() {
         </View>
 
         <Text style={styles.hint}>
-          L'extension Movix est intégrée directement dans l'application. Elle remplace
+          L'extension Orvix est intégrée directement dans l'application. Elle remplace
           le userscript Tampermonkey et l'extension Chrome/Firefox.
         </Text>
       </View>

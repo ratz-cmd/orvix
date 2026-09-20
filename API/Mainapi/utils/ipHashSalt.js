@@ -7,7 +7,7 @@
  * configuration, pas d'une constante du dépôt.
  *
  * C'est la raison d'être de ce module : les deux appelants utilisaient un repli
- * en dur (`'movix-vip-ip'`, `'movix-help-feedback-default-salt'`) présent dans
+ * en dur (`'orvix-vip-ip'`, `'orvix-help-feedback-default-salt'`) présent dans
  * un dépôt public. Avec un sel connu, un hash d'IP ne protège plus rien :
  * l'espace IPv4 se parcourt en force brute en quelques minutes.
  *

@@ -51,8 +51,8 @@ test('resume refreshes authoritative status before injecting it', () => {
 });
 
 test('sensitive playback-awake and Cast messages require trusted source provenance', () => {
-  assert.match(bridge, /isTrustedMovixBridgeUrl/);
-  assert.match(bridge, /PLAYBACK_AWAKE_SET[\s\S]*?MOVIX_PLAYBACK_AWAKE_V1/);
+  assert.match(bridge, /isTrustedOrvixBridgeUrl/);
+  assert.match(bridge, /PLAYBACK_AWAKE_SET[\s\S]*?ORVIX_PLAYBACK_AWAKE_V1/);
   assert.match(bridge, /CASTSHIM_[\s\S]*?trusted/i);
 });
 

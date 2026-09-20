@@ -23,8 +23,8 @@ const SYNCABLE_EXACT_KEYS = new Set([
   'live_tv_favorite_iptv_categories',
   'miniPlayerPosition',
   'miniPlayerVolume',
-  'movix_intro_enabled',
-  'movix_intro_seen',
+  'orvix_intro_enabled',
+  'orvix_intro_seen',
   'privacy_data_collection',
   'recentEmojis',
   'screensaver_enabled',
@@ -45,7 +45,7 @@ const SYNCABLE_PREFIXES = Object.freeze([
   'favorite_',
   'favorites_',
   'miniPlayer',
-  'movix_intro_',
+  'orvix_intro_',
   'player',
   'progress_',
   'screensaver_',
@@ -75,7 +75,7 @@ const BLOCKED_SYNC_KEYS = new Set([
   'is_admin',
   'lastCommentTime',
   'lastReplyTime',
-  'movix_pending_auth_action',
+  'orvix_pending_auth_action',
   'removeItem',
   'resolved_user_id',
   'resolved_user_type',
@@ -103,7 +103,7 @@ const SYNC_LIMITS = Object.freeze({
 });
 
 // Bornes affichage des identifiants utilisateur.
-// `profileName` = nom du profil Movix (créé via /api/profiles ou /api/oauth/profiles).
+// `profileName` = nom du profil Orvix (créé via /api/profiles ou /api/oauth/profiles).
 // `displayName` = pseudo OAuth (Discord/Google) tel qu'on l'affiche dans l'UI.
 //   Discord limite à 32 chars ; Google peut aller plus loin → on tronque à 64.
 const IDENTITY_LIMITS = Object.freeze({

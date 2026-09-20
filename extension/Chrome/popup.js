@@ -1,4 +1,4 @@
-// Movix Extension - Popup Logic
+// Orvix Extension - Popup Logic
 
 document.addEventListener('DOMContentLoaded', async () => {
   const toggleBtn = document.getElementById('toggleBtn');

@@ -1,6 +1,6 @@
-# Extension navigateur Movix
+# Extension navigateur Orvix
 
-L'extension Movix sert quand le site a besoin d'un coup de main côté navigateur : réécriture de headers, interception de requêtes, extraction locale de certaines sources et pont entre la page Movix et une logique qui ne peut pas vivre uniquement dans le frontend web.
+L'extension Orvix sert quand le site a besoin d'un coup de main côté navigateur : réécriture de headers, interception de requêtes, extraction locale de certaines sources et pont entre la page Orvix et une logique qui ne peut pas vivre uniquement dans le frontend web.
 
 Le repo garde deux variantes en parallèle :
 
@@ -58,7 +58,7 @@ Ces permissions servent à :
 - injecter ou normaliser les bons headers
 - faire passer certaines requêtes vidéo ou Live TV
 - exécuter des extractions dans le contexte adapté
-- permettre la communication avec Movix sur ses domaines autorisés
+- permettre la communication avec Orvix sur ses domaines autorisés
 
 ## Notes de contribution
 

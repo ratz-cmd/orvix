@@ -23,7 +23,7 @@
  *    season number).
  * 3. Each source has a `source` tag:
  *      - "manual"  -> 1J1F's own players (totocoutouno, bysezoxexe, ...) — UNIQUE.
- *      - "frembed"/"vidsrc"/"videasy" -> generic TMDB-id aggregators that Movix
+ *      - "frembed"/"vidsrc"/"videasy" -> generic TMDB-id aggregators that Orvix
  *        already exposes as their own sources. We DROP these (J1F_DROP_SOURCES)
  *        so 1J1F doesn't just duplicate frembed; only the unique players remain.
  *    Kept players are split VF/VOSTFR by label.
@@ -60,7 +60,7 @@ const TMDB_API_URL = 'https://api.themoviedb.org/3';
 // --- Env-overridable knobs (domain rotates; markup may drift) ---
 const GO_URL = process.env.J1F_GO_URL || 'https://1jour1film2026.site/go/';
 const BASE_OVERRIDE = (process.env.J1F_BASE_URL || '').trim().replace(/\/+$/, '');
-// Source tags to DROP — generic aggregators Movix already has as separate
+// Source tags to DROP — generic aggregators Orvix already has as separate
 // sources. Anything not listed (e.g. "manual") is kept as a unique 1J1F player.
 const DROP_SOURCES = new Set(
   (process.env.J1F_DROP_SOURCES || 'frembed,vidsrc,videasy')

@@ -21,8 +21,8 @@ import BlurText from '../components/ui/blur-text';
 import ShinyText from '../components/ui/shiny-text';
 import AnimatedBorderCard from '../components/ui/animated-border-card';
 
-const APK_URL = 'https://github.com/orvixcorp/OrvixOpenSource/raw/refs/heads/main/app/orvix-android.apk';
-const IOS_GITHUB_URL = 'https://github.com/orvixcorp/OrvixOpenSource/tree/main/app';
+const APK_URL = 'https://github.com/orvixcorp/orvix/raw/refs/heads/main/app/orvix-android.apk';
+const IOS_GITHUB_URL = 'https://github.com/orvixcorp/orvix/tree/main/app';
 
 const features = [
   {

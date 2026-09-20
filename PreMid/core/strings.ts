@@ -84,7 +84,7 @@ export interface PresenceStrings {
   wrappedYear: string
   notFound: string
   error404: string
-  browseMovix: string
+  browseOrvix: string
   createParty: string
   newParty: string
   inParty: string
@@ -163,7 +163,7 @@ const FR: PresenceStrings = {
   viewSuggestions: 'Consulte les suggestions personnalisées',
   suggestions: 'Suggestions',
   viewExtension: 'Consulte la page de l\'extension',
-  extension: 'Extension Movix',
+  extension: 'Extension Orvix',
   viewList: 'Consulte la liste publique',
   listId: 'Liste {0}',
   browseLists: 'Parcourt les listes publiques',
@@ -197,7 +197,7 @@ const FR: PresenceStrings = {
   wrappedYear: 'Wrapped {0}',
   notFound: 'Page introuvable',
   error404: 'Erreur 404',
-  browseMovix: 'Navigue sur Movix',
+  browseOrvix: 'Navigue sur Orvix',
   createParty: 'Crée une WatchParty',
   newParty: 'Nouvelle WatchParty',
   inParty: 'En WatchParty',
@@ -276,7 +276,7 @@ const EN: PresenceStrings = {
   viewSuggestions: 'Viewing personalized suggestions',
   suggestions: 'Suggestions',
   viewExtension: 'Viewing the extension page',
-  extension: 'Movix extension',
+  extension: 'Orvix extension',
   viewList: 'Viewing the public list',
   listId: 'List {0}',
   browseLists: 'Browsing public lists',
@@ -310,7 +310,7 @@ const EN: PresenceStrings = {
   wrappedYear: 'Wrapped {0}',
   notFound: 'Page not found',
   error404: 'Error 404',
-  browseMovix: 'Browsing Movix',
+  browseOrvix: 'Browsing Orvix',
   createParty: 'Creating a WatchParty',
   newParty: 'New WatchParty',
   inParty: 'In a WatchParty',

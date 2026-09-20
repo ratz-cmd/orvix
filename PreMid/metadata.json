@@ -2,28 +2,28 @@
   "$schema": "https://schemas.premid.app/metadata/1.16",
   "apiVersion": 1,
   "author": {
-    "name": "Movix",
+    "name": "Orvix",
     "id": "1259926474174238741"
   },
-  "service": "Movix",
+  "service": "Orvix",
   "description": {
-    "en": "Movix is a streaming platform for movies, series, anime, and watch parties.",
-    "fr": "Movix est une plateforme de streaming pour films, séries, animés et watch parties."
+    "en": "Orvix is a streaming platform for movies, series, anime, and watch parties.",
+    "fr": "Orvix est une plateforme de streaming pour films, séries, animés et watch parties."
   },
   "url": [
-    "movix.cash",
-    "movix.show",
-    "movix.date",
-    "movix.chat",
-    "movix.golf",
-    "movix.cloud",
-    "movix.fun",
-    "movix.online"
+    "orvix.cash",
+    "orvix.show",
+    "orvix.date",
+    "orvix.chat",
+    "orvix.golf",
+    "orvix.cloud",
+    "orvix.fun",
+    "orvix.online"
   ],
-  "regExp": "^https?[:][/][/]([a-z0-9-]+[.])*(movix[.]cash|movix[.]show|movix[.]date|movix[.]chat|movix[.]golf|movix[.]cloud|movix[.]online|movix[.]fun)[/]",
+  "regExp": "^https?[:][/][/]([a-z0-9-]+[.])*(orvix[.]cash|orvix[.]show|orvix[.]date|orvix[.]chat|orvix[.]golf|orvix[.]cloud|orvix[.]online|orvix[.]fun)[/]",
   "version": "2.0.0",
-  "logo": "https://cdn.rcd.gg/PreMiD/websites/M/Movix/assets/logo.png",
-  "thumbnail": "https://cdn.rcd.gg/PreMiD/websites/M/Movix/assets/thumbnail.png",
+  "logo": "https://cdn.rcd.gg/PreMiD/websites/M/Orvix/assets/logo.png",
+  "thumbnail": "https://cdn.rcd.gg/PreMiD/websites/M/Orvix/assets/thumbnail.png",
   "color": "#dc2626",
   "category": "videos",
   "tags": [
@@ -49,7 +49,7 @@
       "title": "Show Poster",
       "icon": "fas fa-image",
       "value": true,
-      "description": "Show the media poster as the large image instead of the Movix logo."
+      "description": "Show the media poster as the large image instead of the Orvix logo."
     },
     {
       "id": "showTimestamp",

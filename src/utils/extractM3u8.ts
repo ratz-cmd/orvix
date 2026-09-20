@@ -149,14 +149,14 @@ export async function callNativeBackendExtract(type: string, url: string): Promi
 
 /**
  * Vérifie si une extension supportant l'extraction Nexus (locale) est active
- * (supporte à la fois les namespaces Orvix et Movix).
+ * (supporte à la fois les namespaces Orvix et Orvix).
  */
 export function hasNexusExtractors(): boolean {
   if (typeof window === 'undefined') return false;
   const w = window as any;
   return Boolean(
-    (w.hasOrvixNexusExtractor || w.hasMovixNexusExtractor || w.hasOrvixExtension || w.hasMovixExtension) &&
-    (w.orvixExtractM3u8 || w.movixExtractM3u8 || w.orvixExtractAllM3u8 || w.movixExtractAllM3u8)
+    (w.hasOrvixNexusExtractor || w.hasOrvixNexusExtractor || w.hasOrvixExtension || w.hasOrvixExtension) &&
+    (w.orvixExtractM3u8 || w.orvixExtractM3u8 || w.orvixExtractAllM3u8 || w.orvixExtractAllM3u8)
   );
 }
 
@@ -171,7 +171,7 @@ async function tryExtensionFirst(type: string, url: string, serverFallback: () =
 
   const extensionReady = hasNexusExtractors();
   const w = typeof window !== 'undefined' ? (window as any) : null;
-  const extractFn = w?.orvixExtractM3u8 || w?.movixExtractM3u8;
+  const extractFn = w?.orvixExtractM3u8 || w?.orvixExtractM3u8;
 
   if (extensionReady && extractFn) {
     try {
@@ -762,7 +762,7 @@ export async function extractM3u8OnDetection(
   const detectedEmbeds = detectSupportedEmbeds(sources, context);
 
   const w = typeof window !== 'undefined' ? (window as any) : null;
-  const extractAllFn = w?.orvixExtractAllM3u8 || w?.movixExtractAllM3u8;
+  const extractAllFn = w?.orvixExtractAllM3u8 || w?.orvixExtractAllM3u8;
   // If extension with Nexus extractors is available, use its bulk extraction for better performance
   if (extensionReady && extractAllFn) {
     console.log('🔌 Using Orvix Extension Nexus extractors for parallel extraction');

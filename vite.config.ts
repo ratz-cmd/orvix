@@ -51,9 +51,9 @@ function injectPublicConfig(): Plugin {
 
   const replacePlaceholders = (source: string): string => {
     return source
-      .replace(/__(?:MOVIX|ORVIX)_DEFAULT_MIRRORS__/g, JSON.stringify(mirrors))
-      .replace(/__(?:MOVIX|ORVIX)_CONFIG_URL__/g, JSON.stringify(configUrl))
-      .replace(/__(?:MOVIX|ORVIX)_SITE_URL__/g, () => {
+      .replace(/__ORVIX_DEFAULT_MIRRORS__/g, JSON.stringify(mirrors))
+      .replace(/__ORVIX_CONFIG_URL__/g, JSON.stringify(configUrl))
+      .replace(/__ORVIX_SITE_URL__/g, () => {
         if (!siteUrl) throw new Error('VITE_SITE_URL was not resolved')
         return siteUrl
       })

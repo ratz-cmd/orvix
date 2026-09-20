@@ -1,5 +1,5 @@
 /**
- * Versioned Android Cast bridge injected before the Movix frontend.
+ * Versioned Android Cast bridge injected before the Orvix frontend.
  *
  * Android media is always prepared by the locked userscript resolver and then
  * handed to the native LAN relay. This shim deliberately exposes no direct URL
@@ -9,8 +9,8 @@ export function buildCastShim(): string {
   return `
 (function() {
   'use strict';
-  if (window.__MOVIX_ANDROID_CAST_INSTALLED__) return;
-  window.__MOVIX_ANDROID_CAST_INSTALLED__ = true;
+  if (window.__ORVIX_ANDROID_CAST_INSTALLED__) return;
+  window.__ORVIX_ANDROID_CAST_INSTALLED__ = true;
 
   var pendingCallbacks = Object.create(null);
   var idCounter = 0;
@@ -85,7 +85,7 @@ export function buildCastShim(): string {
   }
 
   function getResolver() {
-    var resolver = window.__MOVIX_PREPARE_CAST_SOURCE__;
+    var resolver = window.__ORVIX_PREPARE_CAST_SOURCE__;
     return typeof resolver === 'function' ? resolver : null;
   }
 
@@ -260,7 +260,7 @@ export function buildCastShim(): string {
     return status;
   }
 
-  window.MovixAndroidCast = {
+  window.OrvixAndroidCast = {
     isSupported: function() {
       return callNative('CASTSHIM_INIT').then(function(payload) {
         var capabilities = payload && payload.capabilities;
@@ -296,7 +296,7 @@ export function buildCastShim(): string {
       return callNative('CASTSHIM_LOAD_MEDIA', {
         source: source,
         metadata: {
-          title: title || 'Movix',
+          title: title || 'Orvix',
           poster: poster || '',
           currentTime:
             typeof currentTime === 'number' && currentTime >= 0
@@ -362,7 +362,7 @@ export function buildCastShim(): string {
     },
   };
 
-  window.addEventListener('__MOVIX_CAST_SHIM__', function(event) {
+  window.addEventListener('__ORVIX_CAST_SHIM__', function(event) {
     var detail = event && event.detail;
     if (!detail) return;
     if (detail.kind === 'RESPONSE') {

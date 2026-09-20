@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Génère la source AltStore/SideStore de Movix (orvix-ios-source.json).
+// Génère la source AltStore/SideStore de Orvix (orvix-ios-source.json).
 //
 // Toutes les entrées viennent de l'environnement : le job de release du
 // workflow ios-unsigned est le seul appelant légitime, et une valeur hors
@@ -78,31 +78,31 @@ const versionDescription =
 // relisent au démarrage. On aligne ce lien à chaque rotation — il n'est lu que
 // par l'interface des stores, jamais par l'installation elle-même, donc un
 // domaine périmé ici n'empêche personne d'installer l'app.
-const website = 'https://movix.online';
+const website = 'https://orvix.online';
 
 const appDescription =
-  "Application iOS officielle de Movix : navigation intégrée, lecture " +
+  "Application iOS officielle de Orvix : navigation intégrée, lecture " +
   "vidéo native, image dans l'image, Chromecast et DNS sécurisé.";
 
 // « identifier » (source) et « bundleIdentifier » (app) ne doivent JAMAIS
 // changer : AltStore et SideStore s'en servent comme clés primaires ; les
-// modifier ferait disparaître Movix chez tous les utilisateurs qui ont déjà
+// modifier ferait disparaître Orvix chez tous les utilisateurs qui ont déjà
 // ajouté la source.
 const source = {
-  name: 'Movix',
-  identifier: 'com.movix.source',
+  name: 'Orvix',
+  identifier: 'com.orvix.source',
   subtitle,
   description:
-    "Source officielle de Movix pour AltStore et SideStore. " +
+    "Source officielle de Orvix pour AltStore et SideStore. " +
     "Ajoutez-la pour installer l'application iOS et recevoir ses mises à jour.",
   iconURL,
   website,
   tintColor: '#8b5cf6',
   apps: [
     {
-      name: 'Movix',
-      bundleIdentifier: 'com.movix.app',
-      developerName: 'Movix',
+      name: 'Orvix',
+      bundleIdentifier: 'com.orvix.app',
+      developerName: 'Orvix',
       subtitle,
       localizedDescription:
         `${appDescription} L'IPA distribuée ici n'est pas signée : AltStore ` +
@@ -139,23 +139,23 @@ const source = {
 };
 
 // Scarlet lit un format à lui : un bloc META, puis des seaux par catégorie
-// (« Tweaked », « Jailbreaks », « Emulators », « Other »). Movix n'est ni un
+// (« Tweaked », « Jailbreaks », « Emulators », « Other »). Orvix n'est ni un
 // tweak ni un émulateur, donc « Other ».
 //
 // Scarlet signe avec un certificat d'entreprise partagé, pas avec le compte
-// Apple de l'utilisateur : rien à payer ni à faire signer côté Movix, mais
+// Apple de l'utilisateur : rien à payer ni à faire signer côté Orvix, mais
 // quand Apple révoque ce certificat, toutes les apps installées par Scarlet
 // cessent de s'ouvrir d'un coup. C'est pourquoi la source AltStore/SideStore
 // reste la voie recommandée, celle-ci n'étant qu'un confort supplémentaire
 // pour qui n'a pas d'ordinateur sous la main.
 const scarletSource = {
   META: {
-    repoName: 'Movix',
+    repoName: 'Orvix',
     repoIcon: iconURL,
   },
   Other: [
     {
-      name: 'Movix',
+      name: 'Orvix',
       version,
       // `down` est l'équivalent Scarlet de `downloadURL` : même IPA, même
       // fichier que celui publié dans la release.
@@ -165,9 +165,9 @@ const scarletSource = {
         `${appDescription} L'IPA distribuée ici n'est pas signée : Scarlet ` +
         "la signe au moment de l'installation. " +
         versionDescription,
-      bundleID: 'com.movix.app',
+      bundleID: 'com.orvix.app',
       icon: iconURL,
-      dev: 'Movix',
+      dev: 'Orvix',
       contact: { web: website },
     },
   ],

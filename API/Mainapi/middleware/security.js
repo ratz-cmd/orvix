@@ -43,24 +43,24 @@ function domainRestriction(req, res, next) {
 
   const allowedDomains = [
     'localhost:3000',
-    'movix.blog',
-    'movix.rodeo',
-    'movix.club',
-    'movix.site',
-    'movix11.pages.dev',
+    'orvix.blog',
+    'orvix.rodeo',
+    'orvix.club',
+    'orvix.site',
+    'orvix11.pages.dev',
     'nakios.site',
     'cinezo.site',
     'cinezo.online',
     'filmib.cc',
-    'movix.llc',
-    'movix.cash',
-    'movix.tax',
-    'movix.cloud',
-    'movix.golf',
-    'movix.chat',
-    'movix.date',
-    'movix.show',
-    'movix.fun'
+    'orvix.llc',
+    'orvix.cash',
+    'orvix.tax',
+    'orvix.cloud',
+    'orvix.golf',
+    'orvix.chat',
+    'orvix.date',
+    'orvix.show',
+    'orvix.fun'
   ];
 
   const origin = req.get('origin');
@@ -119,21 +119,21 @@ function domainRestriction(req, res, next) {
   // Route spécifique accessible mais avec fausse réponse
   if (req.path.startsWith('/api/imdb/movie')) {
     return res.json({
-      "iframe_src": "https://movixfakesite.vercel.app/",
+      "iframe_src": "https://orvixfakesite.vercel.app/",
       "player_links": [
         {
           "player": "supervideo",
-          "link": "https://movixfakesite.vercel.app/",
+          "link": "https://orvixfakesite.vercel.app/",
           "is_hd": false
         },
         {
           "player": "dropload",
-          "link": "https://movixfakesite.vercel.app/",
+          "link": "https://orvixfakesite.vercel.app/",
           "is_hd": false
         },
         {
           "player": "mixdrop",
-          "link": "https://movixfakesite.vercel.app/",
+          "link": "https://orvixfakesite.vercel.app/",
           "is_hd": false
         }
       ]
@@ -171,7 +171,7 @@ function domainRestriction(req, res, next) {
                       "players": [
                         {
                           "name": "Supervideo",
-                          "link": "https://movixfakesite.vercel.app/"
+                          "link": "https://orvixfakesite.vercel.app/"
                         }
                       ]
                     }

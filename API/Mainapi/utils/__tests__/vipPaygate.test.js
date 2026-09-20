@@ -62,13 +62,13 @@ test('nonce comparison is safe for equal, unequal, and unequal-length strings', 
 
 test('callback URL contains only the gateway reference and nonce', () => {
   const result = paygate.buildPaygateCallbackUrl({
-    baseUrl: 'https://api.movix.example',
+    baseUrl: 'https://api.orvix.example',
     reference: PAYGATE_FIXTURE.callbackReference,
     nonce: PAYGATE_FIXTURE.callbackNonce,
     requireHttps: true
   });
   const url = new URL(result);
-  assert.equal(url.origin, 'https://api.movix.example');
+  assert.equal(url.origin, 'https://api.orvix.example');
   assert.equal(url.pathname, '/api/vip/paygate/callback');
   assert.deepEqual([...url.searchParams.keys()].sort(), ['nonce', 'reference']);
   assert.equal(url.searchParams.get('reference'), PAYGATE_FIXTURE.callbackReference);
@@ -78,11 +78,11 @@ test('callback URL contains only the gateway reference and nonce', () => {
 
 test('production callback base rejects HTTP, paths, credentials, query, and fragments', () => {
   for (const baseUrl of [
-    'http://api.movix.example',
-    'https://api.movix.example/base',
-    'https://user:pass@api.movix.example',
-    'https://api.movix.example?x=1',
-    'https://api.movix.example#fragment'
+    'http://api.orvix.example',
+    'https://api.orvix.example/base',
+    'https://user:pass@api.orvix.example',
+    'https://api.orvix.example?x=1',
+    'https://api.orvix.example#fragment'
   ]) {
     assert.throws(
       () => paygate.buildPaygateCallbackUrl({
@@ -102,7 +102,7 @@ test('hosted checkout encodes opaque address, email, amount, and branding exactl
     amountEur: 7,
     payerEmail: 'payer+vip@example.test',
     branding: {
-      logo: 'https://cdn.movix.example/paygate logo.png',
+      logo: 'https://cdn.orvix.example/paygate logo.png',
       background: '#0A0A0A',
       theme: '#FBBF24',
       button: '#EAB308'

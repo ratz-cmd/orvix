@@ -100,13 +100,13 @@ import {
 import {
   createAndroidCastRemoteController,
   createWebCastRemoteController,
-  isMovixAndroidCastBridgeCompatible,
+  isOrvixAndroidCastBridgeCompatible,
 } from '../services/castRemoteController';
 import type {
   CastRemoteController,
   CastRemoteStatus,
   CastSource,
-  MovixAndroidCastBridge,
+  OrvixAndroidCastBridge,
 } from '../types/castRemote';
 import { CastRelayDisclosure } from './CastRelayDisclosure';
 import { shouldShowCastRelayDisclosure } from '../utils/castRelayDisclosure';
@@ -274,39 +274,39 @@ function getCastRelayErrorTranslationKey(error: unknown): string {
     : error instanceof Error
       ? error.message
       : '';
-  if (code.includes('MOVIX_RELAY_RELOAD_REQUIRED')) {
+  if (code.includes('ORVIX_RELAY_RELOAD_REQUIRED')) {
     return 'watch.castRelayReloadRequired';
   }
   if (
-    code.includes('MOVIX_RELAY_WIFI_ROUTE_REQUIRED')
-    || code.includes('MOVIX_RELAY_NETWORK_LOST')
+    code.includes('ORVIX_RELAY_WIFI_ROUTE_REQUIRED')
+    || code.includes('ORVIX_RELAY_NETWORK_LOST')
   ) {
     return 'watch.castRelayErrorSameWifi';
   }
-  if (code.includes('MOVIX_RELAY_AP_ISOLATION')) {
+  if (code.includes('ORVIX_RELAY_AP_ISOLATION')) {
     return 'watch.castRelayErrorApIsolation';
   }
-  if (code.includes('MOVIX_RELAY_ADDRESS_CHANGED')) {
+  if (code.includes('ORVIX_RELAY_ADDRESS_CHANGED')) {
     return 'watch.castRelayErrorAddressChanged';
   }
   if (
-    code.includes('MOVIX_RELAY_START_FAILED')
-    || code.includes('MOVIX_RELAY_FOREGROUND')
+    code.includes('ORVIX_RELAY_START_FAILED')
+    || code.includes('ORVIX_RELAY_FOREGROUND')
   ) {
     return 'watch.castRelayErrorForegroundService';
   }
   if (
-    code.includes('MOVIX_CAST_LOAD_REJECTED')
-    || code.includes('MOVIX_CAST_RECEIVER_ERROR')
+    code.includes('ORVIX_CAST_LOAD_REJECTED')
+    || code.includes('ORVIX_CAST_RECEIVER_ERROR')
   ) {
     return 'watch.castRelayErrorReceiverLoadRejected';
   }
-  if (code.includes('MOVIX_RELAY_UNSUPPORTED')) {
+  if (code.includes('ORVIX_RELAY_UNSUPPORTED')) {
     return 'watch.castRelayErrorUnsupportedSource';
   }
   if (
-    code.includes('MOVIX_RELAY_UPSTREAM')
-    || code.includes('MOVIX_RELAY_RESPONSE_TOO_LARGE')
+    code.includes('ORVIX_RELAY_UPSTREAM')
+    || code.includes('ORVIX_RELAY_RESPONSE_TOO_LARGE')
   ) {
     return 'watch.castRelayErrorUpstreamFailure';
   }
@@ -448,7 +448,7 @@ const dispatchDnsEmbedFallback = (
   return false;
 };
 
-const SOURCE_STREAM_QUALITY_CACHE_EVENT = 'movix:source-stream-quality-cache-updated';
+const SOURCE_STREAM_QUALITY_CACHE_EVENT = 'orvix:source-stream-quality-cache-updated';
 const sourceStreamQualityCache = new Map<string, string>();
 const sourceStreamBitrateEstimateCache = new Map<string, number>();
 
@@ -1343,7 +1343,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
   const requestKisskhMediaFallback = useCallback(async (): Promise<boolean> => {
     const source = activeKisskhSourceRef.current;
     const fallbackToken = source?.fallbackToken;
-    const transport = window.movixKisskhFallback;
+    const transport = window.orvixKisskhFallback;
     const controller = kisskhFallbackAbortRef.current;
     if (!source || !fallbackToken || !transport || !controller) return false;
 
@@ -1594,7 +1594,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
     }
 
     const transport: KisskhFallbackTransport = async request => {
-      const fallback = window.movixKisskhFallback;
+      const fallback = window.orvixKisskhFallback;
       return fallback
         ? fallback(request)
         : { success: false, code: 'fallback_unavailable' };
@@ -2026,7 +2026,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
 
   // Setup cinep DNR headers for PurStream sources (non-VIP extension users)
   useEffect(() => {
-    if (purstreamSources && purstreamSources.length > 0 && window.movixSetupHeaders) {
+    if (purstreamSources && purstreamSources.length > 0 && window.orvixSetupHeaders) {
       // Only need one call per unique hostname
       const seen = new Set<string>();
       for (const s of purstreamSources) {
@@ -2035,7 +2035,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
           const host = new URL(s.url).hostname;
           if (seen.has(host)) continue;
           seen.add(host);
-          window.movixSetupHeaders!('cinep', s.url).catch(() => {});
+          window.orvixSetupHeaders!('cinep', s.url).catch(() => {});
         } catch { /* ignore invalid urls */ }
       }
     }
@@ -2044,11 +2044,11 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
   // Free users receive the direct KissKH URL. The extension/userscript applies
   // the provider headers to the media host; VIP proxy URLs must stay untouched.
   useEffect(() => {
-    if (!window.movixSetupHeaders) return;
+    if (!window.orvixSetupHeaders) return;
     for (const source of kisskhSources) {
       try {
         if (new URL(source.url).pathname === '/kisskh-proxy') continue;
-        window.movixSetupHeaders!('kisskh', source.url).catch(() => {});
+        window.orvixSetupHeaders!('kisskh', source.url).catch(() => {});
       } catch { /* ignore invalid urls */ }
     }
   }, [kisskhSources]);
@@ -2264,11 +2264,11 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
   // src. Two concurrent LOAD requests race on the receiver (the first gets
   // LOAD_CANCELLED), surfacing spurious errors or restarting playback.
   const castLoadInFlightRef = useRef<string | null>(null);
-  // Native Android cast bridge (injected by the Movix Android app WebView).
+  // Native Android cast bridge (injected by the Orvix Android app WebView).
   // When present, clicking cast routes through the Google Cast SDK on-device
   // instead of the web cast_sender.js SDK (which isn't available inside WebView).
   const [nativeCastBridge, setNativeCastBridge] =
-    useState<MovixAndroidCastBridge | null>(null);
+    useState<OrvixAndroidCastBridge | null>(null);
   const [nativeCastConfigured, setNativeCastConfigured] = useState(false);
   const [relayDisclosureSuppressed, setRelayDisclosureSuppressedState] =
     useState<boolean | null>(null);
@@ -3146,7 +3146,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
       });
     }
 
-    // Add remaining custom sources (Movix players)
+    // Add remaining custom sources (Orvix players)
     if (regularCustomSources.length > 0) {
       regularCustomSources.forEach((source, index) => {
         const domain = getEmbedDomainLabel(source);
@@ -3154,8 +3154,8 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
           type: 'custom',
           id: `custom_${index}`,
           label: domain
-            ? t('watch.movixPlayerDomain', { n: index + 1, domain })
-            : t('watch.movixPlayer', { n: index + 1 }),
+            ? t('watch.orvixPlayerDomain', { n: index + 1, domain })
+            : t('watch.orvixPlayer', { n: index + 1 }),
           url: source,
         });
       });
@@ -3194,7 +3194,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
     }
 
     // Lecteurs de secours supplémentaires (VOSTFR / Multi)
-    const movixBackupList = [
+    const orvixBackupList = [
       { id: 'peachify', label: 'Peachify (VOSTFR)' },
       { id: 'autoembed', label: 'AutoEmbed (Secours VO)' },
       { id: 'embedsu', label: 'Embed.su (Secours VO)' },
@@ -3203,7 +3203,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
       { id: '111movies', label: '111Movies (Secours VO)' },
     ];
 
-    movixBackupList.forEach(item => {
+    orvixBackupList.forEach(item => {
       let finalUrl = '#';
       if (movieId) {
         if (item.id === 'peachify') finalUrl = `https://peachify.top/embed/movie/${movieId}?sub=French&accent=dc2626`;
@@ -3416,8 +3416,8 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
       if (purstreamSources && purstreamSources[index]) {
         targetUrl = purstreamSources[index].url || '';
         // Setup cinep headers via extension for non-VIP users (raw URLs)
-        if (targetUrl && window.movixSetupHeaders) {
-          window.movixSetupHeaders('cinep', targetUrl).catch(() => {});
+        if (targetUrl && window.orvixSetupHeaders) {
+          window.orvixSetupHeaders('cinep', targetUrl).catch(() => {});
         }
       }
     } else if (sourceType === 'vox') {
@@ -4865,7 +4865,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
           // Download and extract the .gz file locally using PAKO
           const response = await fetch(downloadLink, {
             headers: {
-              'User-Agent': 'Movix/1.0'
+              'User-Agent': 'Orvix/1.0'
             }
           });
 
@@ -6533,7 +6533,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
     return {
       url: preferredStreamUrl,
       contentType: resolveCastContentType(preferredStreamUrl, isSelectedKisskhMp4),
-      title: title || tvShow?.name || 'Movix',
+      title: title || tvShow?.name || 'Orvix',
       poster: poster
         ? (poster.startsWith('http')
           ? poster
@@ -7085,15 +7085,15 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
     src,
   ]);
 
-  // Detect the Movix Android app WebView cast bridge.
-  // When the React Native shell injects window.MovixAndroidCast, we route
+  // Detect the Orvix Android app WebView cast bridge.
+  // When the React Native shell injects window.OrvixAndroidCast, we route
   // casts through the on-device Google Cast SDK instead of the web SDK
   // (chrome.cast is not available inside Android WebView).
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const bridge = window.MovixAndroidCast;
+    const bridge = window.OrvixAndroidCast;
     if (!bridge || typeof bridge.isSupported !== 'function') return;
-    if (!isMovixAndroidCastBridgeCompatible(bridge)) {
+    if (!isOrvixAndroidCastBridgeCompatible(bridge)) {
       setNativeCastBridge(null);
       setNativeCastConfigured(false);
       return;
@@ -7874,7 +7874,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
    * Séquences déjà connues, pour que le studio empêche d'en superposer deux.
    *
    * Les deux origines sont réunies : le consensus des bases (qui contient déjà
-   * les propositions adoptées, via le fournisseur `movix`) et les propositions
+   * les propositions adoptées, via le fournisseur `orvix`) et les propositions
    * encore en attente de voix. Le studio ignore de lui-même celles du type en
    * cours d'édition — deux relevés d'intro qui se recouvrent, c'est ce que le
    * vote sert à départager.
@@ -11373,7 +11373,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
             </div>
           </div>
 
-          {castStatus.errorCode === 'MOVIX_RELAY_RELOAD_REQUIRED' && (
+          {castStatus.errorCode === 'ORVIX_RELAY_RELOAD_REQUIRED' && (
             <div
               role="alert"
               className="absolute left-4 right-4 top-20 z-30 mx-auto max-w-xl rounded-xl border border-amber-300/40 bg-black/90 p-4 text-center shadow-2xl"

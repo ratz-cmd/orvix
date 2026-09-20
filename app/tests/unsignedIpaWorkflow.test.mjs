@@ -14,7 +14,7 @@ test('unsigned IPA packager validates inputs and produces the unsigned artifacts
 
   assert.match(packager, /IOS_APP_PATH:\?IOS_APP_PATH is required/);
   assert.match(packager, /IOS_OUTPUT_DIR:\?IOS_OUTPUT_DIR is required/);
-  assert.match(packager, /Payload\/Movix\.app/);
+  assert.match(packager, /Payload\/Orvix\.app/);
   assert.match(packager, /_CodeSignature/);
   assert.match(packager, /embedded\.mobileprovision/);
   assert.match(packager, /shasum -a 256/);
@@ -29,7 +29,7 @@ test('unsigned IPA packager validates inputs and produces the unsigned artifacts
   assert.match(packager, /case "\$source_app_path" in[\s\S]*"\$payload_dir"\|"\$payload_dir"\/\*/);
   assert.match(packager, /export LC_ALL=C/);
   assert.match(packager, /touch -h -t 200101010000/);
-  assert.match(packager, /\/usr\/bin\/find Payload -print \| \/usr\/bin\/sort \| \/usr\/bin\/zip -X -q -y Movix-unsigned\.ipa -@/);
+  assert.match(packager, /\/usr\/bin\/find Payload -print \| \/usr\/bin\/sort \| \/usr\/bin\/zip -X -q -y Orvix-unsigned\.ipa -@/);
   assert.equal(
     JSON.parse(packageJson).scripts['package:ios-unsigned'],
     'bash scripts/package-unsigned-ios.sh',
@@ -77,7 +77,7 @@ test('build job installs reproducible JavaScript and ephemeral CocoaPods depende
   assert.match(workflow, /run: npm run build:userscript/);
   assert.match(workflow, /working-directory: app\/ios\s*\n\s*run: pod install/);
   assert.doesNotMatch(workflow, /pod install[^\n]*--deployment/);
-  assert.match(workflow, /pod install[\s\S]*name: Movix-Podfile-lock-\$\{\{ steps\.artifact\.outputs\.version \}\}-\$\{\{ github\.run_number \}\}/);
+  assert.match(workflow, /pod install[\s\S]*name: Orvix-Podfile-lock-\$\{\{ steps\.artifact\.outputs\.version \}\}-\$\{\{ github\.run_number \}\}/);
   assert.match(workflow, /path: app\/ios\/Podfile\.lock/);
 });
 
@@ -107,8 +107,8 @@ test('build job produces and validates an unsigned arm64 device IPA', async () =
   assert.match(workflow, /lipo -archs[\s\S]*grep -qw arm64/);
   assert.match(workflow, /test ! -e [^\n]*_CodeSignature/);
   assert.match(workflow, /test ! -e [^\n]*embedded\.mobileprovision/);
-  assert.match(workflow, /unzip -t [^\n]*Movix-unsigned\.ipa/);
-  assert.match(workflow, /\(cd build\/unsigned-ipa && shasum -a 256 -c Movix-unsigned\.ipa\.sha256\)/);
+  assert.match(workflow, /unzip -t [^\n]*Orvix-unsigned\.ipa/);
+  assert.match(workflow, /\(cd build\/unsigned-ipa && shasum -a 256 -c Orvix-unsigned\.ipa\.sha256\)/);
   assert.doesNotMatch(workflow, /p12|provisioning|app-store|testflight|APPLE_/i);
 });
 
@@ -117,8 +117,8 @@ test('artifact name includes app.json version and run number', async () => {
 
   assert.match(workflow, /app\.json[\s\S]*\.version/);
   assert.match(workflow, /\[\[ ! "\$VERSION" =~ \^\[0-9\]\+/);
-  assert.match(workflow, /Movix-unsigned-\$\{\{ steps\.[^.]+\.outputs\.version \}\}-\$\{\{ github\.run_number \}\}/);
-  assert.match(workflow, /Movix-unsigned\.ipa\.sha256/);
+  assert.match(workflow, /Orvix-unsigned-\$\{\{ steps\.[^.]+\.outputs\.version \}\}-\$\{\{ github\.run_number \}\}/);
+  assert.match(workflow, /Orvix-unsigned\.ipa\.sha256/);
 });
 
 test('tag releases are isolated in a write-enabled job fed only by the build artifact', async () => {
@@ -139,7 +139,7 @@ test('tagged releases commit the IPA next to the Android build', async () => {
   // téléchargeable depuis raw.githubusercontent.
   assert.match(
     workflow,
-    /install -m 644 dist\/Movix-unsigned\.ipa app\/orvix-ios-unsigner\.ipa/,
+    /install -m 644 dist\/Orvix-unsigned\.ipa app\/orvix-ios-unsigner\.ipa/,
   );
   // Rien d'autre que ce chemin ne doit être indexé : dist/ est dans le workspace.
   assert.match(workflow, /git add -- app\/orvix-ios-unsigner\.ipa/);
@@ -188,9 +188,9 @@ test('sidestore source generator produces a source consistent with its inputs', 
 
     const source = JSON.parse(await readFile(output, 'utf8'));
     // Clés primaires des stores : figées pour toujours.
-    assert.equal(source.identifier, 'com.movix.source');
+    assert.equal(source.identifier, 'com.orvix.source');
     const app = source.apps[0];
-    assert.equal(app.bundleIdentifier, 'com.movix.app');
+    assert.equal(app.bundleIdentifier, 'com.orvix.app');
 
     const latest = app.versions[0];
     assert.equal(latest.version, '9.9.9');
@@ -212,9 +212,9 @@ test('sidestore source generator produces a source consistent with its inputs', 
 
     // Le domaine du site tourne sous blocage FAI. Le lien n'est lu que par
     // l'interface du store, mais il ne doit jamais renvoyer vers un domaine
-    // mort : movix.tax ne répond plus depuis longtemps.
+    // mort : orvix.tax ne répond plus depuis longtemps.
     assert.match(source.website, /^https:\/\//);
-    assert.doesNotMatch(source.website, /movix\.tax/);
+    assert.doesNotMatch(source.website, /orvix\.tax/);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -233,13 +233,13 @@ test('scarlet source describes the same IPA in scarlet own format', async () => 
     });
 
     const scarlet = JSON.parse(await readFile(scarletOutput, 'utf8'));
-    // Format Scarlet : un bloc META, puis des seaux par catégorie. Movix n'est
+    // Format Scarlet : un bloc META, puis des seaux par catégorie. Orvix n'est
     // ni un tweak ni un émulateur, donc « Other ».
-    assert.equal(scarlet.META.repoName, 'Movix');
+    assert.equal(scarlet.META.repoName, 'Orvix');
     assert.equal(scarlet.META.repoIcon, 'https://example.test/icon-1024.png');
     const entry = scarlet.Other[0];
-    assert.equal(entry.name, 'Movix');
-    assert.equal(entry.bundleID, 'com.movix.app');
+    assert.equal(entry.name, 'Orvix');
+    assert.equal(entry.bundleID, 'com.orvix.app');
     assert.equal(entry.version, '9.9.9');
     // `down` est l'équivalent Scarlet de `downloadURL` : la même IPA doit être
     // servie aux deux stores, jamais deux fichiers différents.
@@ -261,7 +261,7 @@ test('sidestore source generator refuses malformed or missing inputs', async () 
     const cases = [
       { IOS_SOURCE_OUTPUT: output, IOS_SCARLET_OUTPUT: scarlet, IOS_SOURCE_VERSION: 'v9.9.9' },
       { IOS_SOURCE_OUTPUT: output, IOS_SCARLET_OUTPUT: scarlet, IOS_SOURCE_BUILD_NUMBER: 'quarante-deux' },
-      { IOS_SOURCE_OUTPUT: output, IOS_SCARLET_OUTPUT: scarlet, IOS_SOURCE_DOWNLOAD_URL: 'http://example.test/movix.ipa' },
+      { IOS_SOURCE_OUTPUT: output, IOS_SCARLET_OUTPUT: scarlet, IOS_SOURCE_DOWNLOAD_URL: 'http://example.test/orvix.ipa' },
       { IOS_SOURCE_OUTPUT: output, IOS_SCARLET_OUTPUT: scarlet, IOS_SOURCE_IPA_PATH: join(dir, 'absent.ipa') },
       { IOS_SOURCE_OUTPUT: output, IOS_SCARLET_OUTPUT: scarlet, IOS_SOURCE_NOTES_URL: '' },
       // La sortie Scarlet est obligatoire : un oubli côté workflow doit faire
@@ -291,7 +291,7 @@ test('tagged releases regenerate the sidestore source and commit it with the IPA
   assert.match(workflow, /IOS_SOURCE_VERSION: \$\{\{ needs\.build\.outputs\.version \}\}/);
   assert.match(workflow, /IOS_SOURCE_BUILD_NUMBER: \$\{\{ needs\.build\.outputs\.build_number \}\}/);
   assert.match(workflow, /IOS_SOURCE_MIN_OS: \$\{\{ needs\.build\.outputs\.min_os \}\}/);
-  assert.match(workflow, /IOS_SOURCE_IPA_PATH: dist\/Movix-unsigned\.ipa/);
+  assert.match(workflow, /IOS_SOURCE_IPA_PATH: dist\/Orvix-unsigned\.ipa/);
   // Les deux sources sortent du même run et sont commitées ensemble : jamais
   // une source à jour à côté d'une autre restée sur la version précédente.
   assert.match(workflow, /IOS_SOURCE_OUTPUT: app\/orvix-ios-source\.json/);
@@ -336,8 +336,8 @@ test('README explains how to download, verify, and externally sign the unsigned 
   const readme = await readFile(new URL('../README.md', import.meta.url), 'utf8');
 
   assert.match(readme, /gh run download/);
-  assert.match(readme, /Movix-unsigned-<version>-<run-number>/);
-  assert.match(readme, /shasum -a 256 -c Movix-unsigned\.ipa\.sha256/);
+  assert.match(readme, /Orvix-unsigned-<version>-<run-number>/);
+  assert.match(readme, /shasum -a 256 -c Orvix-unsigned\.ipa\.sha256/);
   assert.match(readme, /IPA non signée/i);
   assert.match(readme, /impossible[^\n]+install/i);
   assert.match(readme, /propres moyens/i);

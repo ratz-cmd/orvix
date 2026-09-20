@@ -8,7 +8,7 @@ WORKDIR /app
 
 # 1) Lockfile-only first => layer cached as long as deps don't change
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,id=movix-npm-builder,target=/root/.npm,sharing=locked \
+RUN --mount=type=cache,id=orvix-npm-builder,target=/root/.npm,sharing=locked \
     npm ci --prefer-offline --no-audit --no-fund
 
 # 2) Build-time env vars (Vite bakes them into the bundle)
@@ -46,7 +46,7 @@ ENV VITE_MAIN_API=$VITE_MAIN_API \
 COPY . .
 
 # 4) Vite build with persistent transform cache
-RUN --mount=type=cache,id=movix-vite,target=/app/node_modules/.cache \
+RUN --mount=type=cache,id=orvix-vite,target=/app/node_modules/.cache \
     npm run build:coolify
 
 # ==============================================================
@@ -61,7 +61,7 @@ ENV NODE_ENV=production \
 # Install only the Hono workspace dependencies required by the runtime.
 COPY package.json package-lock.json ./
 COPY server/package.json ./server/package.json
-RUN --mount=type=cache,id=movix-npm-runner,target=/root/.npm,sharing=locked \
+RUN --mount=type=cache,id=orvix-npm-runner,target=/root/.npm,sharing=locked \
     npm ci --omit=dev --workspace=server --include-workspace-root=false \
     --prefer-offline --no-audit --no-fund
 

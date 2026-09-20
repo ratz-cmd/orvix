@@ -1,5 +1,5 @@
 /**
- * Movix Top 10 - Public endpoint
+ * Orvix Top 10 - Public endpoint
  * Returns the top 10 most watched movies and series by logged-in users
  * Based on aggregated data from wrapped_viewing_data table
  * Uses Redis for caching

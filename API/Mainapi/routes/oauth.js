@@ -94,7 +94,7 @@ const OAUTH_SCOPE_IMPLICATIONS = {
   'alerts.manage': ['alerts.read'],
   'ratings.manage': ['ratings.read'],
 };
-const OAUTH_DEBUG_ENABLED = process.env.MOVIX_OAUTH_DEBUG === 'true';
+const OAUTH_DEBUG_ENABLED = process.env.ORVIX_OAUTH_DEBUG === 'true';
 
 function logOauthDebug(message, payload) {
   if (!OAUTH_DEBUG_ENABLED) {
@@ -277,7 +277,7 @@ function buildUserIdentity(userType, userId, userData) {
   const defaultProfile = getDefaultProfile(userData?.profiles);
   const fallbackName = userType === 'bip39'
     ? `Utilisateur-${String(userId).slice(0, 8)}`
-    : `Movix-${String(userId).slice(0, 8)}`;
+    : `Orvix-${String(userId).slice(0, 8)}`;
   const fallbackAvatar = 'https://as2.ftcdn.net/v2/jpg/05/89/93/27/1000_F_589932782_vQAEAZhHnq1QCGu5ikwrYaQD0Mmurm0N.webp';
 
   const rawUsername = storedProfile?.username || defaultProfile?.name || fallbackName;
@@ -493,7 +493,7 @@ router.get('/authorize/preview', oauthPreviewLimiter, async (req, res) => {
       return res.status(400).json({
         success: false,
         error: 'invalid_grant',
-        error_description: 'Cette demande OAuth a déjà été utilisée. Regénérez une nouvelle demande depuis Movix Translate.',
+        error_description: 'Cette demande OAuth a déjà été utilisée. Regénérez une nouvelle demande depuis Orvix Translate.',
         client: getOAuthClientPublicMetadata(authorizeRequest.client),
       });
     }
@@ -548,7 +548,7 @@ router.post('/authorize/decision', oauthPreviewLimiter, async (req, res) => {
   try {
     const auth = await getAuthIfValid(req);
     if (!auth) {
-      return sendOauthJsonError(res, 401, 'unauthorized', 'Authentification Movix requise');
+      return sendOauthJsonError(res, 401, 'unauthorized', 'Authentification Orvix requise');
     }
 
     const authorizeRequest = parseAuthorizeRequest(req.body || {});
@@ -1309,7 +1309,7 @@ router.post('/favorites', async (req, res) => {
       const current = parseFavoriteArray(profileData[key]).filter(isValidFavoriteItem);
 
       // Déduplication : on retire d'abord toute occurrence du même id puis on
-      // pousse en tête (le frontend Movix met les ajouts récents en haut).
+      // pousse en tête (le frontend Orvix met les ajouts récents en haut).
       const filtered = current.filter((item) => item.id !== tmdbId);
       const newItem = {
         id: tmdbId,

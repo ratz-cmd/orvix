@@ -1,11 +1,11 @@
 /**
- * Movix Extension - Direct M3U8 Extractors
+ * Orvix Extension - Direct M3U8 Extractors
  * Replaces server.py extraction logic - runs entirely in the extension service worker.
  * No VIP check needed since it runs locally.
  */
 
 // ===== Configuration =====
-const PROXY_BASE = 'https://proxiesembed.movix.fun';
+const PROXY_BASE = 'https://proxiesembed.orvix.fun';
 
 // AES constants for SeekStreaming (embed4me)
 const SEEKSTREAMING_AES_KEY_HEX = '6b69656d7469656e6d7561393131636131323334353637383930';
@@ -589,9 +589,9 @@ async function extractFsvidVidzyM3u8(html, embedUrl, provider) {
         provider,
     );
     if (staticCandidate) return staticCandidate;
-    if (!globalThis.MovixQuickJS?.extractPlayerM3u8) return null;
+    if (!globalThis.OrvixQuickJS?.extractPlayerM3u8) return null;
     try {
-        const dynamicCandidate = await globalThis.MovixQuickJS.extractPlayerM3u8(
+        const dynamicCandidate = await globalThis.OrvixQuickJS.extractPlayerM3u8(
             html,
             embedUrl,
             provider,
@@ -2099,7 +2099,7 @@ function clearCaches(type) {
 // Export everything for use in background.js
 // (In service worker, we'll import via importScripts or just include in order)
 if (typeof globalThis !== 'undefined') {
-    globalThis.MovixExtractors = {
+    globalThis.OrvixExtractors = {
         extractVoe,
         extractFsvid,
         extractVidzy,

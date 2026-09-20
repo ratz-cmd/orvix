@@ -40,13 +40,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep links Movix -->
+            <!-- Deep links Orvix -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="movix.tax" />
-                <data android:scheme="https" android:host="*.movix.tax" />
+                <data android:scheme="https" android:host="orvix.tax" />
+                <data android:scheme="https" android:host="*.orvix.tax" />
             </intent-filter>
         </activity>
 
@@ -78,7 +78,7 @@
         <!-- Google Cast framework bootstrap: points to our CastOptionsProvider -->
         <meta-data
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
-            android:value="com.movix.app.cast.CastOptionsProvider" />
+            android:value="com.orvix.app.cast.CastOptionsProvider" />
         <receiver
             android:name=".pip.PictureInPictureActionReceiver"
             android:exported="false" />

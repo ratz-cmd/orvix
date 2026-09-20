@@ -13,11 +13,11 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace "com.movix.app"
+    namespace "com.orvix.app"
     compileSdk rootProject.ext.compileSdkVersion
 
     defaultConfig {
-        applicationId "com.movix.app"
+        applicationId "com.orvix.app"
         minSdk rootProject.ext.minSdkVersion
         targetSdk rootProject.ext.targetSdkVersion
         versionCode 36
@@ -33,11 +33,11 @@ android {
 
     signingConfigs {
         release {
-            if (keystoreProperties['MOVIX_RELEASE_STORE_FILE']) {
-                storeFile file(keystoreProperties['MOVIX_RELEASE_STORE_FILE'])
-                storePassword keystoreProperties['MOVIX_RELEASE_STORE_PASSWORD']
-                keyAlias keystoreProperties['MOVIX_RELEASE_KEY_ALIAS']
-                keyPassword keystoreProperties['MOVIX_RELEASE_KEY_PASSWORD']
+            if (keystoreProperties['ORVIX_RELEASE_STORE_FILE']) {
+                storeFile file(keystoreProperties['ORVIX_RELEASE_STORE_FILE'])
+                storePassword keystoreProperties['ORVIX_RELEASE_STORE_PASSWORD']
+                keyAlias keystoreProperties['ORVIX_RELEASE_KEY_ALIAS']
+                keyPassword keystoreProperties['ORVIX_RELEASE_KEY_PASSWORD']
             }
         }
     }
@@ -49,7 +49,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
-            signingConfig keystoreProperties['MOVIX_RELEASE_STORE_FILE'] ? signingConfigs.release : signingConfigs.debug
+            signingConfig keystoreProperties['ORVIX_RELEASE_STORE_FILE'] ? signingConfigs.release : signingConfigs.debug
         }
     }
 
@@ -75,7 +75,7 @@ dependencies {
     implementation("com.facebook.react:react-android")
     implementation("com.facebook.react:hermes-android")
 
-    // Google Cast (Chromecast) - see app/src/main/java/com/movix/app/cast/
+    // Google Cast (Chromecast) - see app/src/main/java/com/orvix/app/cast/
     // Rester en 21.5.0 tant que RN est en 0.75.4 : la 22.3.1 est compilee en
     // Kotlin 2.2 et le compilateur 1.9.24 impose par le plugin Gradle de RN ne
     // sait pas lire ses metadonnees. Les APIs utilisees ici existent en 21.5.0.

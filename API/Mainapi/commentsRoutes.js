@@ -23,7 +23,7 @@ const webpush = require("web-push");
 const VAPID_CONFIGURED = !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
 if (VAPID_CONFIGURED) {
   webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || "mailto:contact@movix.blog",
+    process.env.VAPID_SUBJECT || "mailto:contact@orvix.blog",
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );
@@ -201,7 +201,7 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans backticks):
           "Content-Type": "application/json",
           Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           "HTTP-Referer": FRONTEND_BASE_URL,
-          "X-Title": "Movix Comment Moderation",
+          "X-Title": "Orvix Comment Moderation",
         },
         timeout: 15000,
       },
@@ -697,9 +697,9 @@ async function createNotification(
       report_dismissed: `Votre signalement a été rejeté`,
     };
     sendPushToUser(toUserId, toUserType, {
-      title: "Movix",
+      title: "Orvix",
       body: pushMessages[notificationType] || "Nouvelle notification",
-      icon: "/movix.png",
+      icon: "/orvix.png",
       data: { contentType, contentId, notificationType },
     });
   } catch (error) {

@@ -7,11 +7,11 @@ const missing = async path => {
   await assert.rejects(access(new URL(path, import.meta.url)), { code: 'ENOENT' });
 };
 
-test('iOS release metadata uses the canonical Movix values', async () => {
+test('iOS release metadata uses the canonical Orvix values', async () => {
   const appJson = JSON.parse(await text('../app.json'));
 
-  assert.equal(appJson.name, 'Movix');
-  assert.equal(appJson.displayName, 'Movix');
+  assert.equal(appJson.name, 'Orvix');
+  assert.equal(appJson.displayName, 'Orvix');
   // La version est celle de la release en cours : la figer ici ferait echouer
   // le contrat a chaque publication. On verifie sa forme, et le test suivant
   // verifie que le projet Xcode reste aligne dessus.
@@ -19,57 +19,57 @@ test('iOS release metadata uses the canonical Movix values', async () => {
   assert.match(appJson.buildNumber, /^\d+$/);
 });
 
-test('iOS project uses the canonical Movix identity', async () => {
+test('iOS project uses the canonical Orvix identity', async () => {
   const [appJson, podfile, project, scheme, info, entitlements] = await Promise.all([
     text('../app.json'),
     text('../ios/Podfile'),
-    text('../ios/Movix.xcodeproj/project.pbxproj'),
-    text('../ios/Movix.xcodeproj/xcshareddata/xcschemes/Movix.xcscheme'),
-    text('../ios/Movix/Info.plist'),
-    text('../ios/Movix/Movix.entitlements'),
+    text('../ios/Orvix.xcodeproj/project.pbxproj'),
+    text('../ios/Orvix.xcodeproj/xcshareddata/xcschemes/Orvix.xcscheme'),
+    text('../ios/Orvix/Info.plist'),
+    text('../ios/Orvix/Orvix.entitlements'),
   ]);
 
-  assert.equal(JSON.parse(appJson).name, 'Movix');
-  assert.match(podfile, /target 'Movix' do/);
-  assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = com\.movix\.app;/);
+  assert.equal(JSON.parse(appJson).name, 'Orvix');
+  assert.match(podfile, /target 'Orvix' do/);
+  assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = com\.orvix\.app;/);
   assert.match(project, /IPHONEOS_DEPLOYMENT_TARGET = 15\.6;/);
   assert.match(project, /TARGETED_DEVICE_FAMILY = "1,2";/);
-  assert.match(project, /PRODUCT_NAME = Movix;/);
+  assert.match(project, /PRODUCT_NAME = Orvix;/);
   // Xcode doit suivre app.json, sinon l'IPA publiee annonce une autre version
   // que l'APK et que le manifeste de mise a jour.
   const { version, buildNumber } = JSON.parse(appJson);
   assert.match(project, new RegExp(`MARKETING_VERSION = ${version.replace(/\./g, '\\.')};`));
   assert.match(project, new RegExp(`CURRENT_PROJECT_VERSION = ${buildNumber};`));
   assert.doesNotMatch(project, /MARKETING_VERSION = (?!\d+\.\d+\.\d+;)/);
-  assert.match(project, /INFOPLIST_FILE = Movix\/Info\.plist;/);
-  assert.match(project, /CODE_SIGN_ENTITLEMENTS = Movix\/Movix\.entitlements;/);
-  assert.match(project, /SWIFT_OBJC_BRIDGING_HEADER = "?Movix\/Movix-Bridging-Header\.h"?;/);
+  assert.match(project, /INFOPLIST_FILE = Orvix\/Info\.plist;/);
+  assert.match(project, /CODE_SIGN_ENTITLEMENTS = Orvix\/Orvix\.entitlements;/);
+  assert.match(project, /SWIFT_OBJC_BRIDGING_HEADER = "?Orvix\/Orvix-Bridging-Header\.h"?;/);
   assert.match(project, /SWIFT_VERSION = 5\.0;/);
   for (const source of ['main.m', 'AppDelegate.mm', 'DnsManager.swift', 'DnsModule.m', 'DnsModuleSwift.swift']) {
     assert.match(project, new RegExp(`${source.replace('.', '\\\.')} in Sources`));
   }
-  assert.match(project, /path = Movix\/Dns;/);
+  assert.match(project, /path = Orvix\/Dns;/);
   for (const resource of ['LaunchScreen.storyboard', 'PrivacyInfo.xcprivacy']) {
     assert.match(project, new RegExp(`${resource.replace('.', '\\\.')} in Resources`));
   }
-  assert.match(project, /name = Movix;/);
-  assert.match(project, /productName = Movix;/);
-  assert.match(project, /name = MovixTests;/);
-  assert.match(project, /productName = MovixTests;/);
-  assert.doesNotMatch(project, /MovixApp/);
-  assert.match(scheme, /BuildableName = "Movix\.app"/);
-  assert.match(scheme, /BlueprintName = "Movix"/);
-  assert.match(scheme, /BuildableName = "MovixTests\.xctest"/);
-  assert.match(scheme, /BlueprintName = "MovixTests"/);
+  assert.match(project, /name = Orvix;/);
+  assert.match(project, /productName = Orvix;/);
+  assert.match(project, /name = OrvixTests;/);
+  assert.match(project, /productName = OrvixTests;/);
+  assert.doesNotMatch(project, /OrvixApp/);
+  assert.match(scheme, /BuildableName = "Orvix\.app"/);
+  assert.match(scheme, /BlueprintName = "Orvix"/);
+  assert.match(scheme, /BuildableName = "OrvixTests\.xctest"/);
+  assert.match(scheme, /BlueprintName = "OrvixTests"/);
   assert.match(scheme, /<TestAction\s+buildConfiguration = "Debug"/);
   assert.match(scheme, /<LaunchAction\s+buildConfiguration = "Debug"/);
   assert.match(scheme, /<ArchiveAction\s+buildConfiguration = "Release"/);
-  assert.doesNotMatch(scheme, /MovixApp/);
+  assert.doesNotMatch(scheme, /OrvixApp/);
   assert.match(info, /<key>CFBundleShortVersionString<\/key>\s*<string>\$\(MARKETING_VERSION\)<\/string>/);
   assert.match(info, /<key>CFBundleVersion<\/key>\s*<string>\$\(CURRENT_PROJECT_VERSION\)<\/string>/);
   // ATS s'applique aux requêtes natives (fetch React Native du pont GM_FETCH,
   // vérification de mise à jour), pas seulement au WebView. Les hébergeurs de
-  // flux servis par le proxy Movix n'ont aucune garantie TLS 1.2 + forward
+  // flux servis par le proxy Orvix n'ont aucune garantie TLS 1.2 + forward
   // secrecy : sans cette dérogation, iOS coupait ces requêtes alors qu'Android,
   // sans équivalent d'ATS, les laissait passer. La parité l'exige.
   assert.match(info, /<key>NSAllowsArbitraryLoads<\/key>\s*<true\/>/);
@@ -80,39 +80,39 @@ test('iOS project uses the canonical Movix identity', async () => {
   assert.match(info, /<key>UISupportedInterfaceOrientations~ipad<\/key>/);
   assert.match(entitlements, /<key>com\.apple\.developer\.networking\.networkextension<\/key>\s*<array>\s*<string>dns-settings<\/string>\s*<\/array>/);
   assert.doesNotMatch(entitlements, /com\.apple\.developer\.networking\.dns-settings/);
-  assert.match(entitlements, /<key>com\.apple\.developer\.associated-domains<\/key>\s*<array>\s*<string>applinks:movix\.tax<\/string>\s*<\/array>/);
+  assert.match(entitlements, /<key>com\.apple\.developer\.associated-domains<\/key>\s*<array>\s*<string>applinks:orvix\.tax<\/string>\s*<\/array>/);
 });
 
-test('iOS CocoaPods integrates MovixTests with complete inheritance', async () => {
+test('iOS CocoaPods integrates OrvixTests with complete inheritance', async () => {
   const podfile = await text('../ios/Podfile');
 
   assert.match(
     podfile,
-    /target 'Movix' do[\s\S]*?target 'MovixTests' do\s+inherit! :complete\s+end\s+post_install do/,
+    /target 'Orvix' do[\s\S]*?target 'OrvixTests' do\s+inherit! :complete\s+end\s+post_install do/,
   );
 });
 
 test('iOS React Native entry point, privacy manifest, and XCTest target are wired', async () => {
   const [delegate, privacy, smokeTest] = await Promise.all([
-    text('../ios/Movix/AppDelegate.mm'),
-    text('../ios/Movix/PrivacyInfo.xcprivacy'),
-    text('../ios/MovixTests/MovixTests.swift'),
+    text('../ios/Orvix/AppDelegate.mm'),
+    text('../ios/Orvix/PrivacyInfo.xcprivacy'),
+    text('../ios/OrvixTests/OrvixTests.swift'),
   ]);
 
-  assert.match(delegate, /self\.moduleName = @"Movix";/);
+  assert.match(delegate, /self\.moduleName = @"Orvix";/);
   assert.match(delegate, /jsBundleURLForBundleRoot:@"index"/);
   assert.match(privacy, /<key>NSPrivacyTracking<\/key>\s*<false\/>/);
-  assert.match(smokeTest, /@testable import Movix/);
-  assert.match(smokeTest, /Bundle\.main\.bundleIdentifier, "com\.movix\.app"/);
+  assert.match(smokeTest, /@testable import Orvix/);
+  assert.match(smokeTest, /Bundle\.main\.bundleIdentifier, "com\.orvix\.app"/);
 });
 
 test('iOS media proxy policy and its XCTest suite are compiled by their targets', async () => {
   const [project, policy] = await Promise.all([
-    text('../ios/Movix.xcodeproj/project.pbxproj'),
-    text('../ios/Movix/Proxy/MediaProxyPolicy.swift'),
+    text('../ios/Orvix.xcodeproj/project.pbxproj'),
+    text('../ios/Orvix/Proxy/MediaProxyPolicy.swift'),
   ]);
 
-  assert.match(project, /path = Movix\/Proxy;/);
+  assert.match(project, /path = Orvix\/Proxy;/);
   assert.match(project, /MediaProxyPolicy\.swift in Sources/);
   assert.match(project, /MediaProxyPolicyTests\.swift in Sources/);
   assert.equal(project.match(/MediaProxyPolicy\.swift in Sources/g)?.length, 2);
@@ -129,8 +129,8 @@ test('iOS media proxy policy and its XCTest suite are compiled by their targets'
 // de nom ne se verrait qu'à l'exécution, par un média qui ne charge pas.
 test('iOS media proxy journal is compiled by the app target', async () => {
   const [project, journal] = await Promise.all([
-    text('../ios/Movix.xcodeproj/project.pbxproj'),
-    text('../ios/Movix/Proxy/MediaProxyJournal.swift'),
+    text('../ios/Orvix.xcodeproj/project.pbxproj'),
+    text('../ios/Orvix/Proxy/MediaProxyJournal.swift'),
   ]);
 
   // Deux occurrences : la déclaration PBXBuildFile et l'entrée de la phase
@@ -143,14 +143,14 @@ test('iOS media proxy journal is compiled by the app target', async () => {
     assert.ok(journal.includes(prefix), `préfixe de journal attendu : ${prefix}`);
   }
   // Le sous-système doit être l'identifiant du bundle, sinon un filtre
-  // `log stream --predicate 'subsystem == "com.movix.app"'` ne rend rien.
-  assert.match(journal, /Logger\(subsystem: "com\.movix\.app", category: "MovixNet"\)/);
+  // `log stream --predicate 'subsystem == "com.orvix.app"'` ne rend rien.
+  assert.match(journal, /Logger\(subsystem: "com\.orvix\.app", category: "OrvixNet"\)/);
   // Découpe des lignes système, comme MAX_LOG_CHUNK côté Android.
   assert.match(journal, /maximumLogChunk = 3_000/);
 });
 
 test('the iOS media proxy journal is safe to call from concurrent media requests', async () => {
-  const journal = await text('../ios/Movix/Proxy/MediaProxyJournal.swift');
+  const journal = await text('../ios/Orvix/Proxy/MediaProxyJournal.swift');
 
   // Deux défauts rendaient l'application inouvrable dès que la capture était
   // active, et aucun compilateur ne les voit : ce contrat les fige.
@@ -201,8 +201,8 @@ test('the network journal toggle never survives a restart', async () => {
 
 test('iOS custom media scheme is compiled, registered, and named identically everywhere', async () => {
   const [project, handler, webviewPatch, runtime, browser] = await Promise.all([
-    text('../ios/Movix.xcodeproj/project.pbxproj'),
-    text('../ios/Movix/Proxy/MediaProxySchemeHandler.swift'),
+    text('../ios/Orvix.xcodeproj/project.pbxproj'),
+    text('../ios/Orvix/Proxy/MediaProxySchemeHandler.swift'),
     text('../patches/react-native-webview+13.16.1.patch'),
     text('../src/injection/bridge-runtime.ts'),
     text('../src/components/WebViewBrowser.tsx'),
@@ -214,20 +214,20 @@ test('iOS custom media scheme is compiled, registered, and named identically eve
   );
   // Le fichier est compilé dans l'app, mais la classe est instanciée depuis les
   // Pods par NSClassFromString : le nom exposé à l'Objective-C fait le lien.
-  assert.match(handler, /@objc\(MovixMediaSchemeHandler\)/);
+  assert.match(handler, /@objc\(OrvixMediaSchemeHandler\)/);
   assert.match(handler, /WKURLSchemeHandler/);
-  assert.match(webviewPatch, /NSClassFromString\(@"MovixMediaSchemeHandler"\)/);
-  assert.match(webviewPatch, /setURLSchemeHandler:handler forURLScheme:@"movix-media"/);
-  assert.match(handler, /static let scheme = "movix-media"/);
-  assert.match(runtime, /__MOVIX_MEDIA_PROXY_SCHEME__/);
-  assert.match(browser, /mediaProxyScheme: Platform\.OS === 'ios' \? 'movix-media' : null/);
+  assert.match(webviewPatch, /NSClassFromString\(@"OrvixMediaSchemeHandler"\)/);
+  assert.match(webviewPatch, /setURLSchemeHandler:handler forURLScheme:@"orvix-media"/);
+  assert.match(handler, /static let scheme = "orvix-media"/);
+  assert.match(runtime, /__ORVIX_MEDIA_PROXY_SCHEME__/);
+  assert.match(browser, /mediaProxyScheme: Platform\.OS === 'ios' \? 'orvix-media' : null/);
 });
 
 test('iOS HLS playlist rewriter and its XCTest suite are compiled by their targets', async () => {
   const [project, rewriter, tests] = await Promise.all([
-    text('../ios/Movix.xcodeproj/project.pbxproj'),
-    text('../ios/Movix/Proxy/HLSPlaylistRewriter.swift'),
-    text('../ios/MovixTests/HLSPlaylistRewriterTests.swift'),
+    text('../ios/Orvix.xcodeproj/project.pbxproj'),
+    text('../ios/Orvix/Proxy/HLSPlaylistRewriter.swift'),
+    text('../ios/OrvixTests/HLSPlaylistRewriterTests.swift'),
   ]);
 
   assert.match(project, /HLSPlaylistRewriter\.swift in Sources/);
@@ -240,16 +240,16 @@ test('iOS HLS playlist rewriter and its XCTest suite are compiled by their targe
   assert.match(rewriter, /isSafeRelativeLocalReference/);
   assert.match(rewriter, /allowedAttributeDirectives/);
   assert.match(rewriter, /invalidLocalizedURL/);
-  assert.match(tests, /@testable import Movix/);
+  assert.match(tests, /@testable import Orvix/);
   assert.match(tests, /testDoesNotRewriteURITextInsideQuotedValuesOrNonURIAttributes/);
 });
 
 test('iOS authenticated media proxy session store and its XCTest suite are compiled by their targets', async () => {
   const [project, models, store, tests] = await Promise.all([
-    text('../ios/Movix.xcodeproj/project.pbxproj'),
-    text('../ios/Movix/Proxy/MediaProxyModels.swift'),
-    text('../ios/Movix/Proxy/MediaProxySessionStore.swift'),
-    text('../ios/MovixTests/MediaProxySessionStoreTests.swift'),
+    text('../ios/Orvix.xcodeproj/project.pbxproj'),
+    text('../ios/Orvix/Proxy/MediaProxyModels.swift'),
+    text('../ios/Orvix/Proxy/MediaProxySessionStore.swift'),
+    text('../ios/OrvixTests/MediaProxySessionStoreTests.swift'),
   ]);
 
   for (const source of ['MediaProxyModels.swift', 'MediaProxySessionStore.swift', 'MediaProxySessionStoreTests.swift']) {
@@ -299,12 +299,12 @@ test('iOS authenticated media proxy session store and its XCTest suite are compi
 
 test('iOS loopback media proxy transport and server are securely wired', async () => {
   const [project, upstream, parser, server, parserTests, integrationTests] = await Promise.all([
-    text('../ios/Movix.xcodeproj/project.pbxproj'),
-    text('../ios/Movix/Proxy/MediaProxyUpstream.swift'),
-    text('../ios/Movix/Proxy/MediaProxyHTTPParser.swift'),
-    text('../ios/Movix/Proxy/MediaProxyServer.swift'),
-    text('../ios/MovixTests/MediaProxyHTTPParserTests.swift'),
-    text('../ios/MovixTests/MediaProxyIntegrationTests.swift'),
+    text('../ios/Orvix.xcodeproj/project.pbxproj'),
+    text('../ios/Orvix/Proxy/MediaProxyUpstream.swift'),
+    text('../ios/Orvix/Proxy/MediaProxyHTTPParser.swift'),
+    text('../ios/Orvix/Proxy/MediaProxyServer.swift'),
+    text('../ios/OrvixTests/MediaProxyHTTPParserTests.swift'),
+    text('../ios/OrvixTests/MediaProxyIntegrationTests.swift'),
   ]);
 
   for (const source of [
@@ -386,17 +386,17 @@ test('iOS loopback media proxy transport and server are securely wired', async (
   }
 });
 
-test('the app icon catalog is compiled into the Movix bundle', async () => {
-  const project = await text('../ios/Movix.xcodeproj/project.pbxproj');
+test('the app icon catalog is compiled into the Orvix bundle', async () => {
+  const project = await text('../ios/Orvix.xcodeproj/project.pbxproj');
   const catalog = JSON.parse(
-    await text('../ios/Movix/Images.xcassets/AppIcon.appiconset/Contents.json'),
+    await text('../ios/Orvix/Images.xcassets/AppIcon.appiconset/Contents.json'),
   );
 
   // Les fichiers d'icones ne suffisent pas : sans reference, appartenance au
   // groupe, phase Resources et nom de catalogue, l'IPA sort sans icone.
   assert.match(
     project,
-    /isa = PBXFileReference; lastKnownFileType = folder\.assetcatalog;[^\n]*path = Movix\/Images\.xcassets;/,
+    /isa = PBXFileReference; lastKnownFileType = folder\.assetcatalog;[^\n]*path = Orvix\/Images\.xcassets;/,
   );
   assert.match(project, /Images\.xcassets in Resources \*\/ = \{isa = PBXBuildFile;/);
   assert.match(project, /Images\.xcassets in Resources \*\/,/);
@@ -414,30 +414,30 @@ test('the app icon catalog is compiled into the Movix bundle', async () => {
   );
   await Promise.all(
     catalog.images.map(image => text(
-      `../ios/Movix/Images.xcassets/AppIcon.appiconset/${image.filename}`,
+      `../ios/Orvix/Images.xcassets/AppIcon.appiconset/${image.filename}`,
     )),
   );
 });
 
-test('legacy MovixApp Xcode artifacts are absent', async () => {
+test('legacy OrvixApp Xcode artifacts are absent', async () => {
   await Promise.all([
-    missing('../ios/MovixApp.xcodeproj'),
-    missing('../ios/MovixApp.xcworkspace'),
-    missing('../ios/MovixAppTests'),
+    missing('../ios/OrvixApp.xcodeproj'),
+    missing('../ios/OrvixApp.xcworkspace'),
+    missing('../ios/OrvixAppTests'),
   ]);
 });
 
 test('every framework the generated Swift header names is imported before it', async () => {
-  // `Movix-Swift.h` declare tout le module @objc d'un coup, et Swift n'y
+  // `Orvix-Swift.h` declare tout le module @objc d'un coup, et Swift n'y
   // forward-declare que ses propres types : un protocole venant d'un framework
   // tiers y apparait nu. Sans son import prealable, la compilation casse sur
   // « cannot find protocol declaration », loin du fichier Swift fautif — c'est
-  // ce qui est arrive quand MovixMediaSchemeHandler a adopte WKURLSchemeHandler
+  // ce qui est arrive quand OrvixMediaSchemeHandler a adopte WKURLSchemeHandler
   // sans que WebKit soit importe.
   const importers = [
-    '../ios/Movix/AppDelegate.mm',
-    '../ios/Movix/UI/MovixBrowserChromeViewManager.m',
-    '../ios/Movix/UI/MovixGlassEffectViewManager.m',
+    '../ios/Orvix/AppDelegate.mm',
+    '../ios/Orvix/UI/OrvixBrowserChromeViewManager.m',
+    '../ios/Orvix/UI/OrvixGlassEffectViewManager.m',
   ];
   const required = [
     '<AVKit/AVKit.h>',
@@ -448,12 +448,12 @@ test('every framework the generated Swift header names is imported before it', a
 
   for (const path of importers) {
     const source = await text(path);
-    const generated = source.indexOf('#import "Movix-Swift.h"');
+    const generated = source.indexOf('#import "Orvix-Swift.h"');
     assert.notEqual(generated, -1, `${path} doit importer l'en-tete genere`);
     for (const framework of required) {
       const at = source.indexOf(`#import ${framework}`);
       assert.notEqual(at, -1, `${path} doit importer ${framework}`);
-      assert.ok(at < generated, `${path} : ${framework} doit preceder Movix-Swift.h`);
+      assert.ok(at < generated, `${path} : ${framework} doit preceder Orvix-Swift.h`);
     }
   }
 });
@@ -461,8 +461,8 @@ test('every framework the generated Swift header names is imported before it', a
 test('the Swift sources adopting third-party protocols stay covered by that list', async () => {
   // Si une classe @objc adopte un protocole d'un framework absent de la liste
   // ci-dessus, le test precedent passe alors que la compilation casse.
-  const handler = await text('../ios/Movix/Proxy/MediaProxySchemeHandler.swift');
-  assert.match(handler, /@objc\(MovixMediaSchemeHandler\)/);
+  const handler = await text('../ios/Orvix/Proxy/MediaProxySchemeHandler.swift');
+  assert.match(handler, /@objc\(OrvixMediaSchemeHandler\)/);
   assert.match(handler, /WKURLSchemeHandler/);
   assert.match(handler, /^import WebKit$/m);
 });

@@ -48,7 +48,7 @@ interface NativePictureInPicture {
   removeListeners(count: number): void;
 }
 
-const EVENT_NAME = 'MOVIX_PICTURE_IN_PICTURE';
+const EVENT_NAME = 'ORVIX_PICTURE_IN_PICTURE';
 const PREPARED_SOURCE_PROTOCOL_VERSION = 1 as const;
 const MAX_NATIVE_PLAYBACK_POSITION_SEC = 366 * 86_400;
 const NATIVE_PLAYBACK_HANDOFF_ID = /^[A-Za-z0-9_-]{16,128}$/;

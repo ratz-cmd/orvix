@@ -200,7 +200,7 @@ async function createHarness(mode, environment = {}) {
     container,
     body,
     dispatch(detail) {
-      window.dispatchEvent(new CustomEvent('__MOVIX_PIP_SHIM__', { detail }));
+      window.dispatchEvent(new CustomEvent('__ORVIX_PIP_SHIM__', { detail }));
     },
     document,
     get enterEvents() { return enterEvents; },
@@ -266,9 +266,9 @@ test('native prepare and state isolate then restore the selected video', async (
   h.dispatch({ kind: 'RESPONSE', id: request.id, ok: true, error: null });
   await promise;
   h.dispatch({ kind: 'NATIVE_EVENT', event: { kind: 'prepare' } });
-  assert.equal(h.html.classList.contains('movix-native-pip'), true);
-  assert.equal(h.video.hasAttribute('data-movix-native-pip-target'), true);
-  assert.equal(h.container.hasAttribute('data-movix-native-pip-ancestor'), true);
+  assert.equal(h.html.classList.contains('orvix-native-pip'), true);
+  assert.equal(h.video.hasAttribute('data-orvix-native-pip-target'), true);
+  assert.equal(h.container.hasAttribute('data-orvix-native-pip-ancestor'), true);
   assert.equal(h.document.head.children.length, 1);
   h.dispatch({ kind: 'NATIVE_EVENT', event: { kind: 'state', active: true } });
   assert.equal(h.document.pictureInPictureElement, h.video);
@@ -276,9 +276,9 @@ test('native prepare and state isolate then restore the selected video', async (
   h.dispatch({ kind: 'NATIVE_EVENT', event: { kind: 'state', active: false } });
   assert.equal(h.document.pictureInPictureElement, null);
   assert.equal(h.leaveEvents, 1);
-  assert.equal(h.html.classList.contains('movix-native-pip'), false);
-  assert.equal(h.video.hasAttribute('data-movix-native-pip-target'), false);
-  assert.equal(h.container.hasAttribute('data-movix-native-pip-ancestor'), false);
+  assert.equal(h.html.classList.contains('orvix-native-pip'), false);
+  assert.equal(h.video.hasAttribute('data-orvix-native-pip-target'), false);
+  assert.equal(h.container.hasAttribute('data-orvix-native-pip-ancestor'), false);
   assert.equal(h.document.head.children.length, 0);
 });
 
@@ -306,9 +306,9 @@ test('pagehide removes markers and rejects pending requests with AbortError', as
   const pending = h.document.exitPictureInPicture();
   h.window.dispatchEvent(new CustomEvent('pagehide'));
   await assert.rejects(pending, error => error.name === 'AbortError');
-  assert.equal(h.html.classList.contains('movix-native-pip'), false);
-  assert.equal(h.video.hasAttribute('data-movix-native-pip-target'), false);
-  assert.equal(h.container.hasAttribute('data-movix-native-pip-ancestor'), false);
+  assert.equal(h.html.classList.contains('orvix-native-pip'), false);
+  assert.equal(h.video.hasAttribute('data-orvix-native-pip-target'), false);
+  assert.equal(h.container.hasAttribute('data-orvix-native-pip-ancestor'), false);
   assert.equal(h.document.head.children.length, 0);
   assert.equal(h.leaveEvents, 1);
 });
@@ -326,10 +326,10 @@ test('fallback and repeated lifecycle events retain markers only for the current
     h.dispatch({ kind: 'NATIVE_EVENT', event: { kind: 'prepare' } });
     h.dispatch({ kind: 'NATIVE_EVENT', event: { kind: 'state', active: true } });
 
-    assert.equal(h.video.hasAttribute('data-movix-native-pip-target'), false);
-    assert.equal(h.otherVideo.hasAttribute('data-movix-native-pip-target'), true);
-    assert.equal(h.container.hasAttribute('data-movix-native-pip-ancestor'), false);
-    assert.equal(h.body.hasAttribute('data-movix-native-pip-ancestor'), true);
+    assert.equal(h.video.hasAttribute('data-orvix-native-pip-target'), false);
+    assert.equal(h.otherVideo.hasAttribute('data-orvix-native-pip-target'), true);
+    assert.equal(h.container.hasAttribute('data-orvix-native-pip-ancestor'), false);
+    assert.equal(h.body.hasAttribute('data-orvix-native-pip-ancestor'), true);
     assert.equal(h.enterEvents, 1);
     assert.equal(h.leaveEvents, 0);
     assert.equal(h.document.head.children.length, 1);
@@ -341,13 +341,13 @@ test('fallback and repeated lifecycle events retain markers only for the current
     } else {
       h.window.dispatchEvent(new CustomEvent('pagehide'));
     }
-    assert.equal(h.video.hasAttribute('data-movix-native-pip-target'), false);
-    assert.equal(h.otherVideo.hasAttribute('data-movix-native-pip-target'), false);
-    assert.equal(h.container.hasAttribute('data-movix-native-pip-ancestor'), false);
-    assert.equal(h.body.hasAttribute('data-movix-native-pip-ancestor'), false);
-    assert.equal(h.html.hasAttribute('data-movix-native-pip-ancestor'), false);
+    assert.equal(h.video.hasAttribute('data-orvix-native-pip-target'), false);
+    assert.equal(h.otherVideo.hasAttribute('data-orvix-native-pip-target'), false);
+    assert.equal(h.container.hasAttribute('data-orvix-native-pip-ancestor'), false);
+    assert.equal(h.body.hasAttribute('data-orvix-native-pip-ancestor'), false);
+    assert.equal(h.html.hasAttribute('data-orvix-native-pip-ancestor'), false);
     assert.equal(h.document.head.children.length, 0);
-    assert.equal(h.html.classList.contains('movix-native-pip'), false);
+    assert.equal(h.html.classList.contains('orvix-native-pip'), false);
     assert.equal(h.enterEvents, 1);
     assert.equal(h.leaveEvents, 1);
   }

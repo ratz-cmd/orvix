@@ -22,7 +22,7 @@ const require = createRequire(import.meta.url);
 const ts = require('typescript');
 const axios = require('axios');
 
-const MAIN_API = 'https://api.movix.test';
+const MAIN_API = 'https://api.orvix.test';
 
 const makeStorage = () => {
   const store = new Map();

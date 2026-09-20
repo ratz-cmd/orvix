@@ -54,7 +54,7 @@ export function isExtractableUrl(url: string): boolean {
 
 /**
  * Tente d'extraire le flux M3U8/MP4 direct à la volée avec timeout strict.
- * Priorité 1: Extension Orvix/Movix (qui gère l'extraction locale et les règles DNR d'en-têtes réseau)
+ * Priorité 1: Extension Orvix/Orvix (qui gère l'extraction locale et les règles DNR d'en-têtes réseau)
  * Priorité 2: Backend natif /api/extract
  * Si l'extraction réussit, le lecteur Orvix natif prend le relais immédiatement (0 pub).
  * Si l'extraction échoue ou dépasse le délai, retourne success: false pour permettre
@@ -83,7 +83,7 @@ export async function tryOnTheFlyExtraction(
       // 1. Tenter l'extension navigateur d'abord si elle est présente
       if (hasNexusExtractors()) {
         const w = typeof window !== 'undefined' ? (window as any) : null;
-        const extractFn = w?.orvixExtractM3u8 || w?.movixExtractM3u8;
+        const extractFn = w?.orvixExtractM3u8 || w?.orvixExtractM3u8;
         if (extractFn) {
           try {
             console.log(`[ON-THE-FLY] Appel extension pour ${hoster}: ${url}`);

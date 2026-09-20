@@ -28,7 +28,7 @@ type NativeProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-const NativeChrome = requireNativeComponent<NativeProps>('MovixBrowserChromeView');
+const NativeChrome = requireNativeComponent<NativeProps>('OrvixBrowserChromeView');
 
 export default function IOSBrowserToolbar({
   canGoBack,

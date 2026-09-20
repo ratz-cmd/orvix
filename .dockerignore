@@ -50,7 +50,7 @@ Thumbs.db
 *.swo
 
 # === Images lourdes inutiles au build ===
-movix.png
+orvix.png
 
 # === Docs ===
 *.md

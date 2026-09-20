@@ -14,7 +14,7 @@ type Props = PropsWithChildren<{
   style?: StyleProp<ViewStyle>;
 }>;
 
-const IOSGlass = requireNativeComponent<Props>('MovixGlassEffectView');
+const IOSGlass = requireNativeComponent<Props>('OrvixGlassEffectView');
 
 export function NativeGlassSurface(props: Props) {
   if (Platform.OS !== 'ios') {

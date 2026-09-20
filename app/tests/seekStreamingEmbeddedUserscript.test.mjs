@@ -26,7 +26,7 @@ test('mobile embedded userscript is generated exactly from the web source', asyn
     .replace(/`/g, '\\`')
     .replace(/\$\{/g, '\\${');
   const expected = `/**
- * Source du userscript Movix.
+ * Source du userscript Orvix.
  *
  * AUTO-GÉNÉRÉ par scripts/build-userscript.js
  * Ne pas modifier manuellement.
@@ -101,8 +101,8 @@ test('mobile embedded userscript orders normal Seek before its IP fallback', asy
   };
   pageWindow.postMessage = () => {};
   pageWindow.location = {
-    hostname: 'movix.fun',
-    origin: 'https://movix.fun',
+    hostname: 'orvix.fun',
+    origin: 'https://orvix.fun',
   };
 
   const context = vm.createContext({
@@ -169,7 +169,7 @@ test('mobile embedded userscript orders normal Seek before its IP fallback', asy
   });
 
   const result = await context.__embeddedSeekExtractor(
-    'https://movix1.embedseek.com/#ug3i',
+    'https://orvix1.embedseek.com/#ug3i',
   );
 
   assert.equal(
@@ -186,6 +186,6 @@ test('mobile embedded userscript orders normal Seek before its IP fallback', asy
       { kind: 'source', url: sourceUrl },
     ],
   );
-  assert.equal(result.origin, 'https://movix1.embedseek.com');
-  assert.equal(result.referer, 'https://movix1.embedseek.com/');
+  assert.equal(result.origin, 'https://orvix1.embedseek.com');
+  assert.equal(result.referer, 'https://orvix1.embedseek.com/');
 });

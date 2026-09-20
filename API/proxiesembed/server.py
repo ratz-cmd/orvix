@@ -1926,7 +1926,7 @@ class ProxyServer:
         return {
             'Authorization': f'Bearer {REAL_DEBRID_API_KEY}',
             'Accept': 'application/json',
-            'User-Agent': 'movix-proxiesembed/1.0',
+            'User-Agent': 'orvix-proxiesembed/1.0',
         }
 
     async def _unlock_with_deepbrid(self, link: str, password: str) -> Response:
@@ -2083,7 +2083,7 @@ class ProxyServer:
             try:
                 headers = {
                     'Accept': 'text/html,application/xhtml+xml',
-                    'User-Agent': 'Movix/1.0 (+https://movix.online)',
+                    'User-Agent': 'Orvix/1.0 (+https://orvix.online)',
                 }
                 timeout = ClientTimeout(total=15)
                 async with aiohttp.ClientSession(headers=headers, timeout=timeout) as session:
@@ -2233,7 +2233,7 @@ class ProxyServer:
 
         headers = {
             'Accept': 'text/html,application/xhtml+xml',
-            'User-Agent': 'Movix/1.0 (+https://movix.online)',
+            'User-Agent': 'Orvix/1.0 (+https://orvix.online)',
         }
         timeout = ClientTimeout(total=DEBRIDR_REQUEST_TIMEOUT)
 

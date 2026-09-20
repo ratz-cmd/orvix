@@ -339,7 +339,7 @@ const WatchAnime: React.FC = () => {
     localStorage.setItem('continueWatching', JSON.stringify(continueWatching));
   }, [id, season, episode]);
 
-  // Movix Wrapped 2026 - Track anime viewing time
+  // Orvix Wrapped 2026 - Track anime viewing time
   useWrappedTracker({
     mode: 'viewing',
     viewingData: id ? {
@@ -1591,7 +1591,7 @@ const WatchAnime: React.FC = () => {
 
           {/* Bouton « Sources » et panneau de sélection.
             *
-            * Portés dans `#movix-overlay-root` : en plein écran, le lecteur
+            * Portés dans `#orvix-overlay-root` : en plein écran, le lecteur
             * passe en `.player-fullscreen-fill` avec un z-index de 2147483000,
             * qui recouvrait ce panneau resté à 10001. Le bouton du lecteur
             * ouvrait donc bien le panneau, mais on ne le voyait jamais — d'où
@@ -1619,7 +1619,7 @@ const WatchAnime: React.FC = () => {
             *
             * Le fond laisse passer les clics vers le lecteur. En plein écran
             * il faut le dire en style inline : la règle
-            * `#movix-overlay-root[data-fullscreen] > *` de index.css pose
+            * `#orvix-overlay-root[data-fullscreen] > *` de index.css pose
             * `pointer-events: auto` avec une spécificité (1,1,0) que la classe
             * utilitaire `pointer-events-none` (0,1,0) ne peut pas battre.
             */}

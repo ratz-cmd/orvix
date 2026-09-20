@@ -59,17 +59,17 @@ test('routes Seek media but not its extraction API', async () => {
     url: 'https://185.237.106.181/v4/token/master.m3u8?v=1',
     method: 'GET',
     headers: {
-      Origin: 'https://movix1.embedseek.com',
-      Referer: 'https://movix1.embedseek.com/',
+      Origin: 'https://orvix1.embedseek.com',
+      Referer: 'https://orvix1.embedseek.com/',
     },
   }), true);
 
   assert.equal(shouldUseMediaProxy({
-    url: 'https://movix1.embedseek.com/api/v1/video?id=ug3i',
+    url: 'https://orvix1.embedseek.com/api/v1/video?id=ug3i',
     method: 'GET',
     headers: {
-      Origin: 'https://movix1.embedseek.com',
-      Referer: 'https://movix1.embedseek.com/',
+      Origin: 'https://orvix1.embedseek.com',
+      Referer: 'https://orvix1.embedseek.com/',
     },
   }), false);
 });
@@ -84,9 +84,9 @@ test('keeps extraction pages, APIs, posts, and unprotected media on GM_FETCH', a
       headers: { Referer: 'https://vidzy.org/' },
     },
     {
-      url: 'https://api.movix.show/api/purstream/movie/550/stream',
+      url: 'https://api.orvix.show/api/purstream/movie/550/stream',
       method: 'GET',
-      headers: { Origin: 'https://movix.show' },
+      headers: { Origin: 'https://orvix.show' },
     },
     {
       url: 'https://u14.vidzy.cc/hls/movie/master.m3u8',

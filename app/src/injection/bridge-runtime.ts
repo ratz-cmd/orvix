@@ -48,8 +48,8 @@ export function buildBridgeRuntime(
   'use strict';
 
   // Empêche la double-injection
-  if (window.__MOVIX_BRIDGE_READY) return;
-  window.__MOVIX_BRIDGE_READY = true;
+  if (window.__ORVIX_BRIDGE_READY) return;
+  window.__ORVIX_BRIDGE_READY = true;
 
   // --- Pending requests ---
   var _pendingRequests = {};
@@ -107,7 +107,7 @@ export function buildBridgeRuntime(
   }
 
   // Réception des réponses du bridge React Native
-  window.addEventListener('__MOVIX_BRIDGE_RESPONSE', function(event) {
+  window.addEventListener('__ORVIX_BRIDGE_RESPONSE', function(event) {
     var response = event.detail;
     if (!response || !response.id) return;
     var handler = _pendingRequests[response.id];
@@ -492,7 +492,7 @@ export function buildBridgeRuntime(
     }
     // Fallback sur localStorage
     try {
-      var stored = localStorage.getItem('movix_userscript:' + key);
+      var stored = localStorage.getItem('orvix_userscript:' + key);
       if (stored !== null) {
         return JSON.parse(stored);
       }
@@ -503,7 +503,7 @@ export function buildBridgeRuntime(
   function GM_setValue(key, value) {
     _storageCache[key] = value;
     try {
-      localStorage.setItem('movix_userscript:' + key, JSON.stringify(value));
+      localStorage.setItem('orvix_userscript:' + key, JSON.stringify(value));
     } catch(e) {}
     // Sync vers natif en arrière-plan
     sendToNative({ type: 'GM_SET_VALUE', id: generateId(), key: key, value: value });
@@ -512,7 +512,7 @@ export function buildBridgeRuntime(
   function GM_deleteValue(key) {
     delete _storageCache[key];
     try {
-      localStorage.removeItem('movix_userscript:' + key);
+      localStorage.removeItem('orvix_userscript:' + key);
     } catch(e) {}
     sendToNative({ type: 'GM_DELETE_VALUE', id: generateId(), key: key });
   }
@@ -526,11 +526,11 @@ export function buildBridgeRuntime(
   // posée sur un élément video est bloquée avant même de partir : le userscript
   // a besoin de le savoir pour ne pas convertir une source jouable en source
   // morte. Le handoff natif, lui, reste valable partout.
-  window.__MOVIX_MEDIA_PROXY_WEB_ROUTING__ = _mediaProxyXhrRoutingEnabled;
+  window.__ORVIX_MEDIA_PROXY_WEB_ROUTING__ = _mediaProxyXhrRoutingEnabled;
   // Là où la boucle locale est refusée, un schéma personnalisé la remplace :
-  // WebKit route « movix-media:// » vers le natif (MediaProxySchemeHandler),
+  // WebKit route « orvix-media:// » vers le natif (MediaProxySchemeHandler),
   // qui relaie vers le proxy local. Le contenu mixte ne s'y applique pas.
-  window.__MOVIX_MEDIA_PROXY_SCHEME__ = ${mediaProxySchemeName};
+  window.__ORVIX_MEDIA_PROXY_SCHEME__ = ${mediaProxySchemeName};
   window.GM_getValue = GM_getValue;
   window.GM_setValue = GM_setValue;
   window.GM_deleteValue = GM_deleteValue;
@@ -555,7 +555,7 @@ export function buildBridgeRuntime(
   // unsafeWindow = window (pas de sandboxing dans le WebView)
   window.unsafeWindow = window;
 
-  console.log('[Movix App] Bridge runtime initialisé');
+  console.log('[Orvix App] Bridge runtime initialisé');
 })();
 true;
 `;

@@ -5,25 +5,25 @@ Lifetime used`):new Se("Lifetime not alive")}},k=class extends T{constructor(e,r
 ${t.stack}Host: ${h}`),Object.assign(c,l),c}throw new pe(t)}return e.value}[Symbol.for("nodejs.util.inspect.custom")](){return this.alive?`${this.constructor.name} { ctx: ${this.ctx.value} rt: ${this.rt.value} }`:`${this.constructor.name} { disposed }`}getFunction(e){let r=this.runtime.hostRefs.get(e);if(typeof r!="function")throw new Error(`Host reference ${e} is not a function`);return r}errorToHandle(e){return e instanceof T?e:this.newError(e)}encodeBinaryJSON(e){let r=this.ffi.QTS_bjson_encode(this.ctx.value,e.value);return this.memory.heapValueHandle(r)}decodeBinaryJSON(e){let r=this.ffi.QTS_bjson_decode(this.ctx.value,e.value);return this.memory.heapValueHandle(r)}success(e){return O.success(e)}fail(e){return O.fail(e,r=>this.unwrapResult(r))}},gt=class extends M{constructor(e){super(),this.scope=new P,this.contextMap=new Map,this.hostRefs=new tr,this._debugMode=!1,this.cToHostCallbacks={freeHostRef:(r,t)=>{if(r!==this.rt.value)throw new Error("Runtime pointer mismatch");this.hostRefs.delete(t)},shouldInterrupt:r=>{if(r!==this.rt.value)throw new Error("QuickJSContext instance received C -> JS interrupt with mismatched rt");let t=this.interruptHandler;if(!t)throw new Error("QuickJSContext had no interrupt handler");return t(this)?1:0},loadModuleSource:Ke(this,function*(r,t,i,o){let u=this.moduleLoader;if(!u)throw new Error("Runtime has no module loader");if(t!==this.rt.value)throw new Error("Runtime pointer mismatch");let l=this.contextMap.get(i)??this.newContext({contextPointer:i});try{let c=yield*r(u(o,l));if(typeof c=="object"&&"error"in c&&c.error)throw this.debugLog("cToHostLoadModule: loader returned error",c.error),c.error;let h=typeof c=="string"?c:"value"in c?c.value:c;return this.memory.newHeapCharPointer(h).value.ptr}catch(c){return this.debugLog("cToHostLoadModule: caught error",c),l.throw(c),0}}),normalizeModule:Ke(this,function*(r,t,i,o,u){let l=this.moduleNormalizer;if(!l)throw new Error("Runtime has no module normalizer");if(t!==this.rt.value)throw new Error("Runtime pointer mismatch");let c=this.contextMap.get(i)??this.newContext({contextPointer:i});try{let h=yield*r(l(o,u,c));if(typeof h=="object"&&"error"in h&&h.error)throw this.debugLog("cToHostNormalizeModule: normalizer returned error",h.error),h.error;let v=typeof h=="string"?h:h.value;return c.getMemory(this.rt.value).newHeapCharPointer(v).value.ptr}catch(h){return this.debugLog("normalizeModule: caught error",h),c.throw(h),0}})},e.ownedLifetimes?.forEach(r=>this.scope.manage(r)),this.module=e.module,this.memory=new yt(this.module),this.ffi=e.ffi,this.rt=e.rt,this.callbacks=e.callbacks,this.scope.manage(this.rt),this.callbacks.setRuntimeCallbacks(this.rt.value,this.cToHostCallbacks),this.executePendingJobs=this.executePendingJobs.bind(this),ye&&this.setDebugMode(!0)}get alive(){return this.scope.alive}dispose(){return this.scope.dispose()}newContext(e={}){let r=Yt(e.intrinsics),t=new T(e.contextPointer||this.ffi.QTS_NewContext(this.rt.value,r),void 0,o=>{this.contextMap.delete(o),this.callbacks.deleteContext(o),this.ffi.QTS_FreeContext(o)}),i=new vt({module:this.module,ctx:t,ffi:this.ffi,rt:this.rt,ownedLifetimes:e.ownedLifetimes,runtime:this,callbacks:this.callbacks});return this.contextMap.set(t.value,i),i}setModuleLoader(e,r){this.moduleLoader=e,this.moduleNormalizer=r,this.ffi.QTS_RuntimeEnableModuleLoader(this.rt.value,this.moduleNormalizer?1:0)}removeModuleLoader(){this.moduleLoader=void 0,this.ffi.QTS_RuntimeDisableModuleLoader(this.rt.value)}hasPendingJob(){return!!this.ffi.QTS_IsJobPending(this.rt.value)}setInterruptHandler(e){let r=this.interruptHandler;this.interruptHandler=e,r||this.ffi.QTS_RuntimeEnableInterruptHandler(this.rt.value)}removeInterruptHandler(){this.interruptHandler&&(this.ffi.QTS_RuntimeDisableInterruptHandler(this.rt.value),this.interruptHandler=void 0)}executePendingJobs(e=-1){let r=this.memory.newMutablePointerArray(1),t=this.ffi.QTS_ExecutePendingJob(this.rt.value,e??-1,r.value.ptr),i=r.value.typedArray[0];if(r.dispose(),i===0)return this.ffi.QTS_FreeValuePointerRuntime(this.rt.value,t),O.success(0);let o=this.contextMap.get(i)??this.newContext({contextPointer:i}),u=o.getMemory(this.rt.value).heapValueHandle(t);if(o.typeof(u)==="number"){let l=o.getNumber(u);return u.dispose(),O.success(l)}else{let l=Object.assign(u,{context:o});return O.fail(l,c=>o.unwrapResult(c))}}setMemoryLimit(e){if(e<0&&e!==-1)throw new Error("Cannot set memory limit to negative number. To unset, pass -1");this.ffi.QTS_RuntimeSetMemoryLimit(this.rt.value,e)}computeMemoryUsage(){let e=this.getSystemContext().getMemory(this.rt.value);return e.heapValueHandle(this.ffi.QTS_RuntimeComputeMemoryUsage(this.rt.value,e.ctx.value))}dumpMemoryUsage(){return this.memory.consumeHeapCharPointer(this.ffi.QTS_RuntimeDumpMemoryUsage(this.rt.value))}setMaxStackSize(e){if(e<0)throw new Error("Cannot set memory limit to negative number. To unset, pass 0.");this.ffi.QTS_RuntimeSetMaxStackSize(this.rt.value,e)}assertOwned(e){if(e.owner&&e.owner.rt!==this.rt)throw new it(`Handle is not owned by this runtime: ${e.owner.rt.value} != ${this.rt.value}`)}setDebugMode(e){this._debugMode=e,this.ffi.DEBUG&&this.rt.alive&&this.ffi.QTS_SetDebugLogEnabled(this.rt.value,e?1:0)}isDebugMode(){return this._debugMode}debugLog(...e){this._debugMode&&console.log("quickjs-emscripten:",...e)}[Symbol.for("nodejs.util.inspect.custom")](){return this.alive?`${this.constructor.name} { rt: ${this.rt.value} }`:`${this.constructor.name} { disposed }`}getSystemContext(){return this.context||(this.context=this.scope.manage(this.newContext())),this.context}},ir=class{constructor(e){this.freeHostRef=e.freeHostRef,this.callFunction=e.callFunction,this.shouldInterrupt=e.shouldInterrupt,this.loadModuleSource=e.loadModuleSource,this.normalizeModule=e.normalizeModule}},Te=class{constructor(e){this.contextCallbacks=new Map,this.runtimeCallbacks=new Map,this.suspendedCount=0,this.cToHostCallbacks=new ir({freeHostRef:(r,t,i)=>{let o=this.runtimeCallbacks.get(t);if(!o)throw new Error(`QuickJSRuntime(rt = ${t}) not found when trying to free HostRef(id = ${i})`);o.freeHostRef(t,i)},callFunction:(r,t,i,o,u,l)=>this.handleAsyncify(r,()=>{try{let c=this.contextCallbacks.get(t);if(!c)throw new Error(`QuickJSContext(ctx = ${t}) not found for C function call "${l}"`);return c.callFunction(t,i,o,u,l)}catch(c){return console.error("[C to host error: returning null]",c),0}}),shouldInterrupt:(r,t)=>this.handleAsyncify(r,()=>{try{let i=this.runtimeCallbacks.get(t);if(!i)throw new Error(`QuickJSRuntime(rt = ${t}) not found for C interrupt`);return i.shouldInterrupt(t)}catch(i){return console.error("[C to host interrupt: returning error]",i),1}}),loadModuleSource:(r,t,i,o)=>this.handleAsyncify(r,()=>{try{let u=this.runtimeCallbacks.get(t);if(!u)throw new Error(`QuickJSRuntime(rt = ${t}) not found for C module loader`);let l=u.loadModuleSource;if(!l)throw new Error(`QuickJSRuntime(rt = ${t}) does not support module loading`);return l(t,i,o)}catch(u){return console.error("[C to host module loader error: returning null]",u),0}}),normalizeModule:(r,t,i,o,u)=>this.handleAsyncify(r,()=>{try{let l=this.runtimeCallbacks.get(t);if(!l)throw new Error(`QuickJSRuntime(rt = ${t}) not found for C module loader`);let c=l.normalizeModule;if(!c)throw new Error(`QuickJSRuntime(rt = ${t}) does not support module loading`);return c(t,i,o,u)}catch(l){return console.error("[C to host module loader error: returning null]",l),0}})}),this.module=e,this.module.callbacks=this.cToHostCallbacks}setRuntimeCallbacks(e,r){this.runtimeCallbacks.set(e,r)}deleteRuntime(e){this.runtimeCallbacks.delete(e)}setContextCallbacks(e,r){this.contextCallbacks.set(e,r)}deleteContext(e){this.contextCallbacks.delete(e)}handleAsyncify(e,r){if(e)return e.handleSleep(i=>{try{let o=r();if(!(o instanceof Promise)){H("asyncify.handleSleep: not suspending:",o),i(o);return}if(this.suspended)throw new st(`Already suspended at: ${this.suspended.stack}
 Attempted to suspend at:`);this.suspended=new ot(`(${this.suspendedCount++})`),H("asyncify.handleSleep: suspending:",this.suspended),o.then(u=>{this.suspended=void 0,H("asyncify.handleSleep: resolved:",u),i(u)},u=>{H("asyncify.handleSleep: rejected:",u),console.error("QuickJS: cannot handle error in suspended function",u),this.suspended=void 0})}catch(o){throw H("asyncify.handleSleep: error:",o),this.suspended=void 0,o}});let t=r();if(t instanceof Promise)throw new Error("Promise return value not supported in non-asyncify context.");return t}};Pe=class{constructor(e,r){this.module=e,this.ffi=r,this.callbacks=new Te(e)}newRuntime(e={}){let r=new T(this.ffi.QTS_NewRuntime(),void 0,i=>{this.ffi.QTS_FreeRuntime(i),this.callbacks.deleteRuntime(i)}),t=new gt({module:this.module,callbacks:this.callbacks,ffi:this.ffi,rt:r});return Qe(t,e),e.moduleLoader&&t.setModuleLoader(e.moduleLoader),t}newContext(e={}){let r=this.newRuntime(),t=r.newContext({...e,ownedLifetimes:Zt(r,e.ownedLifetimes)});return r.context=t,t}evalCode(e,r={}){return P.withScope(t=>{let i=t.manage(this.newContext());xe(i.runtime,r);let o=i.evalCode(e,"eval.js");if(r.memoryLimitBytes!==void 0&&i.runtime.setMemoryLimit(-1),o.error)throw i.dump(t.manage(o.error));return i.dump(t.manage(o.value))})}getWasmMemory(){let e=this.module.quickjsEmscriptenInit?.(()=>{})?.getWasmMemory?.();if(!e)throw new Error("Variant does not support getting WebAssembly.Memory");return e}getFFI(){return this.ffi}}});var bt={};ce(bt,{QuickJSModuleCallbacks:()=>Te,QuickJSWASMModule:()=>Pe,applyBaseRuntimeOptions:()=>Qe,applyModuleEvalRuntimeOptions:()=>xe});var Tt=B(()=>{Me()});var Vt={type:"sync",importFFI:()=>Promise.resolve().then(()=>(ze(),$e)).then(e=>e.QuickJSFFI),importModuleLoader:()=>Promise.resolve().then(()=>(Ye(),qe)).then(e=>e.default)},me=Vt;Me();q();async function Qt(e){let r=ee(await e),[t,i,{QuickJSWASMModule:o}]=await Promise.all([r.importModuleLoader().then(ee),r.importFFI(),Promise.resolve().then(()=>(Tt(),bt)).then(ee)]),u=await t();u.type="sync";let l=new i(u);return new o(u,l)}function ee(e){return e&&"default"in e&&e.default?e.default&&"default"in e.default&&e.default.default?e.default.default:e.default:e}function xt(e,r){return{...e,async importModuleLoader(){let t=ee(await e.importModuleLoader());return async function(){let i=r.emscriptenModule?{...r.emscriptenModule}:{},o=r.log??((...d)=>H("newVariant moduleLoader:",...d)),u=(d,f)=>(o(...d,f),f),l=d=>typeof d=="function"?d():d;(r.wasmLocation||r.wasmSourceMapLocation||r.locateFile)&&(i.locateFile=(d,f)=>{let y={fileName:d,relativeTo:f};if(d.endsWith(".wasm")&&r.wasmLocation!==void 0)return u(["locateFile .wasm: provide wasmLocation",y],r.wasmLocation);if(d.endsWith(".map")){if(r.wasmSourceMapLocation!==void 0)return u(["locateFile .map: provide wasmSourceMapLocation",y],r.wasmSourceMapLocation);if(r.wasmLocation&&!r.locateFile)return u(["locateFile .map: infer from wasmLocation",y],r.wasmLocation+".map")}return r.locateFile?u(["locateFile: use provided fn",y],r.locateFile(d,f)):u(["locateFile: unhandled, passthrough",y],d)}),r.wasmBinary&&(i.wasmBinary=await l(r.wasmBinary)),r.wasmMemory&&(i.wasmMemory=await l(r.wasmMemory));let c=r.wasmModule,h;c&&(i.instantiateWasm=async(d,f)=>{h??(h=Promise.resolve(l(c)));let y=await h;if(!y)throw new Z(`options.wasmModule returned ${String(y)}`);let C=await WebAssembly.instantiate(y,d);return f(C),C.exports}),i.monitorRunDependencies=d=>{o("monitorRunDependencies:",d)},i.quickjsEmscriptenInit=()=>nr(o);let v=t(i),_=i.quickjsEmscriptenInit?.(o);if(c&&_?.receiveWasmOffsetConverter&&!_.existingWasmOffsetConverter){let d=await l(r.wasmBinary)??new ArrayBuffer(0);h??(h=Promise.resolve(l(c)));let f=await h;if(!f)throw new Z(`options.wasmModule returned ${String(f)}`);_.receiveWasmOffsetConverter(d,f)}if(_?.receiveSourceMapJSON){let d=await l(r.wasmSourceMapData);typeof d=="string"?_.receiveSourceMapJSON(JSON.parse(d)):d?_.receiveSourceMapJSON(d):_.receiveSourceMapJSON({version:3,names:[],sources:[],mappings:""})}return v}}}}function nr(e){let r="mock called, emscripten module may not be initialized yet";return{mock:!0,removeRunDependency(t){e(`${r}: removeRunDependency called:`,t)},receiveSourceMapJSON(t){e(`${r}: receiveSourceMapJSON called:`,t)},WasmOffsetConverter:void 0,receiveWasmOffsetConverter(t,i){e(`${r}: receiveWasmOffsetConverter called:`,t,i)}}}function Pt(e){let r=typeof e=="number"?e:e.getTime();return function(){return Date.now()>r}}var At="https://cdn.jsdelivr.net/npm/@jitl/quickjs-wasmfile-release-sync@0.32.0/dist/emscripten-module.wasm",sr="105c3bed22d457e43e3d1c3c1c6959fda62a8fe06f0fc8a985303c3a2be72232",Mt=600*1024,or=512*1024,ar=128*1024,ur=256*1024,lr=16,cr=16*1024*1024,mr=512*1024,hr=1500,Ae=16*1024,dr=Object.freeze(["videojs","jwplayer","sources","atob(","eval(function","eval ( function",".m3u8"]),te;function Et(e,r){if(r!=="fsvid"&&r!=="vidzy")return!1;try{let t=new URL(String(e||"").trim());return t.protocol==="https:"&&!t.username&&!t.password&&(!t.port||t.port==="443")&&!!t.hostname&&/\/embed(?:[-/])/i.test(t.pathname)}catch{return!1}}function fr(e,r,t){if(!Et(r,t))return null;let i=String(e||"").replace(/\\\//g,"/").replace(/&amp;/gi,"&").trim().replace(/\\+$/,"");if(!i||i.length>Ae||!i.toLowerCase().includes(".m3u8")||i.toLowerCase().includes("troll"))return null;try{let o=/^https:\/\//i.test(i)?new URL(i):new URL(i,r);return o.protocol!=="https:"||o.username||o.password||o.port&&o.port!=="443"||!o.hostname||!o.pathname.toLowerCase().includes(".m3u8")||o.href.length>Ae?null:o.href}catch{return null}}function pr(e){if(typeof e!="string"||e.length>or)return[];let r=[],t=0,i=/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;for(let o of e.matchAll(i)){let u=o[1]||"",l=(o[2]||"").trim();if(!l||l.length>ar||/\bsrc\s*=/i.test(u)||/\btype\s*=\s*["'](?:application\/json|application\/ld\+json|module)["']/i.test(u))continue;let c=l.toLowerCase();if(dr.some(h=>c.includes(h))){if(r.length>=lr||t+l.length>ur)break;r.push(l),t+=l.length}}return r}function Sr(){return globalThis.chrome?.runtime||globalThis.browser?.runtime||null}function wr(e){return Array.from(e,r=>r.toString(16).padStart(2,"0")).join("")}async function _r(){let e=await fetch(At,{cache:"force-cache",credentials:"omit",redirect:"error"});if(!e.ok)throw new Error(`quickjs_wasm_http_${e.status}`);if(Number(e.headers.get("content-length")||0)>Mt)throw new Error("quickjs_wasm_too_large");let t=await e.arrayBuffer();if(!t.byteLength||t.byteLength>Mt)throw new Error("quickjs_wasm_invalid_size");let i=await crypto.subtle.digest("SHA-256",t);if(wr(new Uint8Array(i))!==sr)throw new Error("quickjs_wasm_hash_mismatch");return new Uint8Array(t)}async function yr(){if(!te){let e=Sr();te=(async()=>{let r=e?xt(me,{wasmBinary:await _r(),wasmLocation:At,log:()=>{}}):me;return Qt(r)})().catch(r=>{throw te=void 0,r})}return te}function vr(e){let r=new URL(e),t=JSON.stringify(e),i=JSON.stringify(r.origin),o=JSON.stringify(r.hostname),u=JSON.stringify(r.host),l=JSON.stringify(r.pathname||""),c=JSON.stringify(r.search||""),h=JSON.stringify(r.hash||""),v=JSON.stringify(r.port||"");return`
     'use strict';
-    var __movixCandidates = [];
-    var __movixMaxCandidates = 64;
-    var __movixMaxString = ${Ae};
-    var __movixSeen = new WeakSet();
-    function __movixCapture(value, depth) {
+    var __orvixCandidates = [];
+    var __orvixMaxCandidates = 64;
+    var __orvixMaxString = ${Ae};
+    var __orvixSeen = new WeakSet();
+    function __orvixCapture(value, depth) {
       depth = depth || 0;
-      if (depth > 6 || value == null || __movixCandidates.length >= __movixMaxCandidates) return;
+      if (depth > 6 || value == null || __orvixCandidates.length >= __orvixMaxCandidates) return;
       if (typeof value === 'string') {
-        if (value.length <= __movixMaxString && value.toLowerCase().indexOf('.m3u8') !== -1) {
-          __movixCandidates.push(value);
+        if (value.length <= __orvixMaxString && value.toLowerCase().indexOf('.m3u8') !== -1) {
+          __orvixCandidates.push(value);
         }
         return;
       }
-      if ((typeof value !== 'object' && typeof value !== 'function') || __movixSeen.has(value)) return;
-      __movixSeen.add(value);
+      if ((typeof value !== 'object' && typeof value !== 'function') || __orvixSeen.has(value)) return;
+      __orvixSeen.add(value);
       var keys;
       try { keys = Object.keys(value); } catch (_) { return; }
       for (var j = 0; j < keys.length && j < 64; j++) {
-        try { __movixCapture(value[keys[j]], depth + 1); } catch (_) {}
+        try { __orvixCapture(value[keys[j]], depth + 1); } catch (_) {}
       }
     }
     function atob(input) {
@@ -62,32 +62,32 @@ Attempted to suspend at:`);this.suspended=new ot(`(${this.suspendedCount++})`),H
       }
       return output;
     }
-    var __movixChainTarget = function () {};
-    var __movixChain = new Proxy(__movixChainTarget, {
+    var __orvixChainTarget = function () {};
+    var __orvixChain = new Proxy(__orvixChainTarget, {
       apply: function (_target, _thisArg, args) {
-        for (var i = 0; i < args.length; i++) __movixCapture(args[i], 0);
-        return __movixChain;
+        for (var i = 0; i < args.length; i++) __orvixCapture(args[i], 0);
+        return __orvixChain;
       },
       construct: function (_target, args) {
-        for (var i = 0; i < args.length; i++) __movixCapture(arguments[i], 0);
-        return __movixChain;
+        for (var i = 0; i < args.length; i++) __orvixCapture(arguments[i], 0);
+        return __orvixChain;
       },
       get: function (_target, property) {
         if (property === 'then') return undefined;
         if (property === Symbol.toPrimitive) return function () { return ''; };
-        return __movixChain;
+        return __orvixChain;
       },
       set: function () { return true; }
     });
-    function __movixPlayerFactory() {
-      for (var i = 0; i < arguments.length; i++) __movixCapture(arguments[i], 0);
-      return __movixChain;
+    function __orvixPlayerFactory() {
+      for (var i = 0; i < arguments.length; i++) __orvixCapture(arguments[i], 0);
+      return __orvixChain;
     }
-    __movixPlayerFactory.addLanguage = __movixPlayerFactory;
-    __movixPlayerFactory.getPlayers = function () { return {}; };
-    var __movixLooseObject = new Proxy(function () {}, {
-      apply: function () { return __movixLooseObject; },
-      construct: function () { return __movixLooseObject; },
+    __orvixPlayerFactory.addLanguage = __orvixPlayerFactory;
+    __orvixPlayerFactory.getPlayers = function () { return {}; };
+    var __orvixLooseObject = new Proxy(function () {}, {
+      apply: function () { return __orvixLooseObject; },
+      construct: function () { return __orvixLooseObject; },
       get: function (_target, property) {
         if (property === 'canPlayType') return function (type) { return type && (type.indexOf('hls') !== -1 || type.indexOf('mpegURL') !== -1 || type.indexOf('mp4') !== -1) ? 'probably' : 'maybe'; };
         if (property === 'getAttribute') return function (attr) { return attr === 'src' ? '' : 'true'; };
@@ -95,7 +95,7 @@ Attempted to suspend at:`);this.suspended=new ot(`(${this.suspendedCount++})`),H
         if (property === 'referrer') return ${i};
         if (property === 'then') return undefined;
         if (property === Symbol.toPrimitive) return function () { return ''; };
-        return __movixLooseObject;
+        return __orvixLooseObject;
       },
       set: function () { return true; }
     });
@@ -113,13 +113,13 @@ Attempted to suspend at:`);this.suspended=new ot(`(${this.suspendedCount++})`),H
       protocol: 'https:'
     };
     var navigator = { userAgent: 'Mozilla/5.0 Chrome/140.0.0.0', language: 'fr-FR' };
-    var document = __movixLooseObject;
-    var videojs = __movixPlayerFactory;
-    var player = __movixPlayerFactory;
-    var jwplayer = __movixPlayerFactory;
-    var fluidPlayer = __movixPlayerFactory;
-    var Playerjs = __movixPlayerFactory;
-    var Clappr = { Player: __movixPlayerFactory };
+    var document = __orvixLooseObject;
+    var videojs = __orvixPlayerFactory;
+    var player = __orvixPlayerFactory;
+    var jwplayer = __orvixPlayerFactory;
+    var fluidPlayer = __orvixPlayerFactory;
+    var Playerjs = __orvixPlayerFactory;
+    var Clappr = { Player: __orvixPlayerFactory };
     function setTimeout(callback) { if (typeof callback === 'function') callback(); return 1; }
     function clearTimeout() {}
     function setInterval() { return 0; }
@@ -135,12 +135,12 @@ Attempted to suspend at:`);this.suspended=new ot(`(${this.suspendedCount++})`),H
     var SharedWorker = undefined;
     var window = globalThis;
     var self = globalThis;
-  `}function U(e){try{e?.error?e.error.dispose():e?.value?.dispose()}catch{}}async function gr(e,r,t){if(!Et(r,t))return null;let i=pr(e);if(!i.length)return null;let o;try{o=await yr()}catch(h){return console.warn("[MovixQuickJS] runtime unavailable:",h?.message||h),null}let u=o.newRuntime();u.setMemoryLimit(cr),u.setMaxStackSize(mr);let l=Date.now()+hr;u.setInterruptHandler(Pt(l));let c=u.newContext();try{let h=c.evalCode(vr(r),"movix-bootstrap.js");if(h.error)return U(h),null;U(h);for(let f=0;f<i.length;f++){let y=c.evalCode(i[f],`player-script-${f+1}.js`);if(U(y),Date.now()>l)break}let v=c.evalCode(`
+  `}function U(e){try{e?.error?e.error.dispose():e?.value?.dispose()}catch{}}async function gr(e,r,t){if(!Et(r,t))return null;let i=pr(e);if(!i.length)return null;let o;try{o=await yr()}catch(h){return console.warn("[OrvixQuickJS] runtime unavailable:",h?.message||h),null}let u=o.newRuntime();u.setMemoryLimit(cr),u.setMaxStackSize(mr);let l=Date.now()+hr;u.setInterruptHandler(Pt(l));let c=u.newContext();try{let h=c.evalCode(vr(r),"orvix-bootstrap.js");if(h.error)return U(h),null;U(h);for(let f=0;f<i.length;f++){let y=c.evalCode(i[f],`player-script-${f+1}.js`);if(U(y),Date.now()>l)break}let v=c.evalCode(`
       (function () {
         var names = ['sources', 'source', 'file', 'hls', 'hlsUrl', 'm3u8', 'config', 'playerConfig'];
         for (var i = 0; i < names.length; i++) {
-          try { __movixCapture(globalThis[names[i]]); } catch (_) {}
+          try { __orvixCapture(globalThis[names[i]]); } catch (_) {}
         }
-        return JSON.stringify(__movixCandidates);
+        return JSON.stringify(__orvixCandidates);
       })()
-    `,"movix-result.js");if(v.error)return U(v),null;let _=c.dump(v.value);U(v);let d=JSON.parse(String(_||"[]"));for(let f of d){let y=fr(f,r,t);if(y)return y}return null}catch{return null}finally{c.dispose(),u.dispose()}}globalThis.MovixQuickJS=Object.freeze({extractPlayerM3u8:gr});})();
+    `,"orvix-result.js");if(v.error)return U(v),null;let _=c.dump(v.value);U(v);let d=JSON.parse(String(_||"[]"));for(let f of d){let y=fr(f,r,t);if(y)return y}return null}catch{return null}finally{c.dispose(),u.dispose()}}globalThis.OrvixQuickJS=Object.freeze({extractPlayerM3u8:gr});})();

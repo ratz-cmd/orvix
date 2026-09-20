@@ -321,7 +321,7 @@
 
   async function kisskhExchangeMedia(fallbackToken) {
     const response = await kisskhGmRequest(
-      `https://api.movix.fun/api/kisskh/fallback/${fallbackToken}`,
+      `https://api.orvix.fun/api/kisskh/fallback/${fallbackToken}`,
       {
         method: "POST",
         headers: {
@@ -420,15 +420,15 @@
   // END KISSKH FALLBACK
 
   const USERSCRIPT_MANIFEST = {
-    name: "Movix Proxy Extension",
+    name: "Orvix Proxy Extension",
       version: "1.4.15",
     description:
-      "Extension proxy pour Live TV Movix - Contourne CORS, injecte les headers et extrait les sources Nexus",
+      "Extension proxy pour Live TV Orvix - Contourne CORS, injecte les headers et extrait les sources Nexus",
   };
 
   const pageWindow =
     typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
-  const storagePrefix = "movix_userscript:";
+  const storagePrefix = "orvix_userscript:";
   const runtimeListeners = {
     onInstalled: [],
     onStartup: [],
@@ -704,7 +704,7 @@
     return result;
   }
 
-  Object.defineProperty(pageWindow, "__MOVIX_PREPARE_CAST_SOURCE__", {
+  Object.defineProperty(pageWindow, "__ORVIX_PREPARE_CAST_SOURCE__", {
     configurable: false,
     enumerable: false,
     value: prepareCastSource,
@@ -886,7 +886,7 @@
     };
   }
 
-  class MovixXMLHttpRequest {
+  class OrvixXMLHttpRequest {
     constructor() {
       this._native = NativeXMLHttpRequest ? new NativeXMLHttpRequest() : null;
       this._useNative = Boolean(this._native);
@@ -1002,7 +1002,7 @@
         return;
       }
 
-      this.readyState = MovixXMLHttpRequest.OPENED;
+      this.readyState = OrvixXMLHttpRequest.OPENED;
       this._dispatch("readystatechange");
     }
 
@@ -1050,7 +1050,7 @@
       const request = getGMRequest();
       const payload = serializeBody(body);
 
-      this.readyState = MovixXMLHttpRequest.OPENED;
+      this.readyState = OrvixXMLHttpRequest.OPENED;
       this._dispatch("readystatechange");
 
       this._requestHandle = request({
@@ -1065,7 +1065,7 @@
         timeout: this._timeout || 30000,
         responseType: "arraybuffer",
         onprogress: (event) => {
-          this.readyState = MovixXMLHttpRequest.LOADING;
+          this.readyState = OrvixXMLHttpRequest.LOADING;
           this._dispatch("readystatechange");
           this._dispatch(
             "progress",
@@ -1087,14 +1087,14 @@
           this.responseURL = response.finalUrl || this._url;
           this._responseHeadersRaw = response.responseHeaders || "";
 
-          this.readyState = MovixXMLHttpRequest.HEADERS_RECEIVED;
+          this.readyState = OrvixXMLHttpRequest.HEADERS_RECEIVED;
           this._dispatch("readystatechange");
 
-          this.readyState = MovixXMLHttpRequest.LOADING;
+          this.readyState = OrvixXMLHttpRequest.LOADING;
           this._applyProxyResponse(buffer);
           this._dispatch("readystatechange");
 
-          this.readyState = MovixXMLHttpRequest.DONE;
+          this.readyState = OrvixXMLHttpRequest.DONE;
           this._dispatch("readystatechange");
           this._dispatch(
             "load",
@@ -1112,19 +1112,19 @@
           this.status = response?.status || 0;
           this.statusText =
             response?.statusText || response?.error || "Erreur réseau";
-          this.readyState = MovixXMLHttpRequest.DONE;
+          this.readyState = OrvixXMLHttpRequest.DONE;
           this._dispatch("readystatechange");
           this._dispatch("error");
           this._dispatch("loadend");
         },
         ontimeout: () => {
-          this.readyState = MovixXMLHttpRequest.DONE;
+          this.readyState = OrvixXMLHttpRequest.DONE;
           this._dispatch("readystatechange");
           this._dispatch("timeout");
           this._dispatch("loadend");
         },
         onabort: () => {
-          this.readyState = MovixXMLHttpRequest.DONE;
+          this.readyState = OrvixXMLHttpRequest.DONE;
           this._dispatch("readystatechange");
           this._dispatch("abort");
           this._dispatch("loadend");
@@ -1142,7 +1142,7 @@
         this._requestHandle?.abort?.();
       } catch {}
 
-      this.readyState = MovixXMLHttpRequest.DONE;
+      this.readyState = OrvixXMLHttpRequest.DONE;
       this._dispatch("readystatechange");
       this._dispatch("abort");
       this._dispatch("loadend");
@@ -1232,7 +1232,7 @@
         try {
           handler.call(this, event);
         } catch (error) {
-          console.error("[Movix Userscript] XHR handler error:", error);
+          console.error("[Orvix Userscript] XHR handler error:", error);
         }
       }
 
@@ -1242,18 +1242,18 @@
           try {
             listener.call(this, event);
           } catch (error) {
-            console.error("[Movix Userscript] XHR listener error:", error);
+            console.error("[Orvix Userscript] XHR listener error:", error);
           }
         }
       }
     }
   }
 
-  MovixXMLHttpRequest.UNSENT = 0;
-  MovixXMLHttpRequest.OPENED = 1;
-  MovixXMLHttpRequest.HEADERS_RECEIVED = 2;
-  MovixXMLHttpRequest.LOADING = 3;
-  MovixXMLHttpRequest.DONE = 4;
+  OrvixXMLHttpRequest.UNSENT = 0;
+  OrvixXMLHttpRequest.OPENED = 1;
+  OrvixXMLHttpRequest.HEADERS_RECEIVED = 2;
+  OrvixXMLHttpRequest.LOADING = 3;
+  OrvixXMLHttpRequest.DONE = 4;
 
   function patchPageFetch() {
     const patchedFetch = function (input, init) {
@@ -1286,7 +1286,7 @@
       return;
     }
 
-    pageWindow.XMLHttpRequest = MovixXMLHttpRequest;
+    pageWindow.XMLHttpRequest = OrvixXMLHttpRequest;
   }
 
   function isDirectMediaUrl(url) {
@@ -1352,7 +1352,7 @@
             }
           })
           .catch((error) => {
-            console.error("[Movix Userscript] Media proxy failed:", error);
+            console.error("[Orvix Userscript] Media proxy failed:", error);
             srcDescriptor.set.call(mediaElement, nextUrl);
           });
       },
@@ -1510,13 +1510,13 @@
 
   // --- BEGIN extension/Chrome/extractors.js ---
   /**
-   * Movix Extension - Direct M3U8 Extractors
+   * Orvix Extension - Direct M3U8 Extractors
    * Replaces server.py extraction logic - runs entirely in the extension service worker.
    * No VIP check needed since it runs locally.
    */
 
   // ===== Configuration =====
-  const PROXY_BASE = "https://proxiesembed.movix.fun";
+  const PROXY_BASE = "https://proxiesembed.orvix.fun";
 
   // AES constants for SeekStreaming (embed4me)
   const SEEKSTREAMING_AES_KEY_HEX =
@@ -2331,25 +2331,25 @@
     const safeEmbedPort = JSON.stringify(urlObj.port || "");
     return `
       "use strict";
-      var __movixCandidates = [];
-      var __movixMaxCandidates = 64;
-      var __movixMaxString = ${FSVID_VIDZY_MAX_MEDIA_URL_LENGTH};
-      var __movixSeen = new WeakSet();
-      function __movixCapture(value, depth) {
+      var __orvixCandidates = [];
+      var __orvixMaxCandidates = 64;
+      var __orvixMaxString = ${FSVID_VIDZY_MAX_MEDIA_URL_LENGTH};
+      var __orvixSeen = new WeakSet();
+      function __orvixCapture(value, depth) {
         depth = depth || 0;
-        if (depth > 6 || value == null || __movixCandidates.length >= __movixMaxCandidates) return;
+        if (depth > 6 || value == null || __orvixCandidates.length >= __orvixMaxCandidates) return;
         if (typeof value === "string") {
-          if (value.length <= __movixMaxString && value.toLowerCase().indexOf(".m3u8") !== -1) {
-            __movixCandidates.push(value);
+          if (value.length <= __orvixMaxString && value.toLowerCase().indexOf(".m3u8") !== -1) {
+            __orvixCandidates.push(value);
           }
           return;
         }
-        if ((typeof value !== "object" && typeof value !== "function") || __movixSeen.has(value)) return;
-        __movixSeen.add(value);
+        if ((typeof value !== "object" && typeof value !== "function") || __orvixSeen.has(value)) return;
+        __orvixSeen.add(value);
         var keys;
         try { keys = Object.keys(value); } catch (_) { return; }
         for (var j = 0; j < keys.length && j < 64; j++) {
-          try { __movixCapture(value[keys[j]], depth + 1); } catch (_) {}
+          try { __orvixCapture(value[keys[j]], depth + 1); } catch (_) {}
         }
       }
       function atob(input) {
@@ -2383,32 +2383,32 @@
         }
         return output;
       }
-      var __movixChainTarget = function () {};
-      var __movixChain = new Proxy(__movixChainTarget, {
+      var __orvixChainTarget = function () {};
+      var __orvixChain = new Proxy(__orvixChainTarget, {
         apply: function (_target, _thisArg, args) {
-          for (var i = 0; i < args.length; i++) __movixCapture(args[i], 0);
-          return __movixChain;
+          for (var i = 0; i < args.length; i++) __orvixCapture(args[i], 0);
+          return __orvixChain;
         },
         construct: function (_target, args) {
-          for (var i = 0; i < args.length; i++) __movixCapture(args[i], 0);
-          return __movixChain;
+          for (var i = 0; i < args.length; i++) __orvixCapture(args[i], 0);
+          return __orvixChain;
         },
         get: function (_target, property) {
           if (property === "then") return undefined;
           if (property === Symbol.toPrimitive) return function () { return ""; };
-          return __movixChain;
+          return __orvixChain;
         },
         set: function () { return true; }
       });
-      function __movixPlayerFactory() {
-        for (var i = 0; i < arguments.length; i++) __movixCapture(arguments[i], 0);
-        return __movixChain;
+      function __orvixPlayerFactory() {
+        for (var i = 0; i < arguments.length; i++) __orvixCapture(arguments[i], 0);
+        return __orvixChain;
       }
-      __movixPlayerFactory.addLanguage = __movixPlayerFactory;
-      __movixPlayerFactory.getPlayers = function () { return {}; };
-      var __movixLooseObject = new Proxy(function () {}, {
-        apply: function () { return __movixLooseObject; },
-        construct: function () { return __movixLooseObject; },
+      __orvixPlayerFactory.addLanguage = __orvixPlayerFactory;
+      __orvixPlayerFactory.getPlayers = function () { return {}; };
+      var __orvixLooseObject = new Proxy(function () {}, {
+        apply: function () { return __orvixLooseObject; },
+        construct: function () { return __orvixLooseObject; },
         get: function (_target, property) {
           if (property === "canPlayType") return function (type) { return type && (type.indexOf("hls") !== -1 || type.indexOf("mpegURL") !== -1 || type.indexOf("mp4") !== -1) ? "probably" : "maybe"; };
           if (property === "getAttribute") return function (attr) { return attr === "src" ? "" : "true"; };
@@ -2416,7 +2416,7 @@
           if (property === "referrer") return ${safeEmbedOrigin};
           if (property === "then") return undefined;
           if (property === Symbol.toPrimitive) return function () { return ""; };
-          return __movixLooseObject;
+          return __orvixLooseObject;
         },
         set: function () { return true; }
       });
@@ -2434,13 +2434,13 @@
         protocol: "https:"
       };
       var navigator = { userAgent: "Mozilla/5.0 Chrome/140.0.0.0", language: "fr-FR" };
-      var document = __movixLooseObject;
-      var videojs = __movixPlayerFactory;
-      var player = __movixPlayerFactory;
-      var jwplayer = __movixPlayerFactory;
-      var fluidPlayer = __movixPlayerFactory;
-      var Playerjs = __movixPlayerFactory;
-      var Clappr = { Player: __movixPlayerFactory };
+      var document = __orvixLooseObject;
+      var videojs = __orvixPlayerFactory;
+      var player = __orvixPlayerFactory;
+      var jwplayer = __orvixPlayerFactory;
+      var fluidPlayer = __orvixPlayerFactory;
+      var Playerjs = __orvixPlayerFactory;
+      var Clappr = { Player: __orvixPlayerFactory };
       function setTimeout(callback) { if (typeof callback === "function") callback(); return 1; }
       function clearTimeout() {}
       function setInterval() { return 0; }
@@ -2494,7 +2494,7 @@
     try {
       const bootstrapResult = context.evalCode(
         createFsvidVidzyQuickJsBootstrap(safeEmbedUrl),
-        "movix-bootstrap.js",
+        "orvix-bootstrap.js",
       );
       if (bootstrapResult.error) {
         disposeFsvidVidzyQuickJsResult(bootstrapResult);
@@ -2515,11 +2515,11 @@
         `(function () {
           var names = ["sources", "source", "file", "hls", "hlsUrl", "m3u8", "config", "playerConfig"];
           for (var i = 0; i < names.length; i++) {
-            try { __movixCapture(globalThis[names[i]], 0); } catch (_) {}
+            try { __orvixCapture(globalThis[names[i]], 0); } catch (_) {}
           }
-          return JSON.stringify(__movixCandidates);
+          return JSON.stringify(__orvixCandidates);
         })()`,
-        "movix-result.js",
+        "orvix-result.js",
       );
       if (captureResult.error) {
         disposeFsvidVidzyQuickJsResult(captureResult);
@@ -3570,9 +3570,9 @@
    * traduction, dans un seul sens, pour ne pas avoir deux formats d'URL à
    * suivre de part et d'autre.
    */
-  function movixMediaProxyUrlForWebEngine(localUrl) {
-    if (globalThis.__MOVIX_MEDIA_PROXY_WEB_ROUTING__) return localUrl;
-    const scheme = globalThis.__MOVIX_MEDIA_PROXY_SCHEME__;
+  function orvixMediaProxyUrlForWebEngine(localUrl) {
+    if (globalThis.__ORVIX_MEDIA_PROXY_WEB_ROUTING__) return localUrl;
+    const scheme = globalThis.__ORVIX_MEDIA_PROXY_SCHEME__;
     if (!scheme) return localUrl;
     return localUrl.replace(/^http:/i, `${scheme}:`);
   }
@@ -3586,8 +3586,8 @@
     // personnalisé, que le natif sert en relayant vers ce même proxy. Sans
     // l'un ni l'autre, on rend l'URL amont plutôt qu'une URL morte.
     if (
-      !globalThis.__MOVIX_MEDIA_PROXY_WEB_ROUTING__ &&
-      !globalThis.__MOVIX_MEDIA_PROXY_SCHEME__
+      !globalThis.__ORVIX_MEDIA_PROXY_WEB_ROUTING__ &&
+      !globalThis.__ORVIX_MEDIA_PROXY_SCHEME__
     ) {
       return {};
     }
@@ -3604,7 +3604,7 @@
       );
       if (!localUrl) return {};
       return {
-        m3u8Url: movixMediaProxyUrlForWebEngine(localUrl),
+        m3u8Url: orvixMediaProxyUrlForWebEngine(localUrl),
         upstreamUrl: sourceUrl,
       };
     } catch (e) {
@@ -4321,7 +4321,7 @@
   // Export everything for use in background.js
   // (In service worker, we'll import via importScripts or just include in order)
   if (typeof globalThis !== "undefined") {
-    globalThis.MovixExtractors = {
+    globalThis.OrvixExtractors = {
       extractVoe,
       extractFsvid,
       extractVidzy,
@@ -4353,13 +4353,13 @@
     typeof location !== "undefined" &&
     (location.hostname === "localhost" || location.hostname === "127.0.0.1")
       ? "http://localhost:25565"
-      : "https://api.movix.fun";
+      : "https://api.orvix.fun";
   const STREAM_PROXY_USER_AGENT =
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
   // Import extractors module
 
-  const Extractors = globalThis.MovixExtractors;
+  const Extractors = globalThis.OrvixExtractors;
 
   // User extraction preferences (synced from site via SET_EXTRACTION_PREFS)
   const DEFAULT_EXTRACTION_PREFS = {
@@ -4411,11 +4411,11 @@
   // Load initial state
   (async () => {
     const storedEnabled = await gmGetValueCompat(
-      "movix_extensionEnabled",
+      "orvix_extensionEnabled",
       null,
     );
     if (storedEnabled !== null) extensionEnabled = storedEnabled !== false;
-    const storedStats = await gmGetValueCompat("movix_stats", null);
+    const storedStats = await gmGetValueCompat("orvix_stats", null);
     if (storedStats) {
       sessionStats = { ...sessionStats, ...storedStats };
       if (!sessionStats.byType) {
@@ -4434,7 +4434,7 @@
         };
       }
     }
-    const storedPrefs = await gmGetValueCompat("movix_extraction_prefs", null);
+    const storedPrefs = await gmGetValueCompat("orvix_extraction_prefs", null);
     if (storedPrefs) extractionPrefs = storedPrefs;
   })();
 
@@ -4461,7 +4461,7 @@
         seekstreaming: 0,
       },
     };
-    gmSetValueCompat("movix_stats", sessionStats);
+    gmSetValueCompat("orvix_stats", sessionStats);
   });
 
   // Configure DNR rules for CORS and Headers
@@ -4506,16 +4506,16 @@
           initiatorDomains: [
             "localhost",
             "127.0.0.1",
-            "movix.cash",
-            "movix.club",
-            "movix.cloud",
-            "movix.tax",
-            "movix.golf",
-            "movix.chat",
-            "movix.date",
-            "movix.fun",
-            "movix.show",
-            "movix.men",
+            "orvix.cash",
+            "orvix.club",
+            "orvix.cloud",
+            "orvix.tax",
+            "orvix.golf",
+            "orvix.chat",
+            "orvix.date",
+            "orvix.fun",
+            "orvix.show",
+            "orvix.men",
           ],
           resourceTypes: [
             "xmlhttprequest",
@@ -4649,7 +4649,7 @@
           sessionStats.byType[detectedType] =
             (sessionStats.byType[detectedType] || 0) + 1;
         }
-        await gmSetValueCompat("movix_stats", sessionStats);
+        await gmSetValueCompat("orvix_stats", sessionStats);
         return await handleExtractM3u8(payload);
       }
       case "EXTRACT_ALL_M3U8": {
@@ -4664,7 +4664,7 @@
           return !srcType || isEmbedAllowed(srcType);
         });
         sessionStats.extractions++;
-        await gmSetValueCompat("movix_stats", sessionStats);
+        await gmSetValueCompat("orvix_stats", sessionStats);
         return await handleExtractAllM3u8({
           ...payload,
           sources: filteredSources,
@@ -4719,7 +4719,7 @@
             m3u8: { ...DEFAULT_EXTRACTION_PREFS.m3u8, ...incoming.m3u8 },
             livetv: { ...DEFAULT_EXTRACTION_PREFS.livetv, ...incoming.livetv },
           };
-          await gmSetValueCompat("movix_extraction_prefs", extractionPrefs);
+          await gmSetValueCompat("orvix_extraction_prefs", extractionPrefs);
           return { success: true };
         }
         return { success: false, error: "Invalid prefs shape" };
@@ -5007,42 +5007,42 @@
 
   // === API LOGIC ===
 
-  function getMovixFrontendOrigin() {
+  function getOrvixFrontendOrigin() {
     try {
       const currentOrigin = pageWindow.location?.origin;
       const currentHostname = pageWindow.location?.hostname ?? "";
 
       if (
-        currentHostname === "movix.cash" ||
-        currentHostname.endsWith(".movix.cash") ||
-        currentHostname === "movix.club" ||
-        currentHostname.endsWith(".movix.club") ||
-        currentHostname === "movix.cloud" ||
-        currentHostname.endsWith(".movix.cloud") ||
-        currentHostname === "movix.tax" ||
-        currentHostname.endsWith(".movix.tax") ||
-        currentHostname === "movix.golf" ||
-        currentHostname === "movix.chat" ||
-        currentHostname.endsWith(".movix.chat") ||
-        currentHostname === "movix.date" ||
-        currentHostname.endsWith(".movix.date") ||
-        currentHostname === "movix.fun" ||
-        currentHostname.endsWith(".movix.fun") ||
-        currentHostname === "movix.show" ||
-        currentHostname.endsWith(".movix.show") ||
-        currentHostname === "movix.men" ||
-        currentHostname.endsWith(".movix.men") ||
-        currentHostname.endsWith(".movix.golf")
+        currentHostname === "orvix.cash" ||
+        currentHostname.endsWith(".orvix.cash") ||
+        currentHostname === "orvix.club" ||
+        currentHostname.endsWith(".orvix.club") ||
+        currentHostname === "orvix.cloud" ||
+        currentHostname.endsWith(".orvix.cloud") ||
+        currentHostname === "orvix.tax" ||
+        currentHostname.endsWith(".orvix.tax") ||
+        currentHostname === "orvix.golf" ||
+        currentHostname === "orvix.chat" ||
+        currentHostname.endsWith(".orvix.chat") ||
+        currentHostname === "orvix.date" ||
+        currentHostname.endsWith(".orvix.date") ||
+        currentHostname === "orvix.fun" ||
+        currentHostname.endsWith(".orvix.fun") ||
+        currentHostname === "orvix.show" ||
+        currentHostname.endsWith(".orvix.show") ||
+        currentHostname === "orvix.men" ||
+        currentHostname.endsWith(".orvix.men") ||
+        currentHostname.endsWith(".orvix.golf")
       ) {
-        return (currentOrigin || "https://movix.fun").replace(/\/$/, "");
+        return (currentOrigin || "https://orvix.fun").replace(/\/$/, "");
       }
     } catch {}
 
-    return "https://movix.fun";
+    return "https://orvix.fun";
   }
 
   function buildBackendApiHeaders(accessKey, extraHeaders = {}) {
-    const frontendOrigin = getMovixFrontendOrigin();
+    const frontendOrigin = getOrvixFrontendOrigin();
     const headers = {
       Accept: "application/json",
       Origin: frontendOrigin,
@@ -5647,13 +5647,13 @@
     pageWindow.postMessage(
       success
         ? {
-            source: "MOVIX_EXTENSION",
+            source: "ORVIX_EXTENSION",
             messageId,
             success: true,
             data: payload,
           }
         : {
-            source: "MOVIX_EXTENSION",
+            source: "ORVIX_EXTENSION",
             messageId,
             success: false,
             error:
@@ -5681,22 +5681,22 @@
   }
 
   function exposePageApi() {
-    pageWindow.__MOVIX_EXTENSION_INSTALLED = true;
-    pageWindow.hasMovixUserscript = true;
-    pageWindow.hasMovixNexusExtractor = true;
+    pageWindow.__ORVIX_EXTENSION_INSTALLED = true;
+    pageWindow.hasOrvixUserscript = true;
+    pageWindow.hasOrvixNexusExtractor = true;
 
     if (document.documentElement) {
-      document.documentElement.dataset.movixExtension = "true";
+      document.documentElement.dataset.orvixExtension = "true";
     }
 
-    pageWindow.movixExtractM3u8 = async function movixExtractM3u8(type, url) {
+    pageWindow.orvixExtractM3u8 = async function orvixExtractM3u8(type, url) {
       const result = await requestAction("EXTRACT_M3U8", { type, url });
       return result.success
         ? result.data
         : { success: false, error: result.error || "Extraction impossible" };
     };
 
-    pageWindow.movixExtractAllM3u8 = async function movixExtractAllM3u8(
+    pageWindow.orvixExtractAllM3u8 = async function orvixExtractAllM3u8(
       sources,
     ) {
       const result = await requestAction("EXTRACT_ALL_M3U8", { sources });
@@ -5709,33 +5709,33 @@
           };
     };
 
-    pageWindow.movixDetectEmbeds = async function movixDetectEmbeds(sources) {
+    pageWindow.orvixDetectEmbeds = async function orvixDetectEmbeds(sources) {
       const result = await requestAction("DETECT_EMBEDS", { sources });
       return result.success ? result.data : { embeds: [] };
     };
 
-    pageWindow.movixSetupHeaders = async function movixSetupHeaders(type, url) {
+    pageWindow.orvixSetupHeaders = async function orvixSetupHeaders(type, url) {
       const result = await requestAction("SETUP_HEADERS", { type, url });
       return result.success
         ? result.data
         : { success: false, error: result.error || "Configuration impossible" };
     };
 
-    pageWindow.movixKisskhFallback = async function movixKisskhFallback(request) {
+    pageWindow.orvixKisskhFallback = async function orvixKisskhFallback(request) {
       const result = await requestAction("KISSKH_FALLBACK", request);
       return result.success
         ? result.data
         : { success: false, code: "unsupported_transport" };
     };
 
-    pageWindow.dispatchEvent(new CustomEvent("movix-extension-loaded"));
+    pageWindow.dispatchEvent(new CustomEvent("orvix-extension-loaded"));
   }
 
   pageWindow.addEventListener("message", async (event) => {
     if (
       event.source !== pageWindow ||
       !event.data ||
-      event.data.source !== "MOVIX_WEB" ||
+      event.data.source !== "ORVIX_WEB" ||
       event.data.type !== "EXTENSION_REQUEST"
     ) {
       return;
@@ -5760,6 +5760,6 @@
   Promise.resolve()
     .then(() => (typeof setupRules === "function" ? setupRules() : undefined))
     .catch((error) => {
-      console.error("[Movix Userscript] setupRules error:", error);
+      console.error("[Orvix Userscript] setupRules error:", error);
     });
 })();

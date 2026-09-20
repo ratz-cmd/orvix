@@ -1,6 +1,6 @@
 const ALPHABET =
   "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const SITE_NAME = "Movix";
+const SITE_NAME = "Orvix";
 const TMDB_API_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
@@ -81,9 +81,9 @@ const COPY = {
     tmdbLanguage: "fr-FR",
     ogLocale: "fr_FR",
     alternateOgLocale: "en_US",
-    defaultTitle: "Movix - Films et séries en streaming",
+    defaultTitle: "Orvix - Films et séries en streaming",
     defaultDescription:
-      "Regardez des films, séries, collections et pages communautaires sur Movix.",
+      "Regardez des films, séries, collections et pages communautaires sur Orvix.",
     movieWord: "films",
     tvWord: "séries",
     providerFallback: "Plateforme",
@@ -98,13 +98,13 @@ const COPY = {
     knownForLabel: "Connu pour",
     bornLabel: "Naissance",
     movieFallback:
-      "Découvrez {{title}} sur Movix, avec synopsis, note et lecture en ligne.",
+      "Découvrez {{title}} sur Orvix, avec synopsis, note et lecture en ligne.",
     tvFallback:
-      "Découvrez {{title}} sur Movix, avec synopsis, note, saisons et lecture en ligne.",
+      "Découvrez {{title}} sur Orvix, avec synopsis, note, saisons et lecture en ligne.",
     collectionFallback:
-      "Retrouvez tous les films de la collection {{title}} sur Movix.",
+      "Retrouvez tous les films de la collection {{title}} sur Orvix.",
     personFallback:
-      "Consultez la biographie et la filmographie de {{title}} sur Movix.",
+      "Consultez la biographie et la filmographie de {{title}} sur Orvix.",
     watchMovieLabel: "Regarder le film",
     watchSeriesLabel: "Regarder la série",
     watchAnimeLabel: "Regarder l’anime",
@@ -123,81 +123,81 @@ const COPY = {
     syncProLabel: "Sync Pro",
     movieLabel: "Film",
     tvLabel: "Serie",
-    sharedListTitle: "Liste partagée - Movix",
+    sharedListTitle: "Liste partagée - Orvix",
     sharedListDescription:
-      "Consultez une liste partagée par la communauté Movix.",
-    watchPartyTitle: "Watch Party - Movix",
+      "Consultez une liste partagée par la communauté Orvix.",
+    watchPartyTitle: "Watch Party - Orvix",
     watchPartyDescription:
-      "Créez, rejoignez et partagez une watch party synchronisée sur Movix.",
-    homeTitle: "Movix - Streaming films et séries gratuit",
+      "Créez, rejoignez et partagez une watch party synchronisée sur Orvix.",
+    homeTitle: "Orvix - Streaming films et séries gratuit",
     homeDescription:
-      "Explorez les films, séries, collections, alertes et recommandations Movix.",
-    searchTitle: "Recherche - Movix",
+      "Explorez les films, séries, collections, alertes et recommandations Orvix.",
+    searchTitle: "Recherche - Orvix",
     searchDescription:
-      "Cherchez un film, une série, une collection ou une personne sur Movix.",
-    moviesTitle: "Films - Movix",
+      "Cherchez un film, une série, une collection ou une personne sur Orvix.",
+    moviesTitle: "Films - Orvix",
     moviesDescription:
-      "Parcourez les films populaires, récents et recommandés sur Movix.",
-    tvTitle: "Séries TV - Movix",
+      "Parcourez les films populaires, récents et recommandés sur Orvix.",
+    tvTitle: "Séries TV - Orvix",
     tvDescription:
-      "Parcourez les séries TV populaires, récentes et recommandées sur Movix.",
-    collectionsTitle: "Collections - Movix",
+      "Parcourez les séries TV populaires, récentes et recommandées sur Orvix.",
+    collectionsTitle: "Collections - Orvix",
     collectionsDescription:
-      "Retrouvez les sagas et franchises de films disponibles sur Movix.",
-    alertsTitle: "Mes alertes - Movix",
+      "Retrouvez les sagas et franchises de films disponibles sur Orvix.",
+    alertsTitle: "Mes alertes - Orvix",
     alertsDescription: "Gérez vos alertes de sorties et de nouveaux épisodes.",
-    rouletteTitle: "Roulette - Movix",
+    rouletteTitle: "Roulette - Orvix",
     rouletteDescription:
-      "Laissez Movix choisir un film ou une série pour votre prochaine session.",
-    suggestionTitle: "Suggestion - Movix",
+      "Laissez Orvix choisir un film ou une série pour votre prochaine session.",
+    suggestionTitle: "Suggestion - Orvix",
     suggestionDescription:
       "Lancez une recommandation surprise selon vos critères.",
-    providerBrowseTitle: "Où regarder - Movix",
+    providerBrowseTitle: "Où regarder - Orvix",
     providerBrowseDescription:
-      "Explorez les catalogues par plateforme de streaming sur Movix.",
-    liveTvTitle: "Live TV - Movix",
+      "Explorez les catalogues par plateforme de streaming sur Orvix.",
+    liveTvTitle: "Live TV - Orvix",
     liveTvDescription:
-      "Accédez aux chaînes en direct et au direct TV sur Movix.",
-    extensionTitle: "Extension - Movix",
+      "Accédez aux chaînes en direct et au direct TV sur Orvix.",
+    extensionTitle: "Extension - Orvix",
     extensionDescription:
-      "Installez l’extension navigateur Movix et ses intégrations.",
-    top10Title: "Top 10 - Movix",
+      "Installez l’extension navigateur Orvix et ses intégrations.",
+    top10Title: "Top 10 - Orvix",
     top10Description:
-      "Consultez le Top 10 films et séries de la communauté Movix.",
-    settingsTitle: "Paramètres - Movix",
+      "Consultez le Top 10 films et séries de la communauté Orvix.",
+    settingsTitle: "Paramètres - Orvix",
     settingsDescription:
-      "Réglez la langue, les préférences et les options de votre expérience Movix.",
-    aboutTitle: "À propos de Movix",
+      "Réglez la langue, les préférences et les options de votre expérience Orvix.",
+    aboutTitle: "À propos de Orvix",
     aboutDescription:
-      "Découvrez ce qu’est Movix et les fonctionnalités de la plateforme.",
-    privacyTitle: "Confidentialité - Movix",
+      "Découvrez ce qu’est Orvix et les fonctionnalités de la plateforme.",
+    privacyTitle: "Confidentialité - Orvix",
     privacyDescription:
-      "Consultez la politique de confidentialité et les pratiques de Movix.",
-    cinegraphTitle: "CineGraph - Movix",
+      "Consultez la politique de confidentialité et les pratiques de Orvix.",
+    cinegraphTitle: "CineGraph - Orvix",
     cinegraphDescription:
       "Explorez les liens entre films, séries, genres et talents avec CineGraph.",
-    wishboardTitle: "Wishboard - Movix",
+    wishboardTitle: "Wishboard - Orvix",
     wishboardDescription:
       "Demandez un ajout de contenu et suivez les requêtes communautaires.",
-    wrappedTitle: "Wrapped - Movix",
-    wrappedDescription: "Retrouvez vos statistiques et votre récap Movix.",
-    profileTitle: "Profil - Movix",
+    wrappedTitle: "Wrapped - Orvix",
+    wrappedDescription: "Retrouvez vos statistiques et votre récap Orvix.",
+    profileTitle: "Profil - Orvix",
     profileDescription:
-      "Retrouvez vos listes, favoris, alertes et historique sur Movix.",
-    authTitle: "Connexion - Movix",
-    authDescription: "Connectez-vous à votre compte Movix.",
-    vipTitle: "VIP - Movix",
-    vipDescription: "Découvrez les avantages VIP et les options premium Movix.",
-    genericPageTitle: "Page Movix",
-    genericPageDescription: "Découvrez cette page sur Movix.",
+      "Retrouvez vos listes, favoris, alertes et historique sur Orvix.",
+    authTitle: "Connexion - Orvix",
+    authDescription: "Connectez-vous à votre compte Orvix.",
+    vipTitle: "VIP - Orvix",
+    vipDescription: "Découvrez les avantages VIP et les options premium Orvix.",
+    genericPageTitle: "Page Orvix",
+    genericPageDescription: "Découvrez cette page sur Orvix.",
   },
   en: {
     tmdbLanguage: "en-US",
     ogLocale: "en_US",
     alternateOgLocale: "fr_FR",
-    defaultTitle: "Movix - Movies and TV streaming",
+    defaultTitle: "Orvix - Movies and TV streaming",
     defaultDescription:
-      "Watch movies, TV shows, collections and community pages on Movix.",
+      "Watch movies, TV shows, collections and community pages on Orvix.",
     movieWord: "movies",
     tvWord: "TV shows",
     providerFallback: "Platform",
@@ -212,12 +212,12 @@ const COPY = {
     knownForLabel: "Known for",
     bornLabel: "Born",
     movieFallback:
-      "Discover {{title}} on Movix with synopsis, rating and online playback.",
+      "Discover {{title}} on Orvix with synopsis, rating and online playback.",
     tvFallback:
-      "Discover {{title}} on Movix with synopsis, rating, seasons and online playback.",
+      "Discover {{title}} on Orvix with synopsis, rating, seasons and online playback.",
     collectionFallback:
-      "Browse every movie in the {{title}} collection on Movix.",
-    personFallback: "See the biography and filmography of {{title}} on Movix.",
+      "Browse every movie in the {{title}} collection on Orvix.",
+    personFallback: "See the biography and filmography of {{title}} on Orvix.",
     watchMovieLabel: "Watch movie",
     watchSeriesLabel: "Watch series",
     watchAnimeLabel: "Watch anime",
@@ -236,67 +236,67 @@ const COPY = {
     syncProLabel: "Sync Pro",
     movieLabel: "Movie",
     tvLabel: "TV Show",
-    sharedListTitle: "Shared List - Movix",
-    sharedListDescription: "Browse a list shared by the Movix community.",
-    watchPartyTitle: "Watch Party - Movix",
+    sharedListTitle: "Shared List - Orvix",
+    sharedListDescription: "Browse a list shared by the Orvix community.",
+    watchPartyTitle: "Watch Party - Orvix",
     watchPartyDescription:
-      "Create, join and share synchronized watch parties on Movix.",
-    homeTitle: "Movix - Free movie and TV streaming",
+      "Create, join and share synchronized watch parties on Orvix.",
+    homeTitle: "Orvix - Free movie and TV streaming",
     homeDescription:
-      "Explore movies, TV shows, collections, alerts and recommendations on Movix.",
-    searchTitle: "Search - Movix",
+      "Explore movies, TV shows, collections, alerts and recommendations on Orvix.",
+    searchTitle: "Search - Orvix",
     searchDescription:
-      "Search for a movie, TV show, collection or person on Movix.",
-    moviesTitle: "Movies - Movix",
+      "Search for a movie, TV show, collection or person on Orvix.",
+    moviesTitle: "Movies - Orvix",
     moviesDescription:
-      "Browse popular, recent and recommended movies on Movix.",
-    tvTitle: "TV Shows - Movix",
-    tvDescription: "Browse popular, recent and recommended TV shows on Movix.",
-    collectionsTitle: "Collections - Movix",
+      "Browse popular, recent and recommended movies on Orvix.",
+    tvTitle: "TV Shows - Orvix",
+    tvDescription: "Browse popular, recent and recommended TV shows on Orvix.",
+    collectionsTitle: "Collections - Orvix",
     collectionsDescription:
-      "Browse movie sagas and franchises available on Movix.",
-    alertsTitle: "My Alerts - Movix",
+      "Browse movie sagas and franchises available on Orvix.",
+    alertsTitle: "My Alerts - Orvix",
     alertsDescription: "Manage your release and new episode alerts.",
-    rouletteTitle: "Roulette - Movix",
+    rouletteTitle: "Roulette - Orvix",
     rouletteDescription:
-      "Let Movix pick a movie or TV show for your next session.",
-    suggestionTitle: "Suggestion - Movix",
+      "Let Orvix pick a movie or TV show for your next session.",
+    suggestionTitle: "Suggestion - Orvix",
     suggestionDescription:
       "Get a surprise recommendation based on your filters.",
-    providerBrowseTitle: "Where to Watch - Movix",
+    providerBrowseTitle: "Where to Watch - Orvix",
     providerBrowseDescription:
-      "Explore streaming catalogs by platform on Movix.",
-    liveTvTitle: "Live TV - Movix",
-    liveTvDescription: "Access live channels and TV streams on Movix.",
-    extensionTitle: "Extension - Movix",
+      "Explore streaming catalogs by platform on Orvix.",
+    liveTvTitle: "Live TV - Orvix",
+    liveTvDescription: "Access live channels and TV streams on Orvix.",
+    extensionTitle: "Extension - Orvix",
     extensionDescription:
-      "Install the Movix browser extension and integrations.",
-    top10Title: "Top 10 - Movix",
-    top10Description: "See the Movix community Top 10 movies and TV shows.",
-    settingsTitle: "Settings - Movix",
+      "Install the Orvix browser extension and integrations.",
+    top10Title: "Top 10 - Orvix",
+    top10Description: "See the Orvix community Top 10 movies and TV shows.",
+    settingsTitle: "Settings - Orvix",
     settingsDescription:
-      "Adjust language, preferences and experience options on Movix.",
-    aboutTitle: "About Movix",
-    aboutDescription: "Learn what Movix is and what the platform offers.",
-    privacyTitle: "Privacy - Movix",
-    privacyDescription: "Read the Movix privacy policy and data practices.",
-    cinegraphTitle: "CineGraph - Movix",
+      "Adjust language, preferences and experience options on Orvix.",
+    aboutTitle: "About Orvix",
+    aboutDescription: "Learn what Orvix is and what the platform offers.",
+    privacyTitle: "Privacy - Orvix",
+    privacyDescription: "Read the Orvix privacy policy and data practices.",
+    cinegraphTitle: "CineGraph - Orvix",
     cinegraphDescription:
       "Explore links between movies, shows, genres and talent with CineGraph.",
-    wishboardTitle: "Wishboard - Movix",
+    wishboardTitle: "Wishboard - Orvix",
     wishboardDescription:
       "Request content additions and track community requests.",
-    wrappedTitle: "Wrapped - Movix",
-    wrappedDescription: "See your Movix stats and recap.",
-    profileTitle: "Profile - Movix",
+    wrappedTitle: "Wrapped - Orvix",
+    wrappedDescription: "See your Orvix stats and recap.",
+    profileTitle: "Profile - Orvix",
     profileDescription:
-      "Find your lists, favorites, alerts and history on Movix.",
-    authTitle: "Login - Movix",
-    authDescription: "Sign in to your Movix account.",
-    vipTitle: "VIP - Movix",
-    vipDescription: "Discover Movix VIP benefits and premium options.",
-    genericPageTitle: "Movix Page",
-    genericPageDescription: "Discover this page on Movix.",
+      "Find your lists, favorites, alerts and history on Orvix.",
+    authTitle: "Login - Orvix",
+    authDescription: "Sign in to your Orvix account.",
+    vipTitle: "VIP - Orvix",
+    vipDescription: "Discover Orvix VIP benefits and premium options.",
+    genericPageTitle: "Orvix Page",
+    genericPageDescription: "Discover this page on Orvix.",
   },
 };
 
@@ -422,7 +422,7 @@ function formatRating(value) {
     : numberValue.toFixed(1);
 }
 
-function buildImageUrl(origin, payload, fallbackPath = "/movix.png") {
+function buildImageUrl(origin, payload, fallbackPath = "/orvix.png") {
   const imagePath =
     payload.backdrop_path || payload.poster_path || payload.profile_path;
   if (!imagePath) return new URL(fallbackPath, origin).toString();
@@ -430,7 +430,7 @@ function buildImageUrl(origin, payload, fallbackPath = "/movix.png") {
   return `${TMDB_IMAGE_BASE}/${size}${imagePath}`;
 }
 
-function resolveExternalImageUrl(origin, value, fallbackPath = "/movix.png") {
+function resolveExternalImageUrl(origin, value, fallbackPath = "/orvix.png") {
   const normalized = String(value || "").trim();
 
   if (!normalized) {
@@ -537,7 +537,7 @@ function buildBaseMetadata(requestUrl, previewLanguage, payload) {
     ),
     canonicalUrl: requestUrl.toString(),
     imageUrl:
-      payload.imageUrl || new URL("/movix.png", requestUrl.origin).toString(),
+      payload.imageUrl || new URL("/orvix.png", requestUrl.origin).toString(),
     imageAlt: payload.imageAlt || SITE_NAME,
     ogType: payload.ogType || "website",
     ogLocale: copy.ogLocale,
@@ -840,8 +840,8 @@ function buildWatchPartyMetadata(requestUrl, roomData, previewLanguage, mode) {
   ];
   const descriptionBody = titleText
     ? previewLanguage === "fr"
-      ? `Rejoignez cette Watch Party Movix pour regarder ${titleText}${episodePart} en synchronisation.`
-      : `Join this Movix Watch Party to watch ${titleText}${episodePart} in sync.`
+      ? `Rejoignez cette Watch Party Orvix pour regarder ${titleText}${episodePart} en synchronisation.`
+      : `Join this Orvix Watch Party to watch ${titleText}${episodePart} in sync.`
     : copy.watchPartyDescription;
 
   return buildBaseMetadata(requestUrl, previewLanguage, {
@@ -851,7 +851,7 @@ function buildWatchPartyMetadata(requestUrl, roomData, previewLanguage, mode) {
       requestUrl.origin,
       media.poster || roomData.poster,
     ),
-    imageAlt: titleText ? `${titleText} - Watch Party` : "Watch Party - Movix",
+    imageAlt: titleText ? `${titleText} - Watch Party` : "Watch Party - Orvix",
     ogType: "website",
   });
 }
@@ -864,8 +864,8 @@ function buildGenreMetadata(requestUrl, mediaType, genreId, previewLanguage) {
   const contentType = mediaType === "movie" ? copy.movieWord : copy.tvWord;
   const description =
     previewLanguage === "fr"
-      ? `Retrouvez les ${contentType} du genre ${genreName} sur Movix.`
-      : `Browse ${contentType} in the ${genreName} genre on Movix.`;
+      ? `Retrouvez les ${contentType} du genre ${genreName} sur Orvix.`
+      : `Browse ${contentType} in the ${genreName} genre on Orvix.`;
   const title =
     previewLanguage === "fr"
       ? `${genreName} - ${contentType} - ${SITE_NAME}`
@@ -902,11 +902,11 @@ function buildProviderMetadata(
           : "movies and TV shows";
   const description = type
     ? previewLanguage === "fr"
-      ? `Retrouvez les ${contentType} de ${providerName}${genreName ? ` dans ${genreName}` : ""} sur Movix.`
-      : `Browse ${contentType} on ${providerName}${genreName ? ` in ${genreName}` : ""} on Movix.`
+      ? `Retrouvez les ${contentType} de ${providerName}${genreName ? ` dans ${genreName}` : ""} sur Orvix.`
+      : `Browse ${contentType} on ${providerName}${genreName ? ` in ${genreName}` : ""} on Orvix.`
     : previewLanguage === "fr"
-      ? `Explorez le catalogue ${providerName} sur Movix.`
-      : `Explore the ${providerName} catalog on Movix.`;
+      ? `Explorez le catalogue ${providerName} sur Orvix.`
+      : `Explore the ${providerName} catalog on Orvix.`;
 
   return buildBaseMetadata(requestUrl, previewLanguage, {
     title: type
@@ -920,12 +920,12 @@ function buildWrappedMetadata(requestUrl, year, previewLanguage) {
   const copy = COPY[previewLanguage];
   const description = year
     ? previewLanguage === "fr"
-      ? `Retrouvez votre récap Movix ${year} et partagez vos stats.`
-      : `See your Movix ${year} recap and share your stats.`
+      ? `Retrouvez votre récap Orvix ${year} et partagez vos stats.`
+      : `See your Orvix ${year} recap and share your stats.`
     : copy.wrappedDescription;
 
   return buildBaseMetadata(requestUrl, previewLanguage, {
-    title: year ? `Movix Wrapped ${year}` : copy.wrappedTitle,
+    title: year ? `Orvix Wrapped ${year}` : copy.wrappedTitle,
     description,
   });
 }
@@ -1059,32 +1059,32 @@ function buildStaticMetadata(requestUrl, previewLanguage) {
       });
     case "/debrid":
       return buildBaseMetadata(requestUrl, previewLanguage, {
-        title: "Debrid - Movix",
+        title: "Debrid - Orvix",
         description:
           previewLanguage === "fr"
-            ? "Débridez et gérez vos liens premium sur Movix."
-            : "Debrid and manage your premium links on Movix.",
+            ? "Débridez et gérez vos liens premium sur Orvix."
+            : "Debrid and manage your premium links on Orvix.",
       });
     case "/dmca":
       return buildBaseMetadata(requestUrl, previewLanguage, {
-        title: "DMCA - Movix",
+        title: "DMCA - Orvix",
         description:
           previewLanguage === "fr"
-            ? "Informations DMCA et demandes legales pour Movix."
-            : "DMCA information and legal requests for Movix.",
+            ? "Informations DMCA et demandes legales pour Orvix."
+            : "DMCA information and legal requests for Orvix.",
       });
     case "/admin":
       return buildBaseMetadata(requestUrl, previewLanguage, {
-        title: "Admin - Movix",
-        description: "Movix administration.",
+        title: "Admin - Orvix",
+        description: "Orvix administration.",
       });
     case "/ftv":
       return buildBaseMetadata(requestUrl, previewLanguage, {
-        title: "France TV - Movix",
+        title: "France TV - Orvix",
         description:
           previewLanguage === "fr"
-            ? "Accédez au catalogue et au live France TV via Movix."
-            : "Access the France TV catalog and live streams via Movix.",
+            ? "Accédez au catalogue et au live France TV via Orvix."
+            : "Access the France TV catalog and live streams via Orvix.",
       });
     default:
       if (/^\/watchparty\/(?:join|room)\//.test(pathname)) {
@@ -1111,11 +1111,11 @@ function buildStaticMetadata(requestUrl, previewLanguage) {
 
       if (/^\/ftv\/(?:info|watch)\//.test(pathname)) {
         return buildBaseMetadata(requestUrl, previewLanguage, {
-          title: "France TV - Movix",
+          title: "France TV - Orvix",
           description:
             previewLanguage === "fr"
-              ? "Accédez au catalogue et au live France TV via Movix."
-              : "Access the France TV catalog and live streams via Movix.",
+              ? "Accédez au catalogue et au live France TV via Orvix."
+              : "Access the France TV catalog and live streams via Orvix.",
         });
       }
 

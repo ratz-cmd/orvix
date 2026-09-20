@@ -12,12 +12,12 @@ while [ "$source_app_input" != "/" ] && [ "${source_app_input%/}" != "$source_ap
 done
 
 if [ -z "$source_app_input" ] || [ -L "$source_app_input" ] || ! [ -d "$source_app_input" ]; then
-  echo "IOS_APP_PATH must be a non-symlink Movix.app directory" >&2
+  echo "IOS_APP_PATH must be a non-symlink Orvix.app directory" >&2
   exit 1
 fi
 
-if [ "$(basename "$source_app_input")" != "Movix.app" ]; then
-  echo "IOS_APP_PATH must name Movix.app" >&2
+if [ "$(basename "$source_app_input")" != "Orvix.app" ]; then
+  echo "IOS_APP_PATH must name Orvix.app" >&2
   exit 1
 fi
 
@@ -31,7 +31,7 @@ if [ -z "$resolved_output_dir" ] || [ "$resolved_output_dir" = "/" ]; then
 fi
 
 payload_dir="$resolved_output_dir/Payload"
-payload_app_path="$resolved_output_dir/Payload/Movix.app"
+payload_app_path="$resolved_output_dir/Payload/Orvix.app"
 case "$resolved_output_dir" in
   "$source_app_path"|"$source_app_path"/*)
     echo "IOS_OUTPUT_DIR must not be inside IOS_APP_PATH" >&2
@@ -58,7 +58,7 @@ rm -f -- "$payload_app_path/embedded.mobileprovision"
 
 (
   cd "$resolved_output_dir"
-  rm -f -- Movix-unsigned.ipa Movix-unsigned.ipa.sha256
-  /usr/bin/find Payload -print | /usr/bin/sort | /usr/bin/zip -X -q -y Movix-unsigned.ipa -@
-  shasum -a 256 Movix-unsigned.ipa > Movix-unsigned.ipa.sha256
+  rm -f -- Orvix-unsigned.ipa Orvix-unsigned.ipa.sha256
+  /usr/bin/find Payload -print | /usr/bin/sort | /usr/bin/zip -X -q -y Orvix-unsigned.ipa -@
+  shasum -a 256 Orvix-unsigned.ipa > Orvix-unsigned.ipa.sha256
 )

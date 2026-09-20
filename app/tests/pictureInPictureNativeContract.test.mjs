@@ -7,7 +7,7 @@ const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 test('manifest and activity expose PiP lifecycle', async () => {
   const [manifest, activity] = await Promise.all([
     read('android/app/src/main/AndroidManifest.xml'),
-    read('android/app/src/main/java/com/movix/app/MainActivity.kt'),
+    read('android/app/src/main/java/com/orvix/app/MainActivity.kt'),
   ]);
   assert.match(manifest, /android:supportsPictureInPicture="true"/);
   assert.match(activity, /onUserLeaveHint\(\)/);
@@ -20,19 +20,19 @@ test('manifest and activity expose PiP lifecycle', async () => {
 
 test('application registers the bounded native module', async () => {
   const [application, module, packageSource] = await Promise.all([
-    read('android/app/src/main/java/com/movix/app/MainApplication.kt'),
-    read('android/app/src/main/java/com/movix/app/pip/PictureInPictureModule.kt'),
-    read('android/app/src/main/java/com/movix/app/pip/PictureInPicturePackage.kt'),
+    read('android/app/src/main/java/com/orvix/app/MainApplication.kt'),
+    read('android/app/src/main/java/com/orvix/app/pip/PictureInPictureModule.kt'),
+    read('android/app/src/main/java/com/orvix/app/pip/PictureInPicturePackage.kt'),
   ]);
   assert.match(application, /add\(PictureInPicturePackage\(\)\)/);
   assert.match(module, /override fun getName\(\) = "PictureInPicture"/);
   assert.match(module, /fun setPlaybackActive\(active: Boolean\)/);
-  assert.match(module, /MOVIX_PICTURE_IN_PICTURE/);
+  assert.match(module, /ORVIX_PICTURE_IN_PICTURE/);
   assert.match(packageSource, /PictureInPictureModule\(reactContext\)/);
 });
 
 test('module clears PiP playback on the UI thread before unsubscribing', async () => {
-  const module = await read('android/app/src/main/java/com/movix/app/pip/PictureInPictureModule.kt');
+  const module = await read('android/app/src/main/java/com/orvix/app/pip/PictureInPictureModule.kt');
   assert.match(
     module,
     /override fun invalidate\(\) \{\s*val activity = currentActivity as\? MainActivity\s*activity\?\.runOnUiThread \{\s*activity\.pictureInPictureController\.setPlaybackActive\(false\)\s*finishInvalidation\(\)\s*} \?: finishInvalidation\(\)\s*}/,
@@ -46,7 +46,7 @@ test('module clears PiP playback on the UI thread before unsubscribing', async (
 test('PiP host exposes three immutable package-local actions', async () => {
   const [manifest, host] = await Promise.all([
     read('android/app/src/main/AndroidManifest.xml'),
-    read('android/app/src/main/java/com/movix/app/pip/AndroidPictureInPictureHost.kt'),
+    read('android/app/src/main/java/com/orvix/app/pip/AndroidPictureInPictureHost.kt'),
   ]);
   assert.match(host, /runCatching \{ actions\(playbackPlaying\) \}/);
   assert.match(host, /let\(builder::setActions\)/);
@@ -61,8 +61,8 @@ test('PiP host exposes three immutable package-local actions', async () => {
 
 test('iOS native PiP defines a handoff-bound AVPlayer state machine', async () => {
   const [models, controller] = await Promise.all([
-    read('ios/Movix/Playback/NativePlaybackModels.swift'),
-    read('ios/Movix/Playback/NativePlaybackController.swift'),
+    read('ios/Orvix/Playback/NativePlaybackModels.swift'),
+    read('ios/Orvix/Playback/NativePlaybackController.swift'),
   ]);
 
   assert.match(models, /preparedSourceProtocolVersion\s*=\s*1/);
@@ -88,14 +88,14 @@ test('iOS native PiP defines a handoff-bound AVPlayer state machine', async () =
 
 test('iOS PiP React module exposes the complete v1 handoff API and one event', async () => {
   const [swift, objc] = await Promise.all([
-    read('ios/Movix/Playback/PictureInPictureModule.swift'),
-    read('ios/Movix/Playback/PictureInPictureModule.m'),
+    read('ios/Orvix/Playback/PictureInPictureModule.swift'),
+    read('ios/Orvix/Playback/PictureInPictureModule.m'),
   ]);
 
   assert.match(swift, /@objc\(PictureInPicture\)/);
   assert.match(swift, /RCTEventEmitter/);
   assert.match(swift, /"preparedSourceProtocolVersion"\s*:\s*PreparedNativePlaybackSource\.preparedSourceProtocolVersion/);
-  assert.match(swift, /supportedEvents\(\).*\["MOVIX_PICTURE_IN_PICTURE"\]/s);
+  assert.match(swift, /supportedEvents\(\).*\["ORVIX_PICTURE_IN_PICTURE"\]/s);
   for (const method of [
     'prepare',
     'acknowledgeWebViewPaused',
@@ -111,8 +111,8 @@ test('iOS PiP React module exposes the complete v1 handoff API and one event', a
 
 test('iOS PiP retains a canonical MediaProxy ownership lease and is wired to both targets', async () => {
   const [server, project] = await Promise.all([
-    read('ios/Movix/Proxy/MediaProxyServer.swift'),
-    read('ios/Movix.xcodeproj/project.pbxproj'),
+    read('ios/Orvix/Proxy/MediaProxyServer.swift'),
+    read('ios/Orvix.xcodeproj/project.pbxproj'),
   ]);
 
   assert.match(server, /retainForNativePlayback\(_\s+localURL:\s*URL\)\s+async\s*->\s*MediaProxyAccessLease\?/);

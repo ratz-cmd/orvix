@@ -31,7 +31,7 @@ const VIP_PAYMENT_METHODS = Object.freeze({
 });
 const VIP_PAYMENT_METHOD_ENUM_SQL = "ENUM('btc', 'ltc', 'cryptogate', 'paygate_hosted', 'autobuy', 'payblis')";
 
-const DEFAULT_SUPPORT_TELEGRAM_URL = 'https://t.me/movix_site';
+const DEFAULT_SUPPORT_TELEGRAM_URL = 'https://t.me/orvix_site';
 const FINAL_STATUSES = new Set(['delivered', 'cancelled']);
 const DEFAULT_EXPIRATION_MINUTES = 210;
 const DEFAULT_PAYGATE_MIN_PAID_RATIO = 0.60;
@@ -1562,8 +1562,8 @@ async function createCryptoGateVipInvoice(pool, payload, context = {}) {
       currency: 'EUR',
       email: normalizedEmail,
       orderId: publicId,
-      label: `Movix VIP ${buildDurationLabel(pack.vipYears)}`,
-      description: `Pack VIP Movix - ${buildDurationLabel(pack.vipYears)}`
+      label: `Orvix VIP ${buildDurationLabel(pack.vipYears)}`,
+      description: `Pack VIP Orvix - ${buildDurationLabel(pack.vipYears)}`
     });
   } catch (error) {
     const mapped = createVipInvoiceError(
@@ -1688,7 +1688,7 @@ async function createPayblisVipInvoice(pool, { pack, recipientMode, payerEmail, 
     secretKey,
     sandbox: payblisMod.isPayblisSandbox(),
     amountEur: pack.amountEur,
-    productName: `Movix VIP ${buildDurationLabel(pack.vipYears)}`,
+    productName: `Orvix VIP ${buildDurationLabel(pack.vipYears)}`,
     refOrder,
     payerEmail: normalizedEmail,
     customerName,

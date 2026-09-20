@@ -609,7 +609,7 @@ const VAVOO_SLUG_TO_GROUP = Object.fromEntries(
 
 // `item.url` vaut « https://kool.to/kool-iptv/play/<id> » : on n'en garde que
 // le préfixe, l'id étant reconstruit à la résolution (les doublons de nom
-// portent un suffixe `~n` côté Movix qui n'existe pas en amont).
+// portent un suffixe `~n` côté Orvix qui n'existe pas en amont).
 function extractVavooPlayPrefix(items) {
   for (const item of items) {
     const url = typeof item?.url === "string" ? item.url : "";

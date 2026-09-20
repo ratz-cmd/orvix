@@ -1,6 +1,6 @@
-export const SITE_NAME = 'Movix'
+export const SITE_NAME = 'Orvix'
 export const CDN_ASSETS_BASE
-  = 'https://cdn.rcd.gg/PreMiD/websites/M/Movix/assets'
+  = 'https://cdn.rcd.gg/PreMiD/websites/M/Orvix/assets'
 export const FALLBACK_LOGO = `${CDN_ASSETS_BASE}/logo.png`
 
 export const PRESENCE_ICONS = {
@@ -55,7 +55,7 @@ export const SAFE_BUTTON_RULES: Array<{
 
 export const NON_BREAKING_SPACE_PATTERN = /\u00A0/g
 export const WHITESPACE_PATTERN = /\s+/g
-export const STRIP_SITE_NAME_PATTERN = /\s*(?:[-:]\s*)?Movix$/i
+export const STRIP_SITE_NAME_PATTERN = /\s*(?:[-:]\s*)?Orvix$/i
 export const HTTPS_URL_PATTERN = /^https:\/\//i
 export const WORD_SEPARATOR_PATTERN = /[_-]+/g
 export const WORD_INITIAL_PATTERN = /\b\w/g

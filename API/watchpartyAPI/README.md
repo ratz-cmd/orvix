@@ -1,6 +1,6 @@
 # WatchParty API
 
-La WatchParty est le service temps réel de Movix. C'est lui qui gère les rooms, le chat, les rôles, les votes, la synchro de lecture et la persistance minimale entre deux redémarrages.
+La WatchParty est le service temps réel de Orvix. C'est lui qui gère les rooms, le chat, les rôles, les votes, la synchro de lecture et la persistance minimale entre deux redémarrages.
 
 Le service est volontairement concentré dans un seul fichier ESM, `watchparty.js`, qui combine Express, serveur HTTP et namespace Socket.IO.
 
@@ -52,8 +52,8 @@ Sans `WATCHPARTY_REST_CORS_ORIGIN` / `WATCHPARTY_SOCKET_CORS_ORIGIN`, seul
 les credentials CORS (une origine reflétée avec credentials est exploitable).
 
 Ces deux variables acceptent, séparés par des virgules : une origine
-(`https://movix.fun`), un domaine nu (`movix.fun`), ou l'URL d'une **liste de
-miroirs** (`https://movix.online/address.json`). Une URL avec un chemin est
+(`https://orvix.fun`), un domaine nu (`orvix.fun`), ou l'URL d'une **liste de
+miroirs** (`https://orvix.online/address.json`). Une URL avec un chemin est
 reconnue comme une liste et téléchargée au démarrage puis toutes les 10 minutes.
 
 Le serveur y retient `primary` et `active` et ignore délibérément `blocked` :

@@ -29,15 +29,15 @@ function assertBalancedPBX(project) {
 }
 
 test('Cast models enforce bounded metadata, content types and valid UTF-8 WebVTT', async () => {
-  const source = await read('../ios/Movix/Cast/CastModels.swift');
+  const source = await read('../ios/Orvix/Cast/CastModels.swift');
 
   assert.match(source, /enum CastRelayError: String, Error, Equatable, Sendable/);
   for (const code of [
-    'MOVIX_CAST_SOURCE_INVALID',
-    'MOVIX_CAST_CONTENT_TYPE_UNSUPPORTED',
-    'MOVIX_CAST_TEXT_TRACK_INVALID',
-    'MOVIX_CAST_TOO_MANY_TRACKS',
-    'MOVIX_CAST_LOCAL_SOURCE_UNAVAILABLE',
+    'ORVIX_CAST_SOURCE_INVALID',
+    'ORVIX_CAST_CONTENT_TYPE_UNSUPPORTED',
+    'ORVIX_CAST_TEXT_TRACK_INVALID',
+    'ORVIX_CAST_TOO_MANY_TRACKS',
+    'ORVIX_CAST_LOCAL_SOURCE_UNAVAILABLE',
   ]) assert.match(source, new RegExp(code));
   assert.match(source, /maximumTrackCount\s*=\s*16/);
   assert.match(source, /maximumInlineVTTBytes\s*=\s*2 \* 1_024 \* 1_024/);
@@ -54,7 +54,7 @@ test('Cast models enforce bounded metadata, content types and valid UTF-8 WebVTT
 });
 
 test('relay owns a cryptographic lifecycle session without an absolute TTL', async () => {
-  const source = await read('../ios/Movix/Cast/CastRelayServer.swift');
+  const source = await read('../ios/Orvix/Cast/CastRelayServer.swift');
 
   assert.match(source, /actor CastRelaySessionStore/);
   assert.match(source, /SecRandomCopyBytes/);
@@ -73,7 +73,7 @@ test('relay owns a cryptographic lifecycle session without an absolute TTL', asy
 });
 
 test('listener binds only the selected address and rejects peers before reading', async () => {
-  const source = await read('../ios/Movix/Cast/CastRelayServer.swift');
+  const source = await read('../ios/Orvix/Cast/CastRelayServer.swift');
 
   assert.match(source, /protocol CastRelayListenerFactory/);
   assert.match(source, /requiredLocalEndpoint\s*=\s*\.hostPort/);
@@ -86,7 +86,7 @@ test('listener binds only the selected address and rejects peers before reading'
 });
 
 test('relay HTTP is strict and applies receiver-facing CORS and PNA itself', async () => {
-  const source = await read('../ios/Movix/Cast/CastRelayServer.swift');
+  const source = await read('../ios/Orvix/Cast/CastRelayServer.swift');
 
   assert.match(source, /MediaProxyHTTPParser\.parse/);
   assert.match(source, /method == "OPTIONS"/);
@@ -106,7 +106,7 @@ test('relay HTTP is strict and applies receiver-facing CORS and PNA itself', asy
 });
 
 test('relay reuses pinned upstream and HLS rewriting with bounded backpressure', async () => {
-  const source = await read('../ios/Movix/Cast/CastRelayServer.swift');
+  const source = await read('../ios/Orvix/Cast/CastRelayServer.swift');
 
   assert.match(source, /protocol CastRelayUpstreamOpening/);
   assert.match(source, /extension MediaProxyUpstream: CastRelayUpstreamOpening/);
@@ -127,8 +127,8 @@ test('relay reuses pinned upstream and HLS rewriting with bounded backpressure',
 
 test('relay resource kinds make transformed HLS and text fail closed', async () => {
   const [models, relay] = await Promise.all([
-    read('../ios/Movix/Cast/CastModels.swift'),
-    read('../ios/Movix/Cast/CastRelayServer.swift'),
+    read('../ios/Orvix/Cast/CastModels.swift'),
+    read('../ios/Orvix/Cast/CastRelayServer.swift'),
   ]);
 
   assert.match(models, /enum CastTextTrackFormat: String, Hashable, Sendable/);
@@ -147,8 +147,8 @@ test('relay resource kinds make transformed HLS and text fail closed', async () 
 
 test('preparer performs bounded pinned inspection before starting a relay', async () => {
   const [models, preparer] = await Promise.all([
-    read('../ios/Movix/Cast/CastModels.swift'),
-    read('../ios/Movix/Cast/CastMediaPreparer.swift'),
+    read('../ios/Orvix/Cast/CastModels.swift'),
+    read('../ios/Orvix/Cast/CastMediaPreparer.swift'),
   ]);
 
   assert.match(models, /let hlsSegmentFormat: String\?/);
@@ -170,7 +170,7 @@ test('preparer performs bounded pinned inspection before starting a relay', asyn
 });
 
 test('relay lifecycle is awaited, idempotent and stops on every required invalidation', async () => {
-  const source = await read('../ios/Movix/Cast/CastRelayServer.swift');
+  const source = await read('../ios/Orvix/Cast/CastRelayServer.swift');
 
   assert.match(source, /actor CastRelayStopGate/);
   assert.match(source, /func stop\(\) async/);
@@ -188,8 +188,8 @@ test('relay lifecycle is awaited, idempotent and stops on every required invalid
 
 test('preparer resolves owned loopback targets and leaves replacement switching to the coordinator', async () => {
   const [models, preparer] = await Promise.all([
-    read('../ios/Movix/Cast/CastModels.swift'),
-    read('../ios/Movix/Cast/CastMediaPreparer.swift'),
+    read('../ios/Orvix/Cast/CastModels.swift'),
+    read('../ios/Orvix/Cast/CastMediaPreparer.swift'),
   ]);
 
   assert.match(preparer, /protocol MediaProxyCastResolving/);
@@ -206,8 +206,8 @@ test('preparer resolves owned loopback targets and leaves replacement switching 
 
 test('XCTest sources cover security, streaming, lifecycle, duration and rollback behavior', async () => {
   const [relayTests, preparerTests] = await Promise.all([
-    read('../ios/MovixTests/CastRelayServerTests.swift'),
-    read('../ios/MovixTests/CastMediaPreparerTests.swift'),
+    read('../ios/OrvixTests/CastRelayServerTests.swift'),
+    read('../ios/OrvixTests/CastMediaPreparerTests.swift'),
   ]);
   const all = `${relayTests}\n${preparerTests}`;
   for (const coverage of [
@@ -239,7 +239,7 @@ test('XCTest sources cover security, streaming, lifecycle, duration and rollback
 });
 
 test('Xcode wires three Cast sources and two XCTest files into only intended phases', async () => {
-  const project = await read('../ios/Movix.xcodeproj/project.pbxproj');
+  const project = await read('../ios/Orvix.xcodeproj/project.pbxproj');
   assertBalancedPBX(project);
 
   for (const source of [

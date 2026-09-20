@@ -21,7 +21,7 @@ async function logSyncErrorToDiscord(errorMessage, context = {}) {
         { name: 'Profile ID', value: context.profileId ? `\`${context.profileId.substring(0, 8)}...\`` : 'N/A', inline: true },
       ],
       timestamp: new Date().toISOString(),
-      footer: { text: 'Movix Sync API' }
+      footer: { text: 'Orvix Sync API' }
     };
 
     if (context.error) {

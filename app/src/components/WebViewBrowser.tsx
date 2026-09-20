@@ -81,7 +81,7 @@ const BASE_INJECTION_OPTIONS = {
   // une page https, mais route un schéma personnalisé vers le natif. Le
   // handler est enregistré sur la configuration WKWebView (patch
   // react-native-webview) et relaie vers le proxy local.
-  mediaProxyScheme: Platform.OS === 'ios' ? 'movix-media' : null,
+  mediaProxyScheme: Platform.OS === 'ios' ? 'orvix-media' : null,
 } as const;
 
 // Construit une fois par état de capture, pas à chaque rendu : le script
@@ -195,7 +195,7 @@ const WebViewBrowser = forwardRef<WebViewBrowserRef, WebViewBrowserProps>(
     // `window.open` et les liens `target="_blank"` : sans ce gestionnaire,
     // react-native-webview recharge la cible dans le WebView courant, ce qui
     // fait entrer les pop-ups publicitaires dans l'application. Seules les
-    // fenêtres de même origine que la page Movix restent internes ; tout le
+    // fenêtres de même origine que la page Orvix restent internes ; tout le
     // reste part vers le navigateur par défaut du système.
     const onOpenWindow = useCallback((event: WebViewOpenWindowEvent) => {
       const targetUrl = event.nativeEvent.targetUrl;
@@ -266,7 +266,7 @@ const WebViewBrowser = forwardRef<WebViewBrowserRef, WebViewBrowserProps>(
         }}
         // Navigation
         onNavigationStateChange={onNavigationStateChange}
-        // Pop-ups : hors origine Movix -> navigateur système
+        // Pop-ups : hors origine Orvix -> navigateur système
         setSupportMultipleWindows={true}
         onOpenWindow={onOpenWindow}
         // Errors

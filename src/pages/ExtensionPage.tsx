@@ -58,9 +58,9 @@ const faqItemsData = [
   { questionKey: 'extension.faq5Q', answerKey: 'extension.faq5A' },
 ];
 
-const USERSCRIPT_URL = 'https://github.com/orvixcorp/OrvixOpenSource/tree/main/userscript';
-const USERSCRIPT_INSTALL_URL = 'https://github.com/orvixcorp/OrvixOpenSource/raw/refs/heads/main/userscript/orvix.user.js';
-const ORVIX_OPEN_SOURCE_GITHUB_URL = 'https://github.com/orvixcorp/OrvixOpenSource';
+const USERSCRIPT_URL = 'https://github.com/ratz-cmd/orvix/tree/main/userscript';
+const USERSCRIPT_INSTALL_URL = 'https://github.com/ratz-cmd/orvix/raw/refs/heads/main/userscript/orvix.user.js';
+const ORVIX_OPEN_SOURCE_GITHUB_URL = 'https://github.com/ratz-cmd/orvix';
 const TAMPERMONKEY_URL = 'https://www.tampermonkey.net/';
 
 const installTutorial = {
@@ -99,11 +99,11 @@ const ExtensionPage: React.FC = () => {
 
       if (
         orvixWindow.__ORVIX_EXTENSION_INSTALLED ||
-        orvixWindow.__MOVIX_EXTENSION_INSTALLED ||
+        orvixWindow.__ORVIX_EXTENSION_INSTALLED ||
         orvixWindow.hasOrvixExtension ||
-        orvixWindow.hasMovixExtension ||
+        orvixWindow.hasOrvixExtension ||
         document.documentElement.dataset.orvixExtension === 'true' ||
-        document.documentElement.dataset.movixExtension === 'true'
+        document.documentElement.dataset.orvixExtension === 'true'
       ) {
         setExtensionDetected(true);
       }
@@ -116,14 +116,14 @@ const ExtensionPage: React.FC = () => {
       setExtensionDetected(true);
     };
     window.addEventListener('orvix-extension-loaded', handleExtensionLoaded);
-    window.addEventListener('movix-extension-loaded', handleExtensionLoaded);
+    window.addEventListener('orvix-extension-loaded', handleExtensionLoaded);
     
     // Re-check périodique au cas où
     const interval = setInterval(checkExtension, 1000);
     
     return () => {
       window.removeEventListener('orvix-extension-loaded', handleExtensionLoaded);
-      window.removeEventListener('movix-extension-loaded', handleExtensionLoaded);
+      window.removeEventListener('orvix-extension-loaded', handleExtensionLoaded);
       clearInterval(interval);
     };
   }, []);

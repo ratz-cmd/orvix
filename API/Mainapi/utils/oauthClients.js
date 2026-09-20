@@ -4,14 +4,14 @@
  * historique (`loadOAuthClients()`, `getOAuthClient()`) pour ne pas avoir
  * à toucher aux 30+ call sites.
  *
- * L'env `MOVIX_OAUTH_CLIENTS_JSON` reste supportée en surcouche (dev local
+ * L'env `ORVIX_OAUTH_CLIENTS_JSON` reste supportée en surcouche (dev local
  * uniquement) ; le fichier `data/oauth-clients.json` n'est plus lu une fois
  * la migration vers DB effectuée (il est archivé en `.migrated`).
  */
 
 const { getCachedClients } = require('./oauthClientsDb');
 
-const OAUTH_CLIENTS_ENV = 'MOVIX_OAUTH_CLIENTS_JSON';
+const OAUTH_CLIENTS_ENV = 'ORVIX_OAUTH_CLIENTS_JSON';
 const KNOWN_OAUTH_SCOPES = [
   // Compte / profils
   'profile.read',
@@ -51,7 +51,7 @@ const KNOWN_OAUTH_SCOPES = [
   'ratings.manage',
 ];
 const DEFAULT_SCOPE = 'profile.read';
-const OAUTH_DEBUG_ENABLED = process.env.MOVIX_OAUTH_DEBUG === 'true';
+const OAUTH_DEBUG_ENABLED = process.env.ORVIX_OAUTH_DEBUG === 'true';
 
 // Préfixe public servant les icônes d'apps (relatif à l'API : `/oauth-icons/<filename>`).
 // Si tu sers via un CDN, set OAUTH_ICON_PUBLIC_BASE_URL.

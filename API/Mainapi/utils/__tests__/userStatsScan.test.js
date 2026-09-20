@@ -8,7 +8,7 @@ const { aggregateUserFiles } = require('../userStatsScan');
 let dir;
 
 before(async () => {
-  dir = await fsp.mkdtemp(path.join(os.tmpdir(), 'movix-users-'));
+  dir = await fsp.mkdtemp(path.join(os.tmpdir(), 'orvix-users-'));
   await fsp.writeFile(path.join(dir, 'bip39-aaa.json'), JSON.stringify({
     auth: JSON.stringify({ userProfile: { provider: 'bip39', createdAt: '2026-05-30T10:00:00Z' } }),
     bip39_auth: 'true',

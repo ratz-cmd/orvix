@@ -145,9 +145,9 @@ function makeWebViewHarness() {
 }
 
 const trustedContext = (overrides = {}) => ({
-  sourceUrl: 'https://movix.tax/watch/movie/1',
-  topLevelUrl: 'https://movix.tax/watch/movie/1',
-  trustedOrigins: ['https://movix.tax/'],
+  sourceUrl: 'https://orvix.tax/watch/movie/1',
+  topLevelUrl: 'https://orvix.tax/watch/movie/1',
+  trustedOrigins: ['https://orvix.tax/'],
   isTopFrame: false,
   navigationGeneration: 7,
   ...overrides,
@@ -173,15 +173,15 @@ async function openMedia(bridge, ref, context = trustedContext(), overrides = {}
     generation: documentGeneration,
     url: 'https://cdn.example/movie/master.m3u8',
     method: 'GET',
-    headers: { Referer: 'https://movix.tax/' },
+    headers: { Referer: 'https://orvix.tax/' },
     ...overrides,
   }), ref, context);
 }
 
 test('iOS exports the exact MediaProxy Swift and Objective-C promise bridge', async () => {
   const [swift, objc] = await Promise.all([
-    read('ios/Movix/Proxy/MediaProxyModule.swift'),
-    read('ios/Movix/Proxy/MediaProxyModule.m'),
+    read('ios/Orvix/Proxy/MediaProxyModule.swift'),
+    read('ios/Orvix/Proxy/MediaProxyModule.m'),
   ]);
 
   assert.match(swift, /@objc\(MediaProxy\)\s*\nfinal class MediaProxyModule: NSObject/);
@@ -206,8 +206,8 @@ test('iOS exports the exact MediaProxy Swift and Objective-C promise bridge', as
   assert.match(objc, /RCT_EXTERN_METHOD\(resolveForCast:\(NSString \*\)localURL\s*resolve:\(RCTPromiseResolveBlock\)resolve\s*reject:\(RCTPromiseRejectBlock\)reject\)/s);
 });
 
-test('Xcode compiles both MediaProxy bridge files only in the Movix app target', async () => {
-  const project = await read('ios/Movix.xcodeproj/project.pbxproj');
+test('Xcode compiles both MediaProxy bridge files only in the Orvix app target', async () => {
+  const project = await read('ios/Orvix.xcodeproj/project.pbxproj');
   const testSources = project.match(/00E356EA1AD99517003FC87E \/\* Sources \*\/ = \{[\s\S]*?\n\s*\};/)?.[0] ?? '';
   const appSources = project.match(/13B07F871A680F5B00A75B9A \/\* Sources \*\/ = \{[\s\S]*?\n\s*\};/)?.[0] ?? '';
   const proxyGroup = project.match(/B30000000000000000000001 \/\* Proxy \*\/ = \{[\s\S]*?\n\s*\};/)?.[0] ?? '';
@@ -259,7 +259,7 @@ test('injection keeps proxy routing separate from explicit Android/iOS-v1 PiP mo
   assert.match(runtime, /GM_MEDIA_PROXY_REGISTER_CAPABILITY/);
   assert.match(runtime, /crypto\.getRandomValues/);
   assert.match(runtime, /capability:[^,\n]+,[\s\S]*?generation:/);
-  assert.doesNotMatch(runtime, /window\.__MOVIX_MEDIA_PROXY_(?:CAPABILITY|GENERATION)/);
+  assert.doesNotMatch(runtime, /window\.__ORVIX_MEDIA_PROXY_(?:CAPABILITY|GENERATION)/);
   assert.match(runtime, /\.catch\(function\(\) \{\s*if \(!cancelled\) \{\s*sendBridgeRequest\(details\);/);
 });
 
@@ -298,7 +298,7 @@ test('iOS runtime keeps capability material lexical and sends it only with proxy
       const message = JSON.parse(raw);
       posted.push(message);
       if (message.type === 'GM_OPEN_MEDIA_PROXY') {
-        window.dispatchEvent(new CustomEvent('__MOVIX_BRIDGE_RESPONSE', {
+        window.dispatchEvent(new CustomEvent('__ORVIX_BRIDGE_RESPONSE', {
           detail: {
             id: message.id,
             success: true,
@@ -339,8 +339,8 @@ test('iOS runtime keeps capability material lexical and sends it only with proxy
   assert.equal(posted[1].capability, posted[0].capability);
   assert.equal(posted[1].generation, posted[0].generation);
   assert.notEqual(posted[0].capability, posted[0].generation);
-  assert.equal(window.__MOVIX_MEDIA_PROXY_CAPABILITY, undefined);
-  assert.equal(window.__MOVIX_MEDIA_PROXY_GENERATION, undefined);
+  assert.equal(window.__ORVIX_MEDIA_PROXY_CAPABILITY, undefined);
+  assert.equal(window.__ORVIX_MEDIA_PROXY_GENERATION, undefined);
 });
 
 test('trusted iOS main-document capability opens the native proxy without isTopFrame', async () => {
@@ -354,7 +354,7 @@ test('trusted iOS main-document capability opens the native proxy without isTopF
   assert.equal(openCalls[0][0], 'https://cdn.example/movie/master.m3u8');
   assert.equal(openCalls[0][1], 'GET');
   assert.equal(JSON.stringify(openCalls[0][2]), JSON.stringify({
-    Referer: 'https://movix.tax/',
+    Referer: 'https://orvix.tax/',
   }));
   assert.equal(responses.at(-1)?.success, true);
   assert.equal(responses.at(-1)?.value, validIOSLocalURL(28123));
@@ -373,7 +373,7 @@ test('iOS rejects subframe, untrusted, mismatched, and stale capabilities immedi
       topLevelUrl: 'https://untrusted.invalid/watch',
     }),
     trustedContext({
-      sourceUrl: 'https://movix.tax/iframe',
+      sourceUrl: 'https://orvix.tax/iframe',
     }),
   ];
   for (const context of rejectedContexts) {
@@ -422,7 +422,7 @@ test('iOS sends the provider encoding and origin to the native media proxy', asy
   ]) {
     await openMedia(bridge, ref, trustedContext(), {
       url: `https://${host}/master.m3u8`,
-      headers: { Origin: 'https://movix.tax', Referer: 'https://movix.tax/', Range: 'bytes=0-1023' },
+      headers: { Origin: 'https://orvix.tax', Referer: 'https://orvix.tax/', Range: 'bytes=0-1023' },
     });
     assert.equal(responses.at(-1)?.success, true);
     const headers = openCalls.at(-1)[2];

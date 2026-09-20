@@ -30,7 +30,7 @@ function assertBalancedPBX(project) {
 }
 
 test('Cast network models keep parsed addresses, prefix and active interface state', async () => {
-  const source = await read('../ios/Movix/Cast/CastNetworkSelector.swift');
+  const source = await read('../ios/Orvix/Cast/CastNetworkSelector.swift');
 
   assert.match(source, /struct LocalInterfaceAddress: Equatable, Sendable/);
   assert.match(source, /let address: MediaProxyIPAddress/);
@@ -44,7 +44,7 @@ test('Cast network models keep parsed addresses, prefix and active interface sta
 });
 
 test('Cast selector uses subnet masks, longest prefix and stable tie breakers', async () => {
-  const source = await read('../ios/Movix/Cast/CastNetworkSelector.swift');
+  const source = await read('../ios/Orvix/Cast/CastNetworkSelector.swift');
 
   assert.match(source, /static func select\(/);
   assert.match(source, /candidate\.type == \.wifi/);
@@ -61,7 +61,7 @@ test('Cast selector uses subnet masks, longest prefix and stable tie breakers', 
 });
 
 test('Cast selector rejects non-unicast, mapped and scoped addresses and brackets IPv6', async () => {
-  const source = await read('../ios/Movix/Cast/CastNetworkSelector.swift');
+  const source = await read('../ios/Orvix/Cast/CastNetworkSelector.swift');
 
   assert.match(source, /invalidReceiverAddress/);
   assert.match(source, /unusableReceiverAddress/);
@@ -75,7 +75,7 @@ test('Cast selector rejects non-unicast, mapped and scoped addresses and bracket
 });
 
 test('production collector crosses active NWPath Wi-Fi interfaces with getifaddrs', async () => {
-  const source = await read('../ios/Movix/Cast/CastNetworkSelector.swift');
+  const source = await read('../ios/Orvix/Cast/CastNetworkSelector.swift');
 
   assert.match(source, /import Network/);
   assert.match(source, /NWPathMonitor\(requiredInterfaceType: \.wifi\)/);
@@ -97,7 +97,7 @@ test('production collector crosses active NWPath Wi-Fi interfaces with getifaddr
 });
 
 test('XCTest covers route, subnet, address safety, lifecycle and arbitrary Wi-Fi names', async () => {
-  const tests = await read('../ios/MovixTests/CastNetworkSelectorTests.swift');
+  const tests = await read('../ios/OrvixTests/CastNetworkSelectorTests.swift');
 
   for (const coverage of [
     'testSelectsOnlyActiveRunningWiFiOnTheReceiverSubnet',
@@ -129,7 +129,7 @@ test('XCTest covers route, subnet, address safety, lifecycle and arbitrary Wi-Fi
 });
 
 test('Xcode wires selector and tests into only their intended Sources phases', async () => {
-  const project = await read('../ios/Movix.xcodeproj/project.pbxproj');
+  const project = await read('../ios/Orvix.xcodeproj/project.pbxproj');
   assertBalancedPBX(project);
 
   for (const source of ['CastNetworkSelector.swift', 'CastNetworkSelectorTests.swift']) {

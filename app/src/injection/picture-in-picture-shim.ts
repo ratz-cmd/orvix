@@ -18,8 +18,8 @@ export function buildPictureInPictureShim(
   if (!nativeWebView || typeof nativeWebView.postMessage !== 'function') return;
   if (!window.crypto || typeof window.crypto.getRandomValues !== 'function') return;
   if (typeof HTMLVideoElement !== 'function') return;
-  if (mode === 'android' && window.__MOVIX_ANDROID_PIP_INSTALLED__) return;
-  if (mode === 'ios-native-v1' && window.__MOVIX_IOS_NATIVE_PIP_V1_INSTALLED__) return;
+  if (mode === 'android' && window.__ORVIX_ANDROID_PIP_INSTALLED__) return;
+  if (mode === 'ios-native-v1' && window.__ORVIX_IOS_NATIVE_PIP_V1_INSTALLED__) return;
 
   var capabilityBytes = new Uint8Array(16);
   try {
@@ -50,8 +50,8 @@ export function buildPictureInPictureShim(
       ? document.exitPictureInPicture
       : null;
 
-  if (mode === 'android') window.__MOVIX_ANDROID_PIP_INSTALLED__ = true;
-  else window.__MOVIX_IOS_NATIVE_PIP_V1_INSTALLED__ = true;
+  if (mode === 'android') window.__ORVIX_ANDROID_PIP_INSTALLED__ = true;
+  else window.__ORVIX_IOS_NATIVE_PIP_V1_INSTALLED__ = true;
 
   var nativePostMessage = nativeWebView.postMessage.bind(nativeWebView);
   var pending = Object.create(null);
@@ -66,10 +66,10 @@ export function buildPictureInPictureShim(
   var iosHandoff = null;
   var MAX_POSITION_SEC = 366 * 86400;
   var CSS = [
-    'html.movix-native-pip,html.movix-native-pip body{background:#000!important;overflow:hidden!important}',
-    'html.movix-native-pip body *{visibility:hidden!important}',
-    'html.movix-native-pip [data-movix-native-pip-ancestor]{visibility:visible!important;overflow:visible!important;transform:none!important;clip:auto!important;opacity:1!important}',
-    'html.movix-native-pip video[data-movix-native-pip-target]{visibility:visible!important;position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;object-fit:contain!important;background:#000!important;z-index:2147483647!important}',
+    'html.orvix-native-pip,html.orvix-native-pip body{background:#000!important;overflow:hidden!important}',
+    'html.orvix-native-pip body *{visibility:hidden!important}',
+    'html.orvix-native-pip [data-orvix-native-pip-ancestor]{visibility:visible!important;overflow:visible!important;transform:none!important;clip:auto!important;opacity:1!important}',
+    'html.orvix-native-pip video[data-orvix-native-pip-target]{visibility:visible!important;position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;object-fit:contain!important;background:#000!important;z-index:2147483647!important}',
   ].join('');
 
   function postNative(message) {
@@ -174,7 +174,7 @@ export function buildPictureInPictureShim(
       clear: clearMediaSource,
     });
     try {
-      Object.defineProperty(window, '__MOVIX_NATIVE_MEDIA_SOURCE_V1__', {
+      Object.defineProperty(window, '__ORVIX_NATIVE_MEDIA_SOURCE_V1__', {
         value: publisher,
         writable: false,
         enumerable: false,
@@ -183,7 +183,7 @@ export function buildPictureInPictureShim(
     } catch (error) {
       return;
     }
-    if (window.__MOVIX_NATIVE_MEDIA_SOURCE_V1__ !== publisher) return;
+    if (window.__ORVIX_NATIVE_MEDIA_SOURCE_V1__ !== publisher) return;
   }
 
   function applyNativeAction(action) {
@@ -229,18 +229,18 @@ export function buildPictureInPictureShim(
 
   function clearMarkers() {
     for (var targetIndex = 0; targetIndex < markedTargets.length; targetIndex += 1) {
-      markedTargets[targetIndex].removeAttribute('data-movix-native-pip-target');
+      markedTargets[targetIndex].removeAttribute('data-orvix-native-pip-target');
     }
     markedTargets = [];
     for (var ancestorIndex = 0; ancestorIndex < markedAncestors.length; ancestorIndex += 1) {
-      markedAncestors[ancestorIndex].removeAttribute('data-movix-native-pip-ancestor');
+      markedAncestors[ancestorIndex].removeAttribute('data-orvix-native-pip-ancestor');
     }
     markedAncestors = [];
   }
 
   function removeAndroidPresentation() {
     var root = document.documentElement;
-    if (root) root.classList.remove('movix-native-pip');
+    if (root) root.classList.remove('orvix-native-pip');
     clearMarkers();
     if (styleElement && styleElement.parentNode) {
       styleElement.parentNode.removeChild(styleElement);
@@ -260,11 +260,11 @@ export function buildPictureInPictureShim(
     clearMarkers();
     selectedVideo = video;
     var root = document.documentElement;
-    if (root) root.classList.add('movix-native-pip');
-    video.setAttribute('data-movix-native-pip-target', '');
+    if (root) root.classList.add('orvix-native-pip');
+    video.setAttribute('data-orvix-native-pip-target', '');
     markedTargets.push(video);
     for (var ancestor = video.parentElement; ancestor; ancestor = ancestor.parentElement) {
-      ancestor.setAttribute('data-movix-native-pip-ancestor', '');
+      ancestor.setAttribute('data-orvix-native-pip-ancestor', '');
       markedAncestors.push(ancestor);
     }
     if (!styleElement) {
@@ -640,7 +640,7 @@ export function buildPictureInPictureShim(
     },
   });
 
-  window.addEventListener('__MOVIX_PIP_SHIM__', function(event) {
+  window.addEventListener('__ORVIX_PIP_SHIM__', function(event) {
     var detail = event && event.detail;
     if (!detail || typeof detail !== 'object') return;
 

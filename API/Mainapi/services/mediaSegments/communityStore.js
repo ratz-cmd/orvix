@@ -1,7 +1,7 @@
 /**
- * Propositions de sequences relevees par la communaute Movix, et leurs votes.
+ * Propositions de sequences relevees par la communaute Orvix, et leurs votes.
  *
- * C'est la seule source d'horodatages qui appartient a Movix : les quatre
+ * C'est la seule source d'horodatages qui appartient a Orvix : les quatre
  * autres sont des bases tierces en lecture seule. Une proposition passe par
  * trois etats, entierement pilotes par le score :
  *
@@ -9,7 +9,7 @@
  *                              vote, mais elle ne declenche aucun saut.
  *   score >= ADOPTION_SCORE  → « adoptee » : elle rejoint le consensus au meme
  *                              titre qu'une base externe, via le fournisseur
- *                              `movix`.
+ *                              `orvix`.
  *   score <= REJECTION_SCORE → supprimee, avec ses votes (ON DELETE CASCADE).
  *
  * Tout est en millisecondes : c'est la resolution a laquelle le studio du
@@ -398,7 +398,7 @@ async function submitSegment({
 
   // Le libelle d'auteur n'est PAS accepte depuis la requete : affiche aux
   // autres utilisateurs sur la carte de vote, il permettrait de s'annoncer
-  // « Equipe Movix ». La colonne reste, pour une valeur derivee du compte le
+  // « Equipe Orvix ». La colonne reste, pour une valeur derivee du compte le
   // jour ou on en affichera une.
   const label = null;
 
@@ -593,7 +593,7 @@ async function deleteSubmissionAsModerator(submissionId) {
 
 /**
  * Propositions adoptees, au format « proposition de fournisseur » attendu par
- * le consensus. C'est le point d'entree du fournisseur `movix`.
+ * le consensus. C'est le point d'entree du fournisseur `orvix`.
  */
 async function getAdoptedCandidates({ mediaType, tmdbId, season, episode, durationSec }) {
   const durationMs = Number.isFinite(durationSec) && durationSec > 0
@@ -613,7 +613,7 @@ async function getAdoptedCandidates({ mediaType, tmdbId, season, episode, durati
       // La confiance monte avec le nombre de voix, sans jamais atteindre 1 :
       // une base externe verifiee garde l'avantage a egalite de rang.
       confidence: Math.min(0.98, 0.7 + 0.03 * submission.votesUp),
-      source: 'movix',
+      source: 'orvix',
       match: 'exact',
       referenceLength: submission.referenceDurationMs / 1000,
     }));

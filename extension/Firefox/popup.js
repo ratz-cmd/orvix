@@ -1,4 +1,4 @@
-// Movix Extension - Popup Logic (Firefox)
+// Orvix Extension - Popup Logic (Firefox)
 const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
 
 document.addEventListener('DOMContentLoaded', async () => {

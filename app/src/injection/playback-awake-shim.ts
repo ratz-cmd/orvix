@@ -4,7 +4,7 @@ export function buildPlaybackAwakeShim(): string {
 (function() {
   'use strict';
   var lastActive = false;
-  window.MovixAndroidPlaybackAwake = {
+  window.OrvixAndroidPlaybackAwake = {
     setActive: function(active) {
       active = active === true;
       if (active === lastActive) return;
@@ -12,13 +12,13 @@ export function buildPlaybackAwakeShim(): string {
       if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
         window.ReactNativeWebView.postMessage(JSON.stringify({
           type: 'PLAYBACK_AWAKE_SET',
-          capability: 'MOVIX_PLAYBACK_AWAKE_V1',
+          capability: 'ORVIX_PLAYBACK_AWAKE_V1',
           active: active
         }));
       }
     }
   };
-  window.addEventListener('pagehide', function() { window.MovixAndroidPlaybackAwake.setActive(false); });
+  window.addEventListener('pagehide', function() { window.OrvixAndroidPlaybackAwake.setActive(false); });
 })();
 true;
 `;

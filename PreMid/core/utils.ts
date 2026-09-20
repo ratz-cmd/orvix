@@ -1149,7 +1149,7 @@ export function createSpecificPagePresence(
 
   if (privacyModeEnabled) {
     const presenceData = buildBasePresence(FALLBACK_LOGO)
-    presenceData.details = normalizeText(state) || s().browseMovix
+    presenceData.details = normalizeText(state) || s().browseOrvix
     return presenceData
   }
 

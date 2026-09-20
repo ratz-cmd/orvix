@@ -48,9 +48,6 @@ export function isOrvixAndroidCastBridgeCompatible(
   );
 }
 
-// Export also with the old name for backward compatibility with HLSPlayer
-export const isMovixAndroidCastBridgeCompatible = isOrvixAndroidCastBridgeCompatible;
-
 function createController(
   kind: CastRemoteController['kind'],
   backend: CastControllerBackend,

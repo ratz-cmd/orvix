@@ -16,9 +16,9 @@ const ast = ts.createSourceFile(
 
 function loadPublisherHelpers(window) {
   const names = new Set([
-    'isCanonicalMovixNativePlaybackUrl',
-    'publishMovixNativeMediaSource',
-    'clearMovixNativeMediaSource',
+    'isCanonicalOrvixNativePlaybackUrl',
+    'publishOrvixNativeMediaSource',
+    'clearOrvixNativeMediaSource',
   ]);
   const declarations = [];
   for (const statement of ast.statements) {
@@ -54,7 +54,7 @@ test('HLSPlayer publisher helper calls the injected facade only for canonical lo
   const calls = [];
   const generation = 'publisherGeneration_1234';
   const window = {
-    __MOVIX_NATIVE_MEDIA_SOURCE_V1__: {
+    __ORVIX_NATIVE_MEDIA_SOURCE_V1__: {
       publish: (...args) => {
         calls.push(['publish', ...args]);
         return generation;
@@ -70,18 +70,18 @@ test('HLSPlayer publisher helper calls the injected facade only for canonical lo
 
   for (const invalid of [
     'https://cdn.example/video.m3u8',
-    'blob:https://movix.example/id',
+    'blob:https://orvix.example/id',
     `${loopback}?query=1`,
     loopback.replace(':49152', ':01'),
     loopback.replace(':49152', ':65536'),
     loopback.replace('/p/', '/p//'),
   ]) {
-    assert.equal(helpers.publishMovixNativeMediaSource(video, invalid, 'hls'), null);
+    assert.equal(helpers.publishOrvixNativeMediaSource(video, invalid, 'hls'), null);
   }
   assert.deepEqual(calls, []);
 
-  assert.equal(helpers.publishMovixNativeMediaSource(video, loopback, 'hls'), generation);
-  helpers.clearMovixNativeMediaSource(video, generation);
+  assert.equal(helpers.publishOrvixNativeMediaSource(video, loopback, 'hls'), generation);
+  helpers.clearOrvixNativeMediaSource(video, generation);
   assert.deepEqual(calls, [
     ['publish', video, loopback, 'hls'],
     ['clear', video, generation],
@@ -91,15 +91,15 @@ test('HLSPlayer publisher helper calls the injected facade only for canonical lo
 test('HLSPlayer publishes immediately before every main MP4/HLS/native assignment and clears captured generations', () => {
   assert.match(
     source,
-    /(?:publishNativeMediaSource|publishMovixNativeMediaSource)\(\s*video,\s*normalizedSrc,\s*'mp4',?\s*\);\s*videoRef\.current\.src = normalizedSrc/,
+    /(?:publishNativeMediaSource|publishOrvixNativeMediaSource)\(\s*video,\s*normalizedSrc,\s*'mp4',?\s*\);\s*videoRef\.current\.src = normalizedSrc/,
   );
   assert.match(
     source,
-    /(?:publishNativeMediaSource|publishMovixNativeMediaSource)\(\s*video,\s*normalizedSrc,\s*'hls',?\s*\);\s*hls\.loadSource\(normalizedSrc\);\s*hls\.attachMedia\(video\)/,
+    /(?:publishNativeMediaSource|publishOrvixNativeMediaSource)\(\s*video,\s*normalizedSrc,\s*'hls',?\s*\);\s*hls\.loadSource\(normalizedSrc\);\s*hls\.attachMedia\(video\)/,
   );
   assert.match(
     source,
-    /(?:publishNativeMediaSource|publishMovixNativeMediaSource)\(\s*video,\s*normalizedSrc,\s*'hls',?\s*\);\s*video\.src = normalizedSrc/,
+    /(?:publishNativeMediaSource|publishOrvixNativeMediaSource)\(\s*video,\s*normalizedSrc,\s*'hls',?\s*\);\s*video\.src = normalizedSrc/,
   );
   assert.match(
     source,
@@ -107,7 +107,7 @@ test('HLSPlayer publishes immediately before every main MP4/HLS/native assignmen
   );
   assert.match(
     source,
-    /(?:publishNativeMediaSource|publishMovixNativeMediaSource)\(\s*videoRef\.current,\s*normalizedSrc,\s*'hls',?\s*\);\s*hls\.loadSource\(normalizedSrc\);\s*hls\.attachMedia\(videoRef\.current\)/,
+    /(?:publishNativeMediaSource|publishOrvixNativeMediaSource)\(\s*videoRef\.current,\s*normalizedSrc,\s*'hls',?\s*\);\s*hls\.loadSource\(normalizedSrc\);\s*hls\.attachMedia\(videoRef\.current\)/,
   );
   assert.match(
     source,

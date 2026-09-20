@@ -1,6 +1,6 @@
-# Movix — Application Mobile
+# Orvix — Application Mobile
 
-Application iOS & Android pour Movix. WebView avec l'extension Movix intégrée (remplacement du userscript Tampermonkey) et changeur DNS 1.1.1.1.
+Application iOS & Android pour Orvix. WebView avec l'extension Orvix intégrée (remplacement du userscript Tampermonkey) et changeur DNS 1.1.1.1.
 
 > ⚠️ **Statut iOS : build automatisé non signé**
 >
@@ -35,7 +35,7 @@ app/
 
 ### Comment ça marche
 
-1. **WebView** charge `movix.tax`
+1. **WebView** charge `orvix.tax`
 2. **Bridge runtime** est injecté AVANT le chargement de la page — fournit `GM_xmlhttpRequest`, `GM_getValue`, `GM_setValue`, `GM_deleteValue`, `unsafeWindow`
 3. **Userscript original** est injecté et fonctionne comme dans Tampermonkey
 4. Quand le userscript fait une requête via `GM_xmlhttpRequest`, le bridge envoie un message à React Native
@@ -91,17 +91,17 @@ L'APK sera dans `android/app/build/outputs/apk/release/`.
 
 ### iOS
 
-Le workflow GitHub Actions **iOS unsigned IPA** produit un artefact nommé `Movix-unsigned-<version>-<run-number>`. Depuis la racine du dépôt, remplacez les valeurs entre chevrons par celles du run à télécharger :
+Le workflow GitHub Actions **iOS unsigned IPA** produit un artefact nommé `Orvix-unsigned-<version>-<run-number>`. Depuis la racine du dépôt, remplacez les valeurs entre chevrons par celles du run à télécharger :
 
 ```bash
 gh run download <run-id> \
-  --name "Movix-unsigned-<version>-<run-number>" \
-  --dir Movix-unsigned-<version>-<run-number>
-cd Movix-unsigned-<version>-<run-number>
-shasum -a 256 -c Movix-unsigned.ipa.sha256
+  --name "Orvix-unsigned-<version>-<run-number>" \
+  --dir Orvix-unsigned-<version>-<run-number>
+cd Orvix-unsigned-<version>-<run-number>
+shasum -a 256 -c Orvix-unsigned.ipa.sha256
 ```
 
-Le téléchargement contient `Movix-unsigned.ipa` et `Movix-unsigned.ipa.sha256`. **L'IPA est non signée et son installation est impossible tant qu'un utilisateur ne l'a pas signée par ses propres moyens.**
+Le téléchargement contient `Orvix-unsigned.ipa` et `Orvix-unsigned.ipa.sha256`. **L'IPA est non signée et son installation est impossible tant qu'un utilisateur ne l'a pas signée par ses propres moyens.**
 
 Sur un tag `ios-v*`, le job de publication commite en plus l'archive dans le dépôt sous `app/orvix-ios-unsigner.ipa`, à côté de `app/orvix-android.apk`. Elle y est donc téléchargeable en direct, sans passer par `gh` :
 
@@ -119,12 +119,12 @@ Le job de publication régénère aussi la source AltStore/SideStore (`app/orvix
 https://raw.githubusercontent.com/ratz-cmd/orvix/main/app/orvix-ios-source.json
 ```
 
-Dans SideStore ou AltStore : **Sources → + → coller cette URL**. Movix apparaît dans le store, s'installe et se met à jour comme n'importe quelle app : le store signe l'IPA avec l'identifiant Apple de l'utilisateur au moment de l'installation (compte gratuit : 3 apps maximum, re-signature automatique tous les 7 jours). Liens à mettre sur une page web pour ajouter la source en un tap :
+Dans SideStore ou AltStore : **Sources → + → coller cette URL**. Orvix apparaît dans le store, s'installe et se met à jour comme n'importe quelle app : le store signe l'IPA avec l'identifiant Apple de l'utilisateur au moment de l'installation (compte gratuit : 3 apps maximum, re-signature automatique tous les 7 jours). Liens à mettre sur une page web pour ajouter la source en un tap :
 
 - `sidestore://source?url=https://raw.githubusercontent.com/ratz-cmd/orvix/main/app/orvix-ios-source.json`
 - `altstore://source?url=https://raw.githubusercontent.com/ratz-cmd/orvix/main/app/orvix-ios-source.json`
 
-L'identifiant de la source (`com.movix.source`) et celui de l'app (`com.movix.app`) ne doivent jamais changer : les stores s'en servent comme clés primaires.
+L'identifiant de la source (`com.orvix.source`) et celui de l'app (`com.orvix.app`) ne doivent jamais changer : les stores s'en servent comme clés primaires.
 
 ### Scarlet
 
@@ -163,6 +163,6 @@ Puis rebuild l'app.
 ## Notes
 
 - Le `DnsPackage.kt` doit être enregistré dans `MainApplication.kt` (ajouté au `getPackages()`)
-- Pour iOS, le bridging header doit pointer vers `Movix-Bridging-Header.h`
+- Pour iOS, le bridging header doit pointer vers `Orvix-Bridging-Header.h`
 - L'app exclut son propre trafic du VPN DNS pour éviter les boucles
 - Le mode audio en arrière-plan est activé pour la lecture vidéo continue

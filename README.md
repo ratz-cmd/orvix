@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./movix.png" alt="Movix" width="120" />
+  <img src="./orvix.png" alt="Orvix" width="120" />
 </p>
 
-<h1 align="center">Movix</h1>
+<h1 align="center">Orvix</h1>
 
 <p align="center">
   <strong>Le 1er site de streaming open source made in France et 100% vibecodé.</strong>
@@ -54,7 +54,7 @@
   <strong>Licence :</strong> Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0) · <a href="./LICENSE">LICENSE</a>
 </p>
 
-Movix est un monorepo produit pour une plateforme de streaming communautaire. Le frontend, l'API principale, la WatchParty, les proxies, les outils navigateur et plusieurs briques d'infra vivent dans le même dépôt parce qu'ils évoluent ensemble.
+Orvix est un monorepo produit pour une plateforme de streaming communautaire. Le frontend, l'API principale, la WatchParty, les proxies, les outils navigateur et plusieurs briques d'infra vivent dans le même dépôt parce qu'ils évoluent ensemble.
 
 Ce n'est pas un simple duo "frontend + backend". Une feature peut très vite traverser plusieurs couches à la fois : interface React, persistance locale, sync backend, extraction vidéo, proxy Python et parfois extension navigateur.
 
@@ -66,7 +66,7 @@ Ce n'est pas un simple duo "frontend + backend". Une feature peut très vite tra
 | `API/Mainapi/` | Backend principal clusterisé | [Main API](API/Mainapi/README.md) |
 | `API/watchpartyAPI/` | Service temps réel WatchParty | [WatchParty API](API/watchpartyAPI/README.md) |
 | `API/proxiesembed/` | Proxy aiohttp pour embeds, flux et DRM | [Proxies Embed](API/proxiesembed/README.md) |
-| `extension/` + `userscript/` | Outils navigateur Movix | [Movix OS](README_MOVIX_OS.md) |
+| `extension/` + `userscript/` | Outils navigateur Orvix | [Orvix OS](README_ORVIX_OS.md) |
 | `app/` | App mobile React Native (Android OK, iOS non testé) | [App mobile](app/README.md) |
 | `wasm/watchparty-sync/` | Moteur Rust/WASM de la Sync Pro | [WatchParty Sync WASM](wasm/watchparty-sync/README.md) |
 | `cloudflareproxy/` | Worker Cloudflare CORS/proxy | [Cloudflare Proxy](cloudflareproxy/README.md) |
@@ -74,7 +74,7 @@ Ce n'est pas un simple duo "frontend + backend". Une feature peut très vite tra
 ## Architecture du monorepo
 
 ```text
-movix-main/
+orvix-main/
 |-- src/                        # Frontend principal
 |-- public/                     # Assets statiques et artefacts WASM publiés
 |-- API/
@@ -200,7 +200,7 @@ Pour un premier lancement local, configure au minimum :
 - [Main API](API/Mainapi/README.md)
 - [WatchParty API](API/watchpartyAPI/README.md)
 - [Proxies Embed](API/proxiesembed/README.md)
-- [Movix OS](README_MOVIX_OS.md)
+- [Orvix OS](README_ORVIX_OS.md)
 - [Extension navigateur](extension/README.md)
 - [Userscript Tampermonkey](userscript/README.md)
 - [App mobile React Native](app/README.md) — Android fonctionnel, iOS non testé (aide recherchée)

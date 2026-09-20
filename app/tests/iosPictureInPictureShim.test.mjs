@@ -212,7 +212,7 @@ async function createHarness(mode, environment = {}) {
 
   return {
     dispatch(detail) {
-      window.dispatchEvent(new CustomEvent('__MOVIX_PIP_SHIM__', { detail }));
+      window.dispatchEvent(new CustomEvent('__ORVIX_PIP_SHIM__', { detail }));
     },
     document,
     foreignVideo: new HarnessVideoElement(new EventTarget()),
@@ -261,11 +261,11 @@ function dispatchNative(harness, capability, event) {
 
 test('iOS v1 installs a non-replaceable exact-video publisher with strict URL and generation checks', async () => {
   const h = await createHarness('ios-native-v1');
-  const publisher = h.window.__MOVIX_NATIVE_MEDIA_SOURCE_V1__;
+  const publisher = h.window.__ORVIX_NATIVE_MEDIA_SOURCE_V1__;
   assert.ok(publisher);
   assert.equal(Object.isFrozen(publisher), true);
   assert.deepEqual(
-    Object.getOwnPropertyDescriptor(h.window, '__MOVIX_NATIVE_MEDIA_SOURCE_V1__'),
+    Object.getOwnPropertyDescriptor(h.window, '__ORVIX_NATIVE_MEDIA_SOURCE_V1__'),
     {
       value: publisher,
       writable: false,
@@ -285,7 +285,7 @@ test('iOS v1 installs a non-replaceable exact-video publisher with strict URL an
     LOOPBACK_URL.replace(TOKEN_A, 'A'.repeat(42)),
     `${LOOPBACK_URL}\n`,
     `https://cdn.example/${TOKEN_A}.m3u8`,
-    'blob:https://movix.example/id',
+    'blob:https://orvix.example/id',
   ];
   for (const value of malformed) {
     assert.equal(publisher.publish(h.video, value, 'hls'), null, value);
@@ -311,7 +311,7 @@ test('iOS v1 installs a non-replaceable exact-video publisher with strict URL an
 
 test('iOS v1 posts bounded PREPARED before ENTER for the requested video and pauses only after matching ready', async () => {
   const h = await createHarness('ios-native-v1');
-  const generation = h.window.__MOVIX_NATIVE_MEDIA_SOURCE_V1__.publish(
+  const generation = h.window.__ORVIX_NATIVE_MEDIA_SOURCE_V1__.publish(
     h.otherVideo,
     LOOPBACK_URL,
     'hls',
@@ -369,7 +369,7 @@ test('iOS v1 posts bounded PREPARED before ENTER for the requested video and pau
 
 test('iOS v1 ignores native events after the exact-video association generation changes', async () => {
   const h = await createHarness('ios-native-v1');
-  const publisher = h.window.__MOVIX_NATIVE_MEDIA_SOURCE_V1__;
+  const publisher = h.window.__ORVIX_NATIVE_MEDIA_SOURCE_V1__;
   publisher.publish(h.video, LOOPBACK_URL, 'hls');
   const promise = h.video.requestPictureInPicture();
   const enter = h.posted.find(message => message.type === 'PIPSHIM_ENTER');
@@ -392,7 +392,7 @@ test('iOS v1 ignores native events after the exact-video association generation 
 
 test('iOS v1 restores only the entered video, acknowledges after seek/play, and leaves exactly once', async () => {
   const h = await createHarness('ios-native-v1');
-  h.window.__MOVIX_NATIVE_MEDIA_SOURCE_V1__.publish(h.video, LOOPBACK_URL, 'hls');
+  h.window.__ORVIX_NATIVE_MEDIA_SOURCE_V1__.publish(h.video, LOOPBACK_URL, 'hls');
   const promise = h.video.requestPictureInPicture();
   const enter = h.posted.find(message => message.type === 'PIPSHIM_ENTER');
   h.dispatch({
@@ -449,7 +449,7 @@ test('iOS v1 restores only the entered video, acknowledges after seek/play, and 
 
 test('iOS v1 retains the exact video for restore after native state becomes inactive', async () => {
   const h = await createHarness('ios-native-v1');
-  h.window.__MOVIX_NATIVE_MEDIA_SOURCE_V1__.publish(h.video, LOOPBACK_URL, 'hls');
+  h.window.__ORVIX_NATIVE_MEDIA_SOURCE_V1__.publish(h.video, LOOPBACK_URL, 'hls');
   const promise = h.video.requestPictureInPicture();
   const enter = h.posted.find(message => message.type === 'PIPSHIM_ENTER');
   h.dispatch({
@@ -492,7 +492,7 @@ test('iOS v1 retains the exact video for restore after native state becomes inac
 
 test('iOS v1 explicit exit keeps the entered video until native restoration completes', async () => {
   const h = await createHarness('ios-native-v1');
-  h.window.__MOVIX_NATIVE_MEDIA_SOURCE_V1__.publish(h.video, LOOPBACK_URL, 'hls');
+  h.window.__ORVIX_NATIVE_MEDIA_SOURCE_V1__.publish(h.video, LOOPBACK_URL, 'hls');
   const promise = h.video.requestPictureInPicture();
   const enter = h.posted.find(message => message.type === 'PIPSHIM_ENTER');
   h.dispatch({
@@ -541,7 +541,7 @@ test('iOS v1 bounds explicit exit when native never restores or becomes inactive
     setTimeout: timers.setTimeout,
     clearTimeout: timers.clearTimeout,
   });
-  h.window.__MOVIX_NATIVE_MEDIA_SOURCE_V1__.publish(h.video, LOOPBACK_URL, 'hls');
+  h.window.__ORVIX_NATIVE_MEDIA_SOURCE_V1__.publish(h.video, LOOPBACK_URL, 'hls');
   const promise = h.video.requestPictureInPicture();
   const enter = h.posted.find(message => message.type === 'PIPSHIM_ENTER');
   h.dispatch({
@@ -565,7 +565,7 @@ test('iOS v1 uses captured standard/WebKit fallbacks with the requested receiver
   for (const fallback of ['standardFallback', 'webkitFallback']) {
     const h = await createHarness('ios-native-v1', { [fallback]: true });
     h.video.currentSrc = fallback === 'standardFallback'
-      ? 'blob:https://movix.example/media-source'
+      ? 'blob:https://orvix.example/media-source'
       : 'https://cdn.example/video.m3u8';
     assert.equal(await h.video.requestPictureInPicture(), h.video);
     assert.equal(h.fallbackReceiver, h.video);
@@ -577,7 +577,7 @@ test('iOS v1 uses captured standard/WebKit fallbacks with the requested receiver
   }
 
   const unsupported = await createHarness('ios-native-v1');
-  unsupported.video.currentSrc = 'blob:https://movix.example/media-source';
+  unsupported.video.currentSrc = 'blob:https://orvix.example/media-source';
   await assert.rejects(
     unsupported.video.requestPictureInPicture(),
     error => error.name === 'NotSupportedError',
@@ -602,7 +602,7 @@ test('iOS v1 pagehide cancels the exact handoff, rejects it, and clears document
 
 test('disabled mode leaves captured browser PiP and WebKit behavior untouched', async () => {
   const h = await createHarness('disabled', { standardFallback: true, webkitFallback: true });
-  assert.equal(h.window.__MOVIX_NATIVE_MEDIA_SOURCE_V1__, undefined);
+  assert.equal(h.window.__ORVIX_NATIVE_MEDIA_SOURCE_V1__, undefined);
   assert.equal(await h.video.requestPictureInPicture(), h.video);
   assert.equal(h.fallbackReceiver, h.video);
   assert.equal(h.video.presentationMode, undefined);

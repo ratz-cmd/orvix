@@ -181,25 +181,25 @@ export function createBootstrap(embedUrl) {
   const safeEmbedPort = JSON.stringify(urlObj.port || '');
   return `
     'use strict';
-    var __movixCandidates = [];
-    var __movixMaxCandidates = 64;
-    var __movixMaxString = ${MAX_MEDIA_URL_LENGTH};
-    var __movixSeen = new WeakSet();
-    function __movixCapture(value, depth) {
+    var __orvixCandidates = [];
+    var __orvixMaxCandidates = 64;
+    var __orvixMaxString = ${MAX_MEDIA_URL_LENGTH};
+    var __orvixSeen = new WeakSet();
+    function __orvixCapture(value, depth) {
       depth = depth || 0;
-      if (depth > 6 || value == null || __movixCandidates.length >= __movixMaxCandidates) return;
+      if (depth > 6 || value == null || __orvixCandidates.length >= __orvixMaxCandidates) return;
       if (typeof value === 'string') {
-        if (value.length <= __movixMaxString && value.toLowerCase().indexOf('.m3u8') !== -1) {
-          __movixCandidates.push(value);
+        if (value.length <= __orvixMaxString && value.toLowerCase().indexOf('.m3u8') !== -1) {
+          __orvixCandidates.push(value);
         }
         return;
       }
-      if ((typeof value !== 'object' && typeof value !== 'function') || __movixSeen.has(value)) return;
-      __movixSeen.add(value);
+      if ((typeof value !== 'object' && typeof value !== 'function') || __orvixSeen.has(value)) return;
+      __orvixSeen.add(value);
       var keys;
       try { keys = Object.keys(value); } catch (_) { return; }
       for (var j = 0; j < keys.length && j < 64; j++) {
-        try { __movixCapture(value[keys[j]], depth + 1); } catch (_) {}
+        try { __orvixCapture(value[keys[j]], depth + 1); } catch (_) {}
       }
     }
     function atob(input) {
@@ -238,32 +238,32 @@ export function createBootstrap(embedUrl) {
       }
       return output;
     }
-    var __movixChainTarget = function () {};
-    var __movixChain = new Proxy(__movixChainTarget, {
+    var __orvixChainTarget = function () {};
+    var __orvixChain = new Proxy(__orvixChainTarget, {
       apply: function (_target, _thisArg, args) {
-        for (var i = 0; i < args.length; i++) __movixCapture(args[i], 0);
-        return __movixChain;
+        for (var i = 0; i < args.length; i++) __orvixCapture(args[i], 0);
+        return __orvixChain;
       },
       construct: function (_target, args) {
-        for (var i = 0; i < args.length; i++) __movixCapture(arguments[i], 0);
-        return __movixChain;
+        for (var i = 0; i < args.length; i++) __orvixCapture(arguments[i], 0);
+        return __orvixChain;
       },
       get: function (_target, property) {
         if (property === 'then') return undefined;
         if (property === Symbol.toPrimitive) return function () { return ''; };
-        return __movixChain;
+        return __orvixChain;
       },
       set: function () { return true; }
     });
-    function __movixPlayerFactory() {
-      for (var i = 0; i < arguments.length; i++) __movixCapture(arguments[i], 0);
-      return __movixChain;
+    function __orvixPlayerFactory() {
+      for (var i = 0; i < arguments.length; i++) __orvixCapture(arguments[i], 0);
+      return __orvixChain;
     }
-    __movixPlayerFactory.addLanguage = __movixPlayerFactory;
-    __movixPlayerFactory.getPlayers = function () { return {}; };
-    var __movixLooseObject = new Proxy(function () {}, {
-      apply: function () { return __movixLooseObject; },
-      construct: function () { return __movixLooseObject; },
+    __orvixPlayerFactory.addLanguage = __orvixPlayerFactory;
+    __orvixPlayerFactory.getPlayers = function () { return {}; };
+    var __orvixLooseObject = new Proxy(function () {}, {
+      apply: function () { return __orvixLooseObject; },
+      construct: function () { return __orvixLooseObject; },
       get: function (_target, property) {
         if (property === 'canPlayType') return function (type) { return type && (type.indexOf('hls') !== -1 || type.indexOf('mpegURL') !== -1 || type.indexOf('mp4') !== -1) ? 'probably' : 'maybe'; };
         if (property === 'getAttribute') return function (attr) { return attr === 'src' ? '' : 'true'; };
@@ -271,7 +271,7 @@ export function createBootstrap(embedUrl) {
         if (property === 'referrer') return ${safeEmbedOrigin};
         if (property === 'then') return undefined;
         if (property === Symbol.toPrimitive) return function () { return ''; };
-        return __movixLooseObject;
+        return __orvixLooseObject;
       },
       set: function () { return true; }
     });
@@ -289,13 +289,13 @@ export function createBootstrap(embedUrl) {
       protocol: 'https:'
     };
     var navigator = { userAgent: 'Mozilla/5.0 Chrome/140.0.0.0', language: 'fr-FR' };
-    var document = __movixLooseObject;
-    var videojs = __movixPlayerFactory;
-    var player = __movixPlayerFactory;
-    var jwplayer = __movixPlayerFactory;
-    var fluidPlayer = __movixPlayerFactory;
-    var Playerjs = __movixPlayerFactory;
-    var Clappr = { Player: __movixPlayerFactory };
+    var document = __orvixLooseObject;
+    var videojs = __orvixPlayerFactory;
+    var player = __orvixPlayerFactory;
+    var jwplayer = __orvixPlayerFactory;
+    var fluidPlayer = __orvixPlayerFactory;
+    var Playerjs = __orvixPlayerFactory;
+    var Clappr = { Player: __orvixPlayerFactory };
     function setTimeout(callback) { if (typeof callback === 'function') callback(); return 1; }
     function clearTimeout() {}
     function setInterval() { return 0; }
@@ -332,7 +332,7 @@ export async function extractPlayerM3u8(html, embedUrl, provider) {
   try {
     QuickJS = await getQuickJsModule();
   } catch (error) {
-    console.warn('[MovixQuickJS] runtime unavailable:', error?.message || error);
+    console.warn('[OrvixQuickJS] runtime unavailable:', error?.message || error);
     return null;
   }
 
@@ -344,7 +344,7 @@ export async function extractPlayerM3u8(html, embedUrl, provider) {
   const context = runtime.newContext();
 
   try {
-    const bootstrapResult = context.evalCode(createBootstrap(embedUrl), 'movix-bootstrap.js');
+    const bootstrapResult = context.evalCode(createBootstrap(embedUrl), 'orvix-bootstrap.js');
     if (bootstrapResult.error) {
       disposeResult(bootstrapResult);
       return null;
@@ -361,11 +361,11 @@ export async function extractPlayerM3u8(html, embedUrl, provider) {
       (function () {
         var names = ['sources', 'source', 'file', 'hls', 'hlsUrl', 'm3u8', 'config', 'playerConfig'];
         for (var i = 0; i < names.length; i++) {
-          try { __movixCapture(globalThis[names[i]]); } catch (_) {}
+          try { __orvixCapture(globalThis[names[i]]); } catch (_) {}
         }
-        return JSON.stringify(__movixCandidates);
+        return JSON.stringify(__orvixCandidates);
       })()
-    `, 'movix-result.js');
+    `, 'orvix-result.js');
     if (captureResult.error) {
       disposeResult(captureResult);
       return null;
@@ -386,4 +386,4 @@ export async function extractPlayerM3u8(html, embedUrl, provider) {
   }
 }
 
-globalThis.MovixQuickJS = Object.freeze({ extractPlayerM3u8 });
+globalThis.OrvixQuickJS = Object.freeze({ extractPlayerM3u8 });

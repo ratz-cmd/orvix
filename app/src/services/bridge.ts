@@ -107,7 +107,7 @@ const CAST_INLINE_VTT_MAX_CHARS = 2 * 1024 * 1024;
 const CAST_TITLE_MAX_LENGTH = 256;
 const CAST_TRACK_LABEL_MAX_LENGTH = 128;
 const CAST_TRACK_LANGUAGE_MAX_LENGTH = 35;
-const MOVIX_PLAYBACK_AWAKE_V1 = 'MOVIX_PLAYBACK_AWAKE_V1';
+const ORVIX_PLAYBACK_AWAKE_V1 = 'ORVIX_PLAYBACK_AWAKE_V1';
 const CAST_CAPABILITY_PATTERN = /^[a-f0-9]{32}$/;
 const PIP_CAPABILITY_PATTERN = /^[a-f0-9]{32}$/;
 const MEDIA_PROXY_CAPABILITY_PATTERN = /^[a-f0-9]{32}$/;
@@ -463,11 +463,11 @@ function createActivePipHandoff(
 
 function buildShimDispatch(detail: object): string {
   const json = JSON.stringify(detail);
-  return `(function(){try{window.dispatchEvent(new CustomEvent('__MOVIX_CAST_SHIM__',{detail:${json}}));}catch(e){}})(); true;`;
+  return `(function(){try{window.dispatchEvent(new CustomEvent('__ORVIX_CAST_SHIM__',{detail:${json}}));}catch(e){}})(); true;`;
 }
 
 function buildPipShimDispatch(detail: object): string {
-  return `(function(){try{window.dispatchEvent(new CustomEvent('__MOVIX_PIP_SHIM__',{detail:${JSON.stringify(detail)}}));}catch(e){}})(); true;`;
+  return `(function(){try{window.dispatchEvent(new CustomEvent('__ORVIX_PIP_SHIM__',{detail:${JSON.stringify(detail)}}));}catch(e){}})(); true;`;
 }
 
 function sendPipShimResponse(
@@ -949,9 +949,9 @@ async function handleCastShimMessage(
 ): Promise<void> {
   switch (req.type) {
     case 'CASTSHIM_INIT': {
-      // Always resolve successfully — the shim's MovixAndroidCast.isSupported()
+      // Always resolve successfully — the shim's OrvixAndroidCast.isSupported()
       // reads `payload.supported` to return a boolean. Rejecting would make
-      // Movix treat the bridge as broken; returning supported:false lets it
+      // Orvix treat the bridge as broken; returning supported:false lets it
       // fall back gracefully (hide cast UI, no error toast).
       const [supported, capabilities] = await Promise.all([
         isCastSupported(),
@@ -1416,7 +1416,7 @@ function sendToWebView(
 ) {
   const js = `
     (function() {
-      var evt = new CustomEvent('__MOVIX_BRIDGE_RESPONSE', {
+      var evt = new CustomEvent('__ORVIX_BRIDGE_RESPONSE', {
         detail: ${JSON.stringify(response)}
       });
       window.dispatchEvent(evt);
@@ -1445,7 +1445,7 @@ function isTrustedPipDocument(
     && hasCoherentTopLevelBridgeUrl(context);
 }
 
-export function isTrustedMovixBridgeUrl(
+export function isTrustedOrvixBridgeUrl(
   sourceUrl: string,
   trustedOrigins: readonly string[],
 ): boolean {
@@ -1543,7 +1543,7 @@ export async function handleBridgeMessage(
     const p = parsed as Record<string, unknown>;
     const trusted =
       !!context
-      && isTrustedMovixBridgeUrl(context.sourceUrl, context.trustedOrigins);
+      && isTrustedOrvixBridgeUrl(context.sourceUrl, context.trustedOrigins);
     const trustedTopFrame = trusted && context?.isTopFrame === true;
     const trustedPipDocument = isTrustedPipDocument(context, trusted);
     if (p.type === 'GM_MEDIA_PROXY_REGISTER_CAPABILITY') {
@@ -1572,7 +1572,7 @@ export async function handleBridgeMessage(
     if (p.type === 'PLAYBACK_AWAKE_SET') {
       if (
         trustedPipDocument
-        && p.capability === MOVIX_PLAYBACK_AWAKE_V1
+        && p.capability === ORVIX_PLAYBACK_AWAKE_V1
         && typeof p.active === 'boolean'
       ) {
         const playbackAwake = NativeModules.PlaybackAwake as
@@ -1873,7 +1873,7 @@ export async function handleBridgeMessage(
       {
         const trusted =
           !!context
-          && isTrustedMovixBridgeUrl(context.sourceUrl, context.trustedOrigins);
+          && isTrustedOrvixBridgeUrl(context.sourceUrl, context.trustedOrigins);
         if (!isAuthorizedMediaProxyRequest(
           parsed as Record<string, unknown>,
           webViewRef,

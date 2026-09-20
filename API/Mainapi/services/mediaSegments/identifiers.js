@@ -1,7 +1,7 @@
 /**
  * Resolution des identifiants dont les fournisseurs ont besoin.
  *
- * Movix raisonne en identifiants TMDB partout ; SkipDB et IntroDB indexent par
+ * Orvix raisonne en identifiants TMDB partout ; SkipDB et IntroDB indexent par
  * IMDb, AniSkip par MyAnimeList. Les deux traductions sont mises en cache tres
  * longtemps : un mapping TMDB→IMDb ou TMDB→MAL ne change pratiquement jamais.
  */

@@ -12,5 +12,5 @@
 -keep class com.facebook.hermes.unicode.** { *; }
 -keep class com.facebook.jni.** { *; }
 
-# Movix DNS
--keep class com.movix.app.dns.** { *; }
+# Orvix DNS
+-keep class com.orvix.app.dns.** { *; }

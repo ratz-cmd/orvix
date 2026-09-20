@@ -122,12 +122,12 @@ function loadBridge(overrides = {}, nativeModules = {}) {
 }
 
 const trustedContext = {
-  sourceUrl: 'https://movix.example/watch/1',
-  trustedOrigins: ['https://movix.example'],
+  sourceUrl: 'https://orvix.example/watch/1',
+  trustedOrigins: ['https://orvix.example'],
 };
 const untrustedContext = {
   sourceUrl: 'https://attacker.example/',
-  trustedOrigins: ['https://movix.example'],
+  trustedOrigins: ['https://orvix.example'],
 };
 const capabilityA = 'a'.repeat(32);
 const capabilityB = 'b'.repeat(32);

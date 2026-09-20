@@ -1,14 +1,14 @@
 .vjs-theme-orvix,
-.vjs-theme-movix {
+.vjs-theme-orvix {
   --vjs-theme-orvix--primary: #e50914;
   --vjs-theme-orvix--secondary: #fff;
-  --vjs-theme-movix--primary: #e50914;
-  --vjs-theme-movix--secondary: #fff;
+  --vjs-theme-orvix--primary: #e50914;
+  --vjs-theme-orvix--secondary: #fff;
 }
 
 .vjs-theme-orvix .vjs-big-play-button,
-.vjs-theme-movix .vjs-big-play-button {
-  background-color: var(--vjs-theme-orvix--primary, var(--vjs-theme-movix--primary));
+.vjs-theme-orvix .vjs-big-play-button {
+  background-color: var(--vjs-theme-orvix--primary, var(--vjs-theme-orvix--primary));
   border: none;
   border-radius: 50%;
   width: 80px;
@@ -19,34 +19,34 @@
 }
 
 .vjs-theme-orvix .vjs-control-bar,
-.vjs-theme-movix .vjs-control-bar {
+.vjs-theme-orvix .vjs-control-bar {
   background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 100%);
   height: 4em;
 }
 
 .vjs-theme-orvix .vjs-button:hover,
-.vjs-theme-movix .vjs-button:hover {
-  color: var(--vjs-theme-orvix--primary, var(--vjs-theme-movix--primary));
+.vjs-theme-orvix .vjs-button:hover {
+  color: var(--vjs-theme-orvix--primary, var(--vjs-theme-orvix--primary));
 }
 
 .vjs-theme-orvix .vjs-play-progress,
-.vjs-theme-movix .vjs-play-progress {
-  background: var(--vjs-theme-orvix--primary, var(--vjs-theme-movix--primary));
+.vjs-theme-orvix .vjs-play-progress {
+  background: var(--vjs-theme-orvix--primary, var(--vjs-theme-orvix--primary));
 }
 
 .vjs-theme-orvix .vjs-slider-bar,
-.vjs-theme-movix .vjs-slider-bar {
-  background: var(--vjs-theme-orvix--primary, var(--vjs-theme-movix--primary));
+.vjs-theme-orvix .vjs-slider-bar {
+  background: var(--vjs-theme-orvix--primary, var(--vjs-theme-orvix--primary));
 }
 
 .vjs-theme-orvix .vjs-volume-level,
-.vjs-theme-movix .vjs-volume-level {
-  background: var(--vjs-theme-orvix--primary, var(--vjs-theme-movix--primary));
+.vjs-theme-orvix .vjs-volume-level {
+  background: var(--vjs-theme-orvix--primary, var(--vjs-theme-orvix--primary));
 }
 
 .vjs-theme-orvix .vjs-menu-item.vjs-selected,
-.vjs-theme-movix .vjs-menu-item.vjs-selected {
-  background-color: var(--vjs-theme-orvix--primary, var(--vjs-theme-movix--primary));
+.vjs-theme-orvix .vjs-menu-item.vjs-selected {
+  background-color: var(--vjs-theme-orvix--primary, var(--vjs-theme-orvix--primary));
 }
 
 .vjs-menu-item:hover,

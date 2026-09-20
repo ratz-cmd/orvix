@@ -15,7 +15,7 @@ import TutoLink from '../../components/TutoLink';
 /** Seule URL à retenir : identique pour tous les clients IA. */
 const MCP_URL = 'https://mcp.orvix.fr/mcp';
 const MCP_SPEC_URL = 'https://modelcontextprotocol.io';
-const ORVIX_OPEN_SOURCE_GITHUB_URL = 'https://github.com/orvixcorp/OrvixOpenSource';
+const ORVIX_OPEN_SOURCE_GITHUB_URL = 'https://github.com/orvixcorp/orvix';
 
 const EXTERNAL_LINK_CLASS =
   'font-medium text-indigo-400 hover:text-indigo-300 underline underline-offset-2 decoration-indigo-500/40 hover:decoration-indigo-400';

@@ -18,7 +18,7 @@ seulement relue.
 | --- | --- | --- |
 | 1 | `package-lock.json` resynchronisé (`server` déclaré `orvix-server` dans les deux entrées du workspace) | `npm ci --dry-run` passe, y compris la variante `--workspace=server` du `Dockerfile` |
 | 2 | `VITE_SITE_URL` : repli `http://localhost:<port>` **en dev uniquement**, message d'erreur actionnable en build, `.env.example` documenté | `cp .env.example .env && npx vite` démarre et répond 200 ; `npm run build` sans la variable échoue avec un message qui dit quoi faire |
-| 3 | `app/scripts/build-userscript.js` et ses 3 tests lisent `userscript/orvix.user.js` (au lieu du nom disparu `movix.user.js`) | `node scripts/build-userscript.js` + `--check` OK ; 3 fichiers de tests, 9/9 |
+| 3 | `app/scripts/build-userscript.js` et ses 3 tests lisent `userscript/orvix.user.js` (au lieu du nom disparu `orvix.user.js`) | `node scripts/build-userscript.js` + `--check` OK ; 3 fichiers de tests, 9/9 |
 | 4 | Miroirs : `vite.config.ts` lit `config.env` (et non `process.env`), `Dockerfile` déclare les deux `ARG` | build avec `VITE_DEFAULT_MIRRORS=miroir1.exemple,miroir2.exemple` → `dist/sw.js` contient ces valeurs, plus `orvix.health` |
 | 5 | Artifacts iOS/APK alignés sur `orvix-*` et sur ce dépôt : workflow, `publish-app.mjs`, `version.json`, sources stores régénérées par le générateur officiel, `.gitignore`, `app/README.md` | `node --test tests/unsignedIpaWorkflow.test.mjs` → 14/14 ; tous les nouveaux `downloadURL` existent déjà sur `main` (`gh api` sur chaque fichier) |
 | 6 | Secrets : plus aucun repli en dur (licences VIP, clé d'admin, sels d'IP), contrôle d'admin à temps constant, en-tête seulement, plus d'exemption `NODE_ENV` | 11 scénarios exécutés (voir annexe) : `503` sans config, `403` sur l'ancienne constante du dépôt, `403` en dev, `403` en query string, `200` avec la bonne clé |
@@ -28,11 +28,11 @@ Détail de l'annexe 6 : le role de `ADMIN_SECRET` a été documenté dans `API/M
 
 **Trois choses que je n'ai pas faites, volontairement :**
 
-- Les identifiants iOS `com.movix.app` / `com.movix.source` et les noms visibles (« Movix »)
+- Les identifiants iOS `com.orvix.app` / `com.orvix.source` et les noms visibles (« Orvix »)
   restent inchangés. Ils sont documentés comme clés primaires des stores : les renommer
   désinstallerait l'app chez tous ceux qui ont déjà ajouté la source. Le rebranding cosmétique
   appartient à l'étape 11.
-- L'artefact `Movix-unsigned.ipa` (nom du zip produit par la CI) n'a pas été renommé : il est
+- L'artefact `Orvix-unsigned.ipa` (nom du zip produit par la CI) n'a pas été renommé : il est
   auto-cohérent, n'est cassé nulle part, et son renommage entraîne une trentaine d'assertions
   de tests sans gain fonctionnel. À faire avec le rebranding complet.
 - Aucun `Content-Security-Policy` n'a été ajouté (étape 9 : il demande de choisir une politique,
@@ -44,7 +44,7 @@ Détail de l'annexe 6 : le role de `ADMIN_SECRET` a été documenté dans `API/M
 deviner le mot « vibecodé » — beaucoup de garde-fous réfléchis, des commentaires qui expliquent
 le *pourquoi*. Mais **rien ne se déploie ni ne se construit aujourd'hui** (le lockfile est
 désynchronisé et le `Dockerfile` s'arrête à sa première instruction), la CI unique du dépôt est
-cassée, le rebranding Movix → Orvix est arrêté au milieu, et certaines zones (secrets, poids,
+cassée, le rebranding Orvix → Orvix est arrêté au milieu, et certaines zones (secrets, poids,
 monolithes) demandent une décision avant la prochaine mise en prod.
 
 Les cinq constats les plus lourds, si tu ne lis qu'une chose :
@@ -85,7 +85,7 @@ Avant les critiques, ce qui mérite d'être dit parce que c'est rare :
 
 ### 1.0 `npm ci` échoue : l'image Docker de production ne peut pas être construite
 
-Le nom du workspace `server/` a été renommé (`movix-server` → `orvix-server`) dans
+Le nom du workspace `server/` a été renommé (`orvix-server` → `orvix-server`) dans
 `server/package.json`, mais le lockfile racine ne l'a pas suivi :
 
 ```
@@ -93,7 +93,7 @@ $ node -p "require('./server/package.json').name"
 orvix-server
 
 $ node -e "console.log(require('./package-lock.json').packages['server'].name)"
-movix-server
+orvix-server
 
 $ npm ci
 npm error Missing: orvix-server@0.1.0 from lock file
@@ -138,12 +138,12 @@ actionnable en build, et `.env.example` explique pourquoi la variable est vide (
 
 ### 1.2 Le userscript de l'app mobile n'existe plus sous le nom attendu
 
-`app/scripts/build-userscript.js:16` lit `../../userscript/movix.user.js`.
+`app/scripts/build-userscript.js:16` lit `../../userscript/orvix.user.js`.
 Le fichier présent s'appelle `userscript/orvix.user.js` :
 
 ```
 $ cd app && node scripts/build-userscript.js
-Error: ENOENT: no such file or directory, open '/home/user/orvix/userscript/movix.user.js'
+Error: ENOENT: no such file or directory, open '/home/user/orvix/userscript/orvix.user.js'
 ```
 
 Conséquences en cascade :
@@ -157,12 +157,12 @@ Conséquences en cascade :
   `kisskhEmbeddedUserscript.test.mjs`, `seekStreamingEmbeddedUserscript.test.mjs`.
 
 C'est le renommage du fichier qui a cassé la chaîne : le générateur, ses deux tests, le
-`.gitignore` et le workflow iOS pointent tous encore vers `movix.user.js`.
+`.gitignore` et le workflow iOS pointent tous encore vers `orvix.user.js`.
 
 **→ Appliqué (point 3).** Générateur, ses trois tests (il y en avait un troisième :
 `castSourcePreparation.test.mjs`), `app/README.md`, `extension/README.md` et `userscript/README.md`
 corrigés. `build-userscript.js --check` passe, et la ligne du README `userscript` qui
-documentait un `public/userscript/movix.user.js` inexistant a été supprimée.
+documentait un `public/userscript/orvix.user.js` inexistant a été supprimée.
 
 ### 1.3 La config des miroirs documentée ne sert à rien
 
@@ -192,39 +192,39 @@ le même build de contrôle injecte désormais bien les valeurs de `.env` dans `
 ### 1.4 Les artefacts iOS et Android se contredisent entre eux
 
 > ⚠️ **Correction de cet audit (20/09).** J'avais écrit que ces URL renvoyaient un 404 : c'est
-> faux. `movixcorp/MovixOpenSource` **existe**, est public, et contient bien
-> `app/movix-android.apk`, `app/movix-ios-unsigner.ipa` et `app/movix-ios-source.json` (vérifié
+> faux. `ratz-cmd/orvix` **existe**, est public, et contient bien
+> `app/orvix-android.apk`, `app/orvix-ios-unsigner.ipa` et `app/orvix-ios-source.json` (vérifié
 > par `gh api`). Le vrai lien mort est ailleurs : l'URL de repli de l'app mobile
-> (`FALLBACK_CONFIG.GITHUB_URL = github.com/Movix-STMG/MovixOpenSource`) et celle de la page
-> d'extension (`github.com/orvixcorp/OrvixOpenSource`) renvoient un **404 réel** — ces deux-là
+> (`FALLBACK_CONFIG.GITHUB_URL = github.com/ratz-cmd/orvix`) et celle de la page
+> d'extension (`github.com/ratz-cmd/orvix`) renvoient un **404 réel** — ces deux-là
 > n'existent pas. Le problème de fond reste entier, mais c'est un problèmes de cohérence interne
 > et non de disponibilité.
 
 Le dépôt a été publié avec les artefacts renommés (`app/orvix-android.apk`,
 `app/orvix-ios-unsigner.ipa`, `app/orvix-ios-source.json`, `app/orvix-scarlet-source.json`)
-alors que la CI, le script de publication et les sources des stores sont restés sur `movix-*` et
-sur `movixcorp/MovixOpenSource` :
+alors que la CI, le script de publication et les sources des stores sont restés sur `orvix-*` et
+sur `ratz-cmd/orvix` :
 
 | Fichier | Pointe vers | Conséquence |
 | --- | --- | --- |
-| `app/orvix-ios-source.json` | `movixcorp/MovixOpenSource` + `movix-ios-unsigner.ipa` | résout (dépôt amont public) mais ne sert pas CETTE IPA |
-| `app/version.json:4` | `movixcorp/MovixOpenSource` + `movix-android.apk` | idem côté APK |
-| `.github/workflows/ios-unsigned.yml:273` | écrivait `app/movix-ios-unsigner.ipa` | aurait créé un **second** binaire de 10 Mo à côté du premier |
-| `scripts/publish-app.mjs` | publiait dans `app/movix-android.apk` | pire cas : `version.json` continuait de pointer l'APK amont, donc **une mise à jour publiée n'atteignait jamais les utilisateurs** |
-| `app/.gitignore` | `!movix-ios-unsigner.ipa` | ne correspondait plus à aucun fichier suivi |
-| `app/src/config/index.ts:23` | `github.com/Movix-STMG/MovixOpenSource` | **404** : la vérification de mise à jour échouait exactement quand elle sert de repli, c'est-à-dire quand le réseau est filtré |
+| `app/orvix-ios-source.json` | `ratz-cmd/orvix` + `orvix-ios-unsigner.ipa` | résout (dépôt amont public) mais ne sert pas CETTE IPA |
+| `app/version.json:4` | `ratz-cmd/orvix` + `orvix-android.apk` | idem côté APK |
+| `.github/workflows/ios-unsigned.yml:273` | écrivait `app/orvix-ios-unsigner.ipa` | aurait créé un **second** binaire de 10 Mo à côté du premier |
+| `scripts/publish-app.mjs` | publiait dans `app/orvix-android.apk` | pire cas : `version.json` continuait de pointer l'APK amont, donc **une mise à jour publiée n'atteignait jamais les utilisateurs** |
+| `app/.gitignore` | `!orvix-ios-unsigner.ipa` | ne correspondait plus à aucun fichier suivi |
+| `app/src/config/index.ts:23` | `github.com/ratz-cmd/orvix` | **404** : la vérification de mise à jour échouait exactement quand elle sert de repli, c'est-à-dire quand le réseau est filtré |
 
 Le `.gitignore` de `app/` était d'ailleurs révélateur : l'IPA n'est suivie que parce qu'elle est
 déjà dans l'index ; la règle d'exception ne correspondait plus à aucun fichier.
 
 **Recommandation :** faire de `orvix-*` l'unique chemin, régénérer les deux JSON de source et
-`version.json` depuis `app/app.json`, et supprimer les entrées `movix-*` de la CI et des
-générateurs (`app/scripts/generate-ios-source.mjs` code encore `com.movix.app`,
-`https://movix.online`, `rentry.co/movix`).
+`version.json` depuis `app/app.json`, et supprimer les entrées `orvix-*` de la CI et des
+générateurs (`app/scripts/generate-ios-source.mjs` code encore `com.orvix.app`,
+`https://orvix.online`, `rentry.co/orvix`).
 
 **→ Appliqué (point 5).** Chemins et URLs alignés sur `orvix-*` + `ratz-cmd/orvix`, sources
-régénérées par le générateur officiel, `Movix-STMG` remplacé par le dépôt réel. `com.movix.app`,
-`com.movix.source`, les noms visibles et le domaine `movix.online` restent volontairement figés
+régénérées par le générateur officiel, `ratz-cmd` remplacé par le dépôt réel. `com.orvix.app`,
+`com.orvix.source`, les noms visibles et le domaine `orvix.online` restent volontairement figés
 (clés primaires des stores ; leur changement ferait disparaître l'app déjà installée).
 
 ---
@@ -266,8 +266,8 @@ fichiers montre que le besoin a été compris ailleurs.
 charger sans `JWT_SECRET` (message explicite, aucun repli) ; le contrôle d'admin est à temps
 constant, limité à l'en-tête `x-admin-key`, sans exemption `NODE_ENV`, et répond 503 si aucun
 secret n'est configuré. Deux sels d'anonymisation d'IP traînaient le même défaut sans être dans
-mon audit initial — `'movix-vip-ip'` dans `vipDonations.js:134` et
-`'movix-help-feedback-default-salt'` dans `helpFeedback.js:44` : sur un espace IPv4, un sel public
+mon audit initial — `'orvix-vip-ip'` dans `vipDonations.js:134` et
+`'orvix-help-feedback-default-salt'` dans `helpFeedback.js:44` : sur un espace IPv4, un sel public
 se force-brute en quelques minutes, donc ces hashs ne pseudonymisaient plus rien. Ils passent par
 un helper partagé (`utils/ipHashSalt.js`) qui lit `TURNSTILE_IP_SALT`/`JWT_SECRET` et alerte si
 aucun n'est configuré. `ADMIN_SECRET` était absent de `.env.example` : il y est maintenant
@@ -302,7 +302,7 @@ anti-scraping — ce qui est un choix défendable, mais il ne faut pas qu'une ro
 
 ### 2.3 Aucune entrée `orvix.*` dans les allowlists
 
-`middleware/cors.js` et `middleware/security.js` listent 19 domaines : `movix.blog`, `movix.fun`,
+`middleware/cors.js` et `middleware/security.js` listent 19 domaines : `orvix.blog`, `orvix.fun`,
 `cinezo.site`, `filmib.cc`… **zéro entrée `orvix.*`**, alors que `generate-vip-key.js` renvoie les
 utilisateurs vers `https://orvix.fr/vip`. Le jour où le site est déployé sur un domaine Orvix,
 toutes les requêtes navigateur se prennent un 403 CORS puis un 404 sec (avec, en prime, la fausse
@@ -366,9 +366,9 @@ Le `strict: true` de `tsconfig.app.json` est donc purement décoratif. Et parmi 
 certaines ne sont pas cosmétiques — ce sont **des séquelles directes du renommage** :
 
 ```
-src/components/HLSPlayer.tsx:109   'MovixAndroidCastBridge' n'existe pas dans '../types/castRemote'.
+src/components/HLSPlayer.tsx:109   'OrvixAndroidCastBridge' n'existe pas dans '../types/castRemote'.
                                    Vouliez-vous dire 'OrvixAndroidCastBridge' ?
-src/components/HLSPlayer.tsx:1346  La propriété 'movixKisskhFallback' n'existe pas sur Window.
+src/components/HLSPlayer.tsx:1346  La propriété 'orvixKisskhFallback' n'existe pas sur Window.
                                    Vouliez-vous dire 'orvixKisskhFallback' ?
 src/components/FloatingPlayer.tsx:5  Cannot find module '../context/MiniPlayerContext'
 ```
@@ -458,14 +458,14 @@ qui génère l'un depuis l'autre, supprimerait la classe de bug entière.
   `TODO` vides et **personne ne l'importe** (`grep useWatchParty` → aucun résultat hors du
   fichier). La vraie implémentation vit dans `WatchPartyRoom.tsx`, `utils/watchparty.ts` et
   `workers/watchpartySync.worker.ts`. Un nouveau contributeur qui suit le README part dans le mur.
-- Liens morts : `movix.png` (le logo affiché en tête du README), `README_MOVIX_OS.md`
+- Liens morts : `orvix.png` (le logo affiché en tête du README), `README_ORVIX_OS.md`
   (référencé deux fois), `cloudflareproxy/README.md`.
 
-### 4.4 Rebranchement Movix/Orvix à moitié fait
+### 4.4 Rebranchement Orvix/Orvix à moitié fait
 
 Occurrences dans le code :
 
-| Zone | Movix | Orvix |
+| Zone | Orvix | Orvix |
 | --- | --- | --- |
 | `src/` | 79 | 361 |
 | `API/` | 117 | 4 |
@@ -473,11 +473,11 @@ Occurrences dans le code :
 | `userscript/` | 103 | 27 |
 | `app/` | **402** | **0** |
 
-L'app mobile n'a pas du tout été rebrandée (`app/app.json` → `"name": "Movix"`,
-`app/src/config/index.ts` → `SITE_URL: 'https://movix.tax'`, `bundleIdentifier: com.movix.app`),
-l'API presque pas, les extensions à moitié. Et le nom du dépôt (`README` = « Movix ») contredit
+L'app mobile n'a pas du tout été rebrandée (`app/app.json` → `"name": "Orvix"`,
+`app/src/config/index.ts` → `SITE_URL: 'https://orvix.tax'`, `bundleIdentifier: com.orvix.app`),
+l'API presque pas, les extensions à moitié. Et le nom du dépôt (`README` = « Orvix ») contredit
 le nom du produit. Les dégâts visibles de ce demi-renommage sont en § 1.2, § 1.4 et § 3.1. Il
-faut finir le travail en une passe, ou décider officiellement que « Movix » reste le nom technique.
+faut finir le travail en une passe, ou décider officiellement que « Orvix » reste le nom technique.
 
 ---
 
@@ -557,7 +557,7 @@ notification push est chargée en eager à cause d'un import statique ailleurs.
 1. Régénérer `package-lock.json` (`npm install --package-lock-only`) : sans ça, **rien ne se
    déploie** (§ 1.0).
 2. `.env.example` : valeur par défaut non vide pour `VITE_SITE_URL`.
-3. Renommer les références `movix.user.js` → `orvix.user.js` (générateur + 2 tests) et vérifier
+3. Renommer les références `orvix.user.js` → `orvix.user.js` (générateur + 2 tests) et vérifier
    que `npm run build:userscript` passe : ça répare la CI iOS.
 4. Brancher la config miroirs : lire `config.env` dans `vite.config.ts` (comme `VITE_SITE_URL`) et
    déclarer les deux variables en `ARG` dans le `Dockerfile`.
@@ -573,7 +573,7 @@ notification push est chargée en eager à cause d'un import statique ailleurs.
 9. Ajouter un CSP et les en-têtes de sécurité dans `server/index.js` (remplacer le
    `next.config.js` mort).
 10. Une seule constante d'allowlist, avec les domaines `orvix.*` ajoutés.
-11. Finir ou annuler le rebranding Movix → Orvix, en une passe.
+11. Finir ou annuler le rebranding Orvix → Orvix, en une passe.
 
 **Ensuite — la dette qui coûte cher chaque semaine**
 12. Sortir les 150 Mo d'avatars et les trois binaires du dépôt.
@@ -595,11 +595,11 @@ Le test `app/tests/hlsNativePictureInPicturePublisher.test.mjs` cherche trois d�
 `src/components/HLSPlayer.tsx` :
 
 ```js
-['isCanonicalMovixNativePlaybackUrl', 'publishMovixNativeMediaSource', 'clearMovixNativeMediaSource']
+['isCanonicalOrvixNativePlaybackUrl', 'publishOrvixNativeMediaSource', 'clearOrvixNativeMediaSource']
 ```
 
 Elles ne s'y trouvent plus : **0 sur 3**. Et rien dans `src/` ne publie plus jamais vers
-`window.__MOVIX_NATIVE_MEDIA_SOURCE_V1__`, l'interface que l'app mobile définit pourtant dans
+`window.__ORVIX_NATIVE_MEDIA_SOURCE_V1__`, l'interface que l'app mobile définit pourtant dans
 `app/src/injection/picture-in-picture-shim.ts:177`.
 
 Autrement dit : le shim natif est en place, il attend une source média, et le lecteur web ne lui
@@ -622,18 +622,18 @@ des fonctionnalités ont silencieusement disparu — impossible de trancher sans
 ### 7.3 🟡 `ExtensionPage.tsx` pointe vers un dépôt qui n'existe pas
 
 ```ts
-const USERSCRIPT_INSTALL_URL = 'https://github.com/orvixcorp/OrvixOpenSource/raw/refs/heads/main/userscript/orvix.user.js';
-const ORVIX_OPEN_SOURCE_GITHUB_URL = 'https://github.com/orvixcorp/OrvixOpenSource';
+const USERSCRIPT_INSTALL_URL = 'https://github.com/ratz-cmd/orvix/raw/refs/heads/main/userscript/orvix.user.js';
+const ORVIX_OPEN_SOURCE_GITHUB_URL = 'https://github.com/ratz-cmd/orvix';
 ```
 
-`orvixcorp/OrvixOpenSource` répond **404** (vérifié par `gh api`). Le bouton « installer le
+`ratz-cmd/orvix` répond **404** (vérifié par `gh api`). Le bouton « installer le
 userscript » de la page d'extension est donc mort. Non corrigé volontairement : le bon dépôt
-cible est une décision produit (`ratz-cmd/orvix` ? un `orvixcorp/...` à créer ?), et les trois
+cible est une décision produit (`ratz-cmd/orvix` ? un `ratz-cmd/...` à créer ?), et les trois
 constantes vont ensemble.
 
 ### 7.4 Ce qui reste à décider
 
-- `FALLBACK_CONFIG.PRIMARY_URL = 'https://movix.tax'` et `TELEGRAM_URL = 't.me/movix_site'`
+- `FALLBACK_CONFIG.PRIMARY_URL = 'https://orvix.tax'` et `TELEGRAM_URL = 't.me/orvix_site'`
   dans `app/src/config/index.ts` : je n'ai pas pu tester ces URLs (pas de sortie HTTP directe
   depuis cet environnement), donc je ne les ai pas touchées. À vérifier avec le rebranding.
 - `API/Mainapi/routes/proxy.js` / `cloudflareproxy/worker.js` : relais ouverts, inchangés

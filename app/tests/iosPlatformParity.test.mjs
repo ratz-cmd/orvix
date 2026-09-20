@@ -122,8 +122,8 @@ test('iOS forwards deep links and never invokes the APK installer', async () => 
     apkInstaller,
     downloader,
   ] = await Promise.all([
-    read('../ios/Movix/AppDelegate.mm'),
-    read('../ios/Movix/Info.plist'),
+    read('../ios/Orvix/AppDelegate.mm'),
+    read('../ios/Orvix/Info.plist'),
     read('../src/hooks/useAppUpdate.ts'),
     read('../src/screens/UpdateScreen.tsx'),
     read('../src/services/apkInstaller.ts'),
@@ -139,7 +139,7 @@ test('iOS forwards deep links and never invokes the APK installer', async () => 
   assert.match(appDelegate, /\[CastBootstrap configure\]/);
   assert.match(appDelegate, /return \[super application:application/);
   assert.match(infoPlist, /<key>CFBundleURLTypes<\/key>/);
-  assert.match(infoPlist, /<string>movix<\/string>/);
+  assert.match(infoPlist, /<string>orvix<\/string>/);
 
   assert.match(updateHook, /Platform\.OS === 'ios'/);
   assert.match(updateHook, /Platform\.OS !== 'android'/);
@@ -192,7 +192,7 @@ test('iOS forwards deep links and never invokes the APK installer', async () => 
 test('iOS update URLs work with the partial React Native URL global', async () => {
   const { isValidHttpsUpdateUrl, releasePageUrl } =
     await loadUpdateHelpersWithReactNativeURL();
-  const repository = 'https://github.com/Movix-STMG/MovixOpenSource';
+  const repository = 'https://github.com/ratz-cmd/orvix';
 
   assert.equal(isValidHttpsUpdateUrl(repository), true);
   assert.equal(
@@ -201,12 +201,12 @@ test('iOS update URLs work with the partial React Native URL global', async () =
   );
 
   for (const unsafe of [
-    'http://github.com/Movix-STMG/MovixOpenSource',
-    'https://user:password@github.com/Movix-STMG/MovixOpenSource',
-    'https://github.com/Movix-STMG/\u0000MovixOpenSource',
-    'https://github.com/Movix-STMG/%00MovixOpenSource',
-    'https://github.com/Movix-STMG/MovixOpenSource\\redirect',
-    'https://github.com:99999/Movix-STMG/MovixOpenSource',
+    'http://github.com/ratz-cmd/orvix',
+    'https://user:password@github.com/ratz-cmd/orvix',
+    'https://github.com/ratz-cmd/\u0000orvix',
+    'https://github.com/ratz-cmd/%00orvix',
+    'https://github.com/ratz-cmd/orvix\\redirect',
+    'https://github.com:99999/ratz-cmd/orvix',
   ]) {
     assert.equal(isValidHttpsUpdateUrl(unsafe), false, unsafe);
   }

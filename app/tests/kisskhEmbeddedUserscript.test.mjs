@@ -18,7 +18,7 @@ function expectedOutput(userscript) {
     .replace(/`/g, '\\`')
     .replace(/\$\{/g, '\\${');
   return `/**
- * Source du userscript Movix.
+ * Source du userscript Orvix.
  *
  * AUTO-GÉNÉRÉ par scripts/build-userscript.js
  * Ne pas modifier manuellement.
@@ -40,8 +40,8 @@ test('embedded mobile userscript is current, exposes KissKH without the generate
   ]);
   assert.equal(embedded, expectedOutput(userscript));
   assert.match(embedded, /KISSKH_FALLBACK/);
-  assert.match(embedded, /movixKisskhFallback/);
-  assert.doesNotMatch(embedded, /MovixKisskhPolicy|GENERATED KISSKH FALLBACK POLICY/);
+  assert.match(embedded, /orvixKisskhFallback/);
+  assert.doesNotMatch(embedded, /OrvixKisskhPolicy|GENERATED KISSKH FALLBACK POLICY/);
   assert.notEqual(
     createHash('sha256').update(embedded).digest('hex'),
     PRE_TASK8_EMBEDDED_SHA256,
@@ -67,7 +67,7 @@ test('extensions no longer load or publish the generated KissKH policy', async (
     readFile(firefoxManifestUrl, 'utf8').then(JSON.parse),
   ]);
 
-  assert.doesNotMatch(chromeBackground, /kisskh-policy\.js|MovixKisskhPolicy/);
+  assert.doesNotMatch(chromeBackground, /kisskh-policy\.js|OrvixKisskhPolicy/);
   assert.equal(firefoxManifest.background.scripts.includes('kisskh-policy.js'), false);
 
   for (const relativePath of [

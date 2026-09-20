@@ -9,9 +9,9 @@ const ROOT = path.basename(process.cwd()) === 'app'
 const read = relativePath => readFile(path.join(ROOT, relativePath), 'utf8');
 
 test('native glass chooses Liquid Glass only when available and honors accessibility', async () => {
-  const swift = await read('ios/Movix/UI/MovixGlassEffectView.swift');
+  const swift = await read('ios/Orvix/UI/OrvixGlassEffectView.swift');
 
-  assert.match(swift, /enum MovixGlassMaterialChoice: Equatable/);
+  assert.match(swift, /enum OrvixGlassMaterialChoice: Equatable/);
   assert.match(swift, /if reduceTransparency \{ return \.opaque \}/);
   assert.match(swift, /if systemMajorVersion >= 26 \{ return \.liquidGlass \}/);
   assert.match(swift, /increaseContrast \? \.systemMaterial : \.systemThinMaterial/);
@@ -27,8 +27,8 @@ test('native glass chooses Liquid Glass only when available and honors accessibi
 
 test('native glass rebuilds for accessibility and validates its public props', async () => {
   const [swift, manager] = await Promise.all([
-    read('ios/Movix/UI/MovixGlassEffectView.swift'),
-    read('ios/Movix/UI/MovixGlassEffectViewManager.m'),
+    read('ios/Orvix/UI/OrvixGlassEffectView.swift'),
+    read('ios/Orvix/UI/OrvixGlassEffectViewManager.m'),
   ]);
 
   assert.match(swift, /reduceTransparencyStatusDidChangeNotification/);
@@ -37,14 +37,14 @@ test('native glass rebuilds for accessibility and validates its public props', a
   assert.match(swift, /value\.isFinite/);
   assert.match(swift, /\(0\.\.\.64\)\.contains\(value\)/);
   assert.match(swift, /clipsToBounds = true/);
-  assert.match(manager, /RCT_EXPORT_MODULE\(MovixGlassEffectView\)/);
+  assert.match(manager, /RCT_EXPORT_MODULE\(OrvixGlassEffectView\)/);
   for (const [name, type] of [
     ['interactive', 'BOOL'],
     ['prominent', 'BOOL'],
   ]) {
     assert.match(manager, new RegExp(`RCT_EXPORT_VIEW_PROPERTY\\(${name}, ${type}\\)`));
   }
-  assert.match(manager, /RCT_CUSTOM_VIEW_PROPERTY\(cornerRadius, NSNumber, MovixGlassEffectView\)/);
+  assert.match(manager, /RCT_CUSTOM_VIEW_PROPERTY\(cornerRadius, NSNumber, OrvixGlassEffectView\)/);
   assert.match(manager, /isfinite\(radius\)/);
   assert.match(manager, /radius >= 0\.0 && radius <= 64\.0/);
 });
@@ -53,7 +53,7 @@ test('React Native wrapper preserves children and degrades to a plain View off i
   const wrapper = await read('src/components/ios/NativeGlassSurface.tsx');
 
   assert.match(wrapper, /PropsWithChildren/);
-  assert.match(wrapper, /requireNativeComponent<Props>\('MovixGlassEffectView'\)/);
+  assert.match(wrapper, /requireNativeComponent<Props>\('OrvixGlassEffectView'\)/);
   assert.match(wrapper, /Platform\.OS !== 'ios'/);
   assert.match(wrapper, /return <View \{\.\.\.viewProps\} \/>/);
   assert.match(wrapper, /return <IOSGlass \{\.\.\.props\} \/>/);
@@ -61,19 +61,19 @@ test('React Native wrapper preserves children and degrades to a plain View off i
 
 test('Xcode compiles the glass view, manager, and focused XCTest', async () => {
   const [project, tests] = await Promise.all([
-    read('ios/Movix.xcodeproj/project.pbxproj'),
-    read('ios/MovixTests/MovixGlassEffectViewTests.swift'),
+    read('ios/Orvix.xcodeproj/project.pbxproj'),
+    read('ios/OrvixTests/OrvixGlassEffectViewTests.swift'),
   ]);
 
   for (const source of [
-    'MovixGlassEffectView.swift',
-    'MovixGlassEffectViewManager.m',
-    'MovixGlassEffectViewTests.swift',
+    'OrvixGlassEffectView.swift',
+    'OrvixGlassEffectViewManager.m',
+    'OrvixGlassEffectViewTests.swift',
   ]) {
     const sourceEntry = new RegExp(`${source.replace('.', '\\.')} in Sources`, 'g');
     assert.equal(project.match(sourceEntry)?.length, 2, `${source} must have a file and build entry`);
   }
-  assert.match(project, /path = Movix\/UI;/);
+  assert.match(project, /path = Orvix\/UI;/);
   assert.match(tests, /testUsesFallbackMaterialBeforeIOS26/);
   assert.match(tests, /testDisablesTransparencyForAccessibility/);
   assert.match(tests, /testUsesHigherContrastFallbackMaterial/);

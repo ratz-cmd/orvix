@@ -1,4 +1,4 @@
-# CLAUDE.md - Movix Project Guide
+# CLAUDE.md - Orvix Project Guide
 
 ## Model selection — important for agents and subagents
 
@@ -12,7 +12,7 @@
 
 **Default rule:** if you can describe the task to a junior dev in under 3 sentences and they'd know what to do, use **Sonnet** or **Haiku**. Reach for Opus only when the task itself is "figure out *what* to build", not just "build *this*".
 
-Concretely for Movix:
+Concretely for Orvix:
 - Adding a settings toggle, an i18n key, a small CSS rule → **Haiku**
 - Implementing a feature with existing patterns (new context, new tool, new route) → **Sonnet**
 - Designing the MCP architecture, deciding OAuth scope structure, debugging the sync race → **Opus**
@@ -21,7 +21,7 @@ When in doubt, **start with Sonnet** and escalate to Opus only if the model visi
 
 ## Project Overview
 
-Movix is an open-source French streaming platform monorepo. It includes a React frontend, multiple Node.js/Python backend services, browser extensions, a Rust WASM sync engine, Cloudflare Workers, and a Discord Rich Presence integration.
+Orvix is an open-source French streaming platform monorepo. It includes a React frontend, multiple Node.js/Python backend services, browser extensions, a Rust WASM sync engine, Cloudflare Workers, and a Discord Rich Presence integration.
 
 **License**: CC BY-NC 4.0
 
@@ -47,7 +47,7 @@ Movix is an open-source French streaming platform monorepo. It includes a React 
 ## Repository Structure
 
 ```
-movix-main/
+orvix-main/
 ├── src/                    # React frontend (Vite)
 │   ├── pages/              # 58 page components
 │   ├── components/         # 118+ reusable components
@@ -194,18 +194,18 @@ Multiple player implementations depending on source type:
 
 ### Service Worker Fallback Domain
 
-Quand `movix.tax` devient injoignable (blocage FAI), le SW (`public/sw.js`) intercepte les navigations et redirige vers un miroir alive :
+Quand `orvix.tax` devient injoignable (blocage FAI), le SW (`public/sw.js`) intercepte les navigations et redirige vers un miroir alive :
 
 1. SW race `fetch(req)` contre timeout 3s
 2. Sur échec réseau (TypeError/AbortError) → load mirrors list
-3. Mirrors fetch depuis `rentry.co/movix` (HTML rendu, pas `/raw` car rentry impose `SECRET_RAW_ACCESS_CODE`) à chaque appel avec timeout 3s. Fallback sur `DEFAULT_MIRRORS` hardcodé au build via `VITE_DEFAULT_MIRRORS` si fetch échoue. Pas de cache SW — toujours frais, une modif rentry est visible immédiatement. `parseConfig` accepte JSON ou HTML (extrait les `<a href>` dans `<article>`).
+3. Mirrors fetch depuis `rentry.co/orvix` (HTML rendu, pas `/raw` car rentry impose `SECRET_RAW_ACCESS_CODE`) à chaque appel avec timeout 3s. Fallback sur `DEFAULT_MIRRORS` hardcodé au build via `VITE_DEFAULT_MIRRORS` si fetch échoue. Pas de cache SW — toujours frais, une modif rentry est visible immédiatement. `parseConfig` accepte JSON ou HTML (extrait les `<a href>` dans `<article>`).
 4. Redirige vers `https://${nextMirror}/` (racine, pas de path preservation — origine courante exclue)
 
 Complément côté React : `src/services/blockDetection.ts` pose un interceptor axios. Après 3 network errors consécutives + `navigator.onLine === true`, `postMessage` au SW qui répond avec l'URL cible, puis `location.replace`.
 
 Admin : éditer la paste rentry pour ajouter/retirer un miroir. Nouveaux clients voient la liste immédiatement ; clients existants après ≤ 24h (TTL cache SW).
 
-Scope : ne sauve QUE les users ayant déjà visité `movix.tax` au moins une fois avant le blocage (sinon SW pas installé). Les nouveaux utilisateurs passent par Telegram `@movix_site`.
+Scope : ne sauve QUE les users ayant déjà visité `orvix.tax` au moins une fois avant le blocage (sinon SW pas installé). Les nouveaux utilisateurs passent par Telegram `@orvix_site`.
 
 ### Deployment
 - Frontend: Cloudflare Pages (uses `CF_PAGES_COMMIT_SHA` for build ID)

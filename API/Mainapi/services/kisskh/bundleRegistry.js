@@ -280,7 +280,7 @@ function createPinnedHttpsFetcher({ request = https.request, timeoutMs = 10_000 
           Host: url.hostname,
           Accept: 'application/javascript,text/plain;q=0.9,*/*;q=0.1',
           'Accept-Encoding': 'identity',
-          'User-Agent': 'Movix-KissKH-Bundle-Guard/1.0',
+          'User-Agent': 'Orvix-KissKH-Bundle-Guard/1.0',
         },
       };
       try {

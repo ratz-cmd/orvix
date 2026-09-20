@@ -17,7 +17,7 @@ if linkage != nil
   use_frameworks! :linkage => linkage.to_sym
 end
 
-target 'Movix' do
+target 'Orvix' do
   config = use_native_modules!
 
   use_react_native!(
@@ -27,7 +27,7 @@ target 'Movix' do
 
   pod 'google-cast-sdk', '~> 4.8.4'
 
-  target 'MovixTests' do
+  target 'OrvixTests' do
     inherit! :complete
   end
 

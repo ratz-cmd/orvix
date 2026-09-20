@@ -5,8 +5,8 @@
  * Priorité :
  *  1) `auth.userProfile.username` + `auth.userProfile.avatar` du provider
  *     OAuth (Discord/Google) — le "vrai" nom de la personne, pas le profil
- *     Movix interne (qui est souvent "Profil" + un avatar Disney random).
- *  2) Le profil Movix `isDefault` ou le premier profil — pour les comptes
+ *     Orvix interne (qui est souvent "Profil" + un avatar Disney random).
+ *  2) Le profil Orvix `isDefault` ou le premier profil — pour les comptes
  *     BIP-39 qui n'ont pas d'identité OAuth.
  *  3) Fallback `{ username: 'Admin', avatar: null }`.
  *
@@ -28,9 +28,9 @@ function safeParseJson(raw) {
  * @param {string} userId
  * @param {string} authType — 'oauth', 'bip39' ou 'bip-39' (DB legacy)
  * @param {{ preferProfile?: boolean }} [options]
- *   preferProfile: utiliser le PREMIER profil Movix (profiles[0]) pour le nom +
+ *   preferProfile: utiliser le PREMIER profil Orvix (profiles[0]) pour le nom +
  *   avatar avant l'identité OAuth. Utilisé par le leaderboard Greenlight et la
- *   gestion d'équipe, qui veulent le profil Movix de l'utilisateur, pas le
+ *   gestion d'équipe, qui veulent le profil Orvix de l'utilisateur, pas le
  *   pseudo Discord/Google.
  * @returns {Promise<{ username: string, avatar: string | null }>}
  */
@@ -52,7 +52,7 @@ async function resolveAdminIdentity(userId, authType, options = {}) {
   const profiles = Array.isArray(data.profiles) ? data.profiles : [];
   const firstProfile = profiles[0];
 
-  // Greenlight / team management : le PREMIER profil Movix prime sur l'identité
+  // Greenlight / team management : le PREMIER profil Orvix prime sur l'identité
   // OAuth. (Le reste de la fonction garde l'ordre OAuth-d'abord par défaut.)
   if (preferProfile && firstProfile?.name) {
     return {
@@ -72,7 +72,7 @@ async function resolveAdminIdentity(userId, authType, options = {}) {
     };
   }
 
-  // 2) BIP-39 ou OAuth sans `auth.userProfile` : profil Movix par défaut.
+  // 2) BIP-39 ou OAuth sans `auth.userProfile` : profil Orvix par défaut.
   const defaultProfile = profiles.find((p) => p && p.isDefault) || firstProfile;
   if (defaultProfile?.name) {
     return {

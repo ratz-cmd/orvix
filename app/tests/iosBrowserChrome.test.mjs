@@ -10,8 +10,8 @@ const read = relativePath => readFile(path.join(ROOT, relativePath), 'utf8');
 
 test('native browser chrome uses adaptive UIKit controls and SF Symbols', async () => {
   const [nativeChrome, manager] = await Promise.all([
-    read('ios/Movix/UI/MovixBrowserChromeView.swift'),
-    read('ios/Movix/UI/MovixBrowserChromeViewManager.m'),
+    read('ios/Orvix/UI/OrvixBrowserChromeView.swift'),
+    read('ios/Orvix/UI/OrvixBrowserChromeViewManager.m'),
   ]);
 
   for (const symbol of [
@@ -56,7 +56,7 @@ test('native browser chrome uses adaptive UIKit controls and SF Symbols', async 
 test('React Native wrapper maps toolbar props and events one-to-one', async () => {
   const wrapper = await read('src/components/ios/IOSBrowserToolbar.tsx');
 
-  assert.match(wrapper, /requireNativeComponent<NativeProps>\('MovixBrowserChromeView'\)/);
+  assert.match(wrapper, /requireNativeComponent<NativeProps>\('OrvixBrowserChromeView'\)/);
   assert.match(wrapper, /Platform\.OS === 'ios'[\s\S]*Platform\.isPad[\s\S]*width >= 768/);
   for (const prop of [
     'canGoBack',
@@ -96,14 +96,14 @@ test('MiniPill uses native glass only on iOS and remains a 44-point target', asy
 });
 
 test('Xcode compiles the native browser chrome sources', async () => {
-  const project = await read('ios/Movix.xcodeproj/project.pbxproj');
+  const project = await read('ios/Orvix.xcodeproj/project.pbxproj');
 
   for (const source of [
-    'MovixBrowserChromeView.swift',
-    'MovixBrowserChromeViewManager.m',
+    'OrvixBrowserChromeView.swift',
+    'OrvixBrowserChromeViewManager.m',
   ]) {
     const sourceEntry = new RegExp(`${source.replace('.', '\\.')} in Sources`, 'g');
     assert.equal(project.match(sourceEntry)?.length, 2, `${source} must have a file and build entry`);
   }
-  assert.match(project, /path = Movix\/UI;/);
+  assert.match(project, /path = Orvix\/UI;/);
 });

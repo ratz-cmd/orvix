@@ -50,7 +50,7 @@ const DEFAULT_AVATAR = 'https://as2.ftcdn.net/v2/jpg/05/89/93/27/1000_F_58993278
 const CLIENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function getSessionClientId(req) {
-  const clientId = String(req.get('x-orvix-client-id') || req.get('x-movix-client-id') || '').trim();
+  const clientId = String(req.get('x-orvix-client-id') || req.get('x-orvix-client-id') || '').trim();
   return CLIENT_ID_PATTERN.test(clientId) ? clientId.toLowerCase() : null;
 }
 

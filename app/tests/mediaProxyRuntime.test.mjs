@@ -35,7 +35,7 @@ function createRuntimeHarness(buildBridgeRuntime, { rejectOpen = false } = {}) {
   }
 
   const window = {
-    __MOVIX_BRIDGE_READY: false,
+    __ORVIX_BRIDGE_READY: false,
     addEventListener(type, handler) {
       if (!listeners.has(type)) listeners.set(type, new Set());
       listeners.get(type).add(handler);
@@ -69,7 +69,7 @@ function createRuntimeHarness(buildBridgeRuntime, { rejectOpen = false } = {}) {
       posted.push(message);
       queueMicrotask(() => {
         if (message.type === 'GM_OPEN_MEDIA_PROXY') {
-          window.dispatchEvent(new CustomEvent('__MOVIX_BRIDGE_RESPONSE', {
+          window.dispatchEvent(new CustomEvent('__ORVIX_BRIDGE_RESPONSE', {
             detail: rejectOpen
               ? { id: message.id, success: false, error: 'unavailable' }
               : {
@@ -81,7 +81,7 @@ function createRuntimeHarness(buildBridgeRuntime, { rejectOpen = false } = {}) {
           return;
         }
 
-        window.dispatchEvent(new CustomEvent('__MOVIX_BRIDGE_RESPONSE', {
+        window.dispatchEvent(new CustomEvent('__ORVIX_BRIDGE_RESPONSE', {
           detail: {
             id: message.id,
             success: true,
@@ -132,8 +132,8 @@ test('Seek media opens a header-bound proxy and sends Range only to loopback', a
     method: 'GET',
     url: 'https://185.237.106.181/v4/synthetic/master.m3u8?v=1',
     headers: {
-      Origin: 'https://movix1.embedseek.com',
-      Referer: 'https://movix1.embedseek.com/',
+      Origin: 'https://orvix1.embedseek.com',
+      Referer: 'https://orvix1.embedseek.com/',
       Range: 'bytes=0-99',
     },
   });
@@ -148,8 +148,8 @@ test('Seek media opens a header-bound proxy and sends Range only to loopback', a
     url: 'https://185.237.106.181/v4/synthetic/master.m3u8?v=1',
     method: 'GET',
     headers: {
-      Origin: 'https://movix1.embedseek.com',
-      Referer: 'https://movix1.embedseek.com/',
+      Origin: 'https://orvix1.embedseek.com',
+      Referer: 'https://orvix1.embedseek.com/',
     },
   });
   assert.deepEqual(harness.nativeFetches, [

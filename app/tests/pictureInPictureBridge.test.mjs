@@ -271,25 +271,25 @@ test('trusted bridge provenance does not depend on React Native URL properties',
 });
 
 const trustedContext = {
-  sourceUrl: 'https://movix.example/watch/1',
-  trustedOrigins: ['https://movix.example'],
+  sourceUrl: 'https://orvix.example/watch/1',
+  trustedOrigins: ['https://orvix.example'],
   isTopFrame: true,
   navigationGeneration: 0,
 };
 const untrustedContext = {
   sourceUrl: 'https://attacker.example/',
-  trustedOrigins: ['https://movix.example'],
+  trustedOrigins: ['https://orvix.example'],
   isTopFrame: true,
 };
 const sameOriginSubframeContext = {
-  sourceUrl: 'https://movix.example/embed/1',
-  trustedOrigins: ['https://movix.example'],
+  sourceUrl: 'https://orvix.example/embed/1',
+  trustedOrigins: ['https://orvix.example'],
   isTopFrame: false,
 };
 const iosMainDocumentWithoutFrameIdentity = {
-  sourceUrl: 'https://movix.example/watch/1',
-  topLevelUrl: 'https://movix.example/watch/1',
-  trustedOrigins: ['https://movix.example'],
+  sourceUrl: 'https://orvix.example/watch/1',
+  topLevelUrl: 'https://orvix.example/watch/1',
+  trustedOrigins: ['https://orvix.example'],
   navigationGeneration: 4,
 };
 const PIP_TOKEN_A = 'A'.repeat(43);
@@ -362,7 +362,7 @@ test('iOS accepts the coherent Apple main document without isTopFrame while expl
     { ...iosMainDocumentWithoutFrameIdentity, isTopFrame: false },
     {
       ...iosMainDocumentWithoutFrameIdentity,
-      sourceUrl: 'https://movix.example/embed/1',
+      sourceUrl: 'https://orvix.example/embed/1',
     },
   ]) {
     const rejected = loadBridge({}, { platform: 'ios' });
@@ -406,7 +406,7 @@ test('trusted current PiP capability can enter and gets its matching response', 
   }), ref, trustedContext);
   assert.equal(calls.enter, 1);
   assert.equal(injected.length, 1);
-  assert.match(injected[0], /__MOVIX_PIP_SHIM__/);
+  assert.match(injected[0], /__ORVIX_PIP_SHIM__/);
   assert.match(injected[0], /pip-1/);
 });
 
@@ -430,16 +430,16 @@ test('same-origin subframes and missing frame identity cannot register PiP or se
   }), ref, trustedContext);
   await bridge.handleBridgeMessage(JSON.stringify({
     type: 'PLAYBACK_AWAKE_SET',
-    capability: 'MOVIX_PLAYBACK_AWAKE_V1',
+    capability: 'ORVIX_PLAYBACK_AWAKE_V1',
     active: true,
   }), ref, sameOriginSubframeContext);
   await bridge.handleBridgeMessage(JSON.stringify({
     type: 'PLAYBACK_AWAKE_SET',
-    capability: 'MOVIX_PLAYBACK_AWAKE_V1',
+    capability: 'ORVIX_PLAYBACK_AWAKE_V1',
     active: true,
   }), ref, {
-    sourceUrl: 'https://movix.example/watch/1',
-    trustedOrigins: ['https://movix.example'],
+    sourceUrl: 'https://orvix.example/watch/1',
+    trustedOrigins: ['https://orvix.example'],
   });
   assert.equal(calls.enter, 0);
   assert.deepEqual(calls.awake, []);
@@ -498,7 +498,7 @@ test('playback transition updates awake and PiP eligibility together', async () 
   const ref = { current: { injectJavaScript() {} } };
   await bridge.handleBridgeMessage(JSON.stringify({
     type: 'PLAYBACK_AWAKE_SET',
-    capability: 'MOVIX_PLAYBACK_AWAKE_V1',
+    capability: 'ORVIX_PLAYBACK_AWAKE_V1',
     active: true,
   }), ref, trustedContext);
   assert.deepEqual(calls.awake, [true]);
@@ -510,7 +510,7 @@ test('inactive playback transition clears awake and PiP eligibility together', a
   const ref = { current: { injectJavaScript() {} } };
   await bridge.handleBridgeMessage(JSON.stringify({
     type: 'PLAYBACK_AWAKE_SET',
-    capability: 'MOVIX_PLAYBACK_AWAKE_V1',
+    capability: 'ORVIX_PLAYBACK_AWAKE_V1',
     active: false,
   }), ref, trustedContext);
   assert.deepEqual(calls.awake, [false]);
@@ -948,7 +948,7 @@ test('an active iOS handoff releases awake state but shields only native PiP eli
 
   await bridge.handleBridgeMessage(JSON.stringify({
     type: 'PLAYBACK_AWAKE_SET',
-    capability: 'MOVIX_PLAYBACK_AWAKE_V1',
+    capability: 'ORVIX_PLAYBACK_AWAKE_V1',
     active: false,
   }), ref, trustedContext);
   assert.deepEqual(calls.awake, [false]);
@@ -970,7 +970,7 @@ test('Android ignores prepared-source messages and preserves legacy enter and pl
   }), ref, trustedContext);
   await bridge.handleBridgeMessage(JSON.stringify({
     type: 'PLAYBACK_AWAKE_SET',
-    capability: 'MOVIX_PLAYBACK_AWAKE_V1',
+    capability: 'ORVIX_PLAYBACK_AWAKE_V1',
     active: false,
   }), ref, trustedContext);
 

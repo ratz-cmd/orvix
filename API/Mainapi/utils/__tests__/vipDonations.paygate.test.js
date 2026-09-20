@@ -225,7 +225,7 @@ test('malformed wallet response creates neither invoice nor event', async (t) =>
   setEnv(t, {
     NODE_ENV: 'production',
     VIP_PAYGATE_ENABLED: 'true',
-    VIP_PAYGATE_CALLBACK_BASE_URL: 'https://api.movix.example',
+    VIP_PAYGATE_CALLBACK_BASE_URL: 'https://api.orvix.example',
     VIP_PAYGATE_SETTLEMENT_WALLET: PAYGATE_FIXTURE.settlementWallet
   });
   const { pool, state } = makeCreationPool();
@@ -256,7 +256,7 @@ test('tiny injected EUR conversion cannot create a zero-value stored invoice', a
   setEnv(t, {
     NODE_ENV: 'production',
     VIP_PAYGATE_ENABLED: 'true',
-    VIP_PAYGATE_CALLBACK_BASE_URL: 'https://api.movix.example',
+    VIP_PAYGATE_CALLBACK_BASE_URL: 'https://api.orvix.example',
     VIP_PAYGATE_SETTLEMENT_WALLET: PAYGATE_FIXTURE.settlementWallet
   });
   const { pool, state } = makeCreationPool();
@@ -295,7 +295,7 @@ test('new PayGate creation separates publicId from callback reference and commit
   setEnv(t, {
     NODE_ENV: 'production',
     VIP_PAYGATE_ENABLED: 'true',
-    VIP_PAYGATE_CALLBACK_BASE_URL: 'https://api.movix.example',
+    VIP_PAYGATE_CALLBACK_BASE_URL: 'https://api.orvix.example',
     VIP_PAYGATE_SETTLEMENT_WALLET: PAYGATE_FIXTURE.settlementWallet,
     VIP_PAYGATE_DOMAIN: 'checkout.paygate.to',
     VIP_PAYGATE_MIN_AMOUNT_EUR: '6.25'
@@ -331,7 +331,7 @@ test('event failure rolls back the invoice transaction', async (t) => {
   setEnv(t, {
     NODE_ENV: 'production',
     VIP_PAYGATE_ENABLED: 'true',
-    VIP_PAYGATE_CALLBACK_BASE_URL: 'https://api.movix.example',
+    VIP_PAYGATE_CALLBACK_BASE_URL: 'https://api.orvix.example',
     VIP_PAYGATE_SETTLEMENT_WALLET: PAYGATE_FIXTURE.settlementWallet
   });
   const { pool, state } = makeCreationPool({ eventError: new Error('event failed') });
@@ -369,7 +369,7 @@ test('admin serializer preserves nullable callback contract without authenticati
     paygate_callback_reference: PAYGATE_FIXTURE.callbackReference,
     paygate_callback_nonce: PAYGATE_FIXTURE.callbackNonce,
     paygate_ipn_token: PAYGATE_FIXTURE.ipnTokenEncoded,
-    paygate_callback_url: `https://api.movix.example/api/vip/paygate/callback?reference=${PAYGATE_FIXTURE.callbackReference}&nonce=${PAYGATE_FIXTURE.callbackNonce}`
+    paygate_callback_url: `https://api.orvix.example/api/vip/paygate/callback?reference=${PAYGATE_FIXTURE.callbackReference}&nonce=${PAYGATE_FIXTURE.callbackNonce}`
   });
 
   const response = serializeAdminInvoice(invoice);
@@ -387,7 +387,7 @@ test('PayGate creation event exposes only its explicit non-secret allowlist', as
   setEnv(t, {
     NODE_ENV: 'production',
     VIP_PAYGATE_ENABLED: 'true',
-    VIP_PAYGATE_CALLBACK_BASE_URL: 'https://api.movix.example',
+    VIP_PAYGATE_CALLBACK_BASE_URL: 'https://api.orvix.example',
     VIP_PAYGATE_SETTLEMENT_WALLET: PAYGATE_FIXTURE.settlementWallet
   });
   const { pool, state } = makeCreationPool();

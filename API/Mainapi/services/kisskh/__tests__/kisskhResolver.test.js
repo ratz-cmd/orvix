@@ -300,7 +300,7 @@ test('local sensitive cache expires at 600 seconds and evicts above 256 entries'
 });
 
 test('episode and subtitle payloads survive a new cache instance through the disk cache', async (t) => {
-  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'movix-kisskh-cache-'));
+  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'orvix-kisskh-cache-'));
   t.after(() => fsp.rm(cacheDir, { recursive: true, force: true }));
   const nowState = { value: 1_000_000 };
   const deps = {
@@ -332,7 +332,7 @@ test('episode and subtitle payloads survive a new cache instance through the dis
 });
 
 test('a resolved TV request survives a new cache instance through the disk cache', async (t) => {
-  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'movix-kisskh-resolution-cache-'));
+  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'orvix-kisskh-resolution-cache-'));
   t.after(() => fsp.rm(cacheDir, { recursive: true, force: true }));
   const { createKisskhCache } = require('../kisskhCache');
   const deps = { cacheDir, now: () => 1_000, sensitiveTtlSeconds: 600 };
@@ -351,7 +351,7 @@ test('a resolved TV request survives a new cache instance through the disk cache
 });
 
 test('catalogue snapshot persists atomically, can be read stale, and rejects invalid replacement', async (t) => {
-  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'movix-kisskh-catalogue-cache-'));
+  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'orvix-kisskh-catalogue-cache-'));
   t.after(() => fsp.rm(cacheDir, { recursive: true, force: true }));
   const nowState = { value: 1_000 };
   const deps = { cacheDir, now: () => nowState.value };
@@ -793,7 +793,7 @@ test('the tmdb-only match key never reuses a season-one drama for a distinct lat
 });
 
 test('TV and movie catalogue caches isolate identical TMDB coordinates on disk and Redis', async (t) => {
-  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'movix-kisskh-media-cache-'));
+  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'orvix-kisskh-media-cache-'));
   t.after(() => fsp.rm(cacheDir, { recursive: true, force: true }));
   const redis = createRedisDouble();
   const { createKisskhCache } = require('../kisskhCache');
@@ -1064,7 +1064,7 @@ test('movie discovery uses the TMDB movie namespace and resolves public episode 
 });
 
 test('explicit catalogue warm-up builds the complete disk snapshot independently of an episode match', async (t) => {
-  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'movix-kisskh-explicit-catalogue-'));
+  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'orvix-kisskh-explicit-catalogue-'));
   t.after(() => fsp.rm(cacheDir, { recursive: true, force: true }));
   const listCalls = [];
   const setup = makeResolver({
@@ -1091,7 +1091,7 @@ test('explicit catalogue warm-up builds the complete disk snapshot independently
 });
 
 test('enhanced discovery builds every catalogue page and treats decimal episodes as bonuses', async (t) => {
-  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'movix-kisskh-enhanced-catalogue-'));
+  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'orvix-kisskh-enhanced-catalogue-'));
   t.after(() => fsp.rm(cacheDir, { recursive: true, force: true }));
   const listCalls = [];
   const progressEvents = [];
@@ -1246,7 +1246,7 @@ test('legacy discovery remains selectable without reading or refreshing the cata
 });
 
 test('failed catalogue refresh keeps using the complete stale disk snapshot', async (t) => {
-  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'movix-kisskh-stale-catalogue-'));
+  const cacheDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'orvix-kisskh-stale-catalogue-'));
   t.after(() => fsp.rm(cacheDir, { recursive: true, force: true }));
   const nowState = { value: 1_000 };
   const setup = makeResolver(discoveryFixture({

@@ -17,7 +17,7 @@ const PAYGATE_FIXTURE = Object.freeze({
 function buildCallbackUrl(overrides = {}) {
   const reference = overrides.reference || PAYGATE_FIXTURE.callbackReference;
   const nonce = overrides.nonce || PAYGATE_FIXTURE.callbackNonce;
-  return `https://api.movix.example/api/vip/paygate/callback?reference=${reference}&nonce=${nonce}`;
+  return `https://api.orvix.example/api/vip/paygate/callback?reference=${reference}&nonce=${nonce}`;
 }
 
 function buildWalletPayload(overrides = {}) {

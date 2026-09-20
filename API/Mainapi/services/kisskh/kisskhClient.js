@@ -353,7 +353,7 @@ function createKisskhClient(deps = {}) {
           Accept: 'application/json',
           'Accept-Encoding': 'gzip, deflate, br',
           Referer: referer,
-          'User-Agent': 'Movix-KissKH-Metadata/1.0',
+          'User-Agent': 'Orvix-KissKH-Metadata/1.0',
         },
         timeout,
         redirect: 'manual',

@@ -34,9 +34,9 @@ async function assertValidPlist(path) {
       '-NoProfile',
       '-NonInteractive',
       '-Command',
-      '$ErrorActionPreference = "Stop"; $path = [Environment]::GetEnvironmentVariable("MOVIX_PLIST_PATH"); [xml]$plist = Get-Content -Raw -LiteralPath $path; if ($null -eq $plist.plist.dict) { throw "Missing plist dictionary" }',
+      '$ErrorActionPreference = "Stop"; $path = [Environment]::GetEnvironmentVariable("ORVIX_PLIST_PATH"); [xml]$plist = Get-Content -Raw -LiteralPath $path; if ($null -eq $plist.plist.dict) { throw "Missing plist dictionary" }',
     ], {
-      env: { ...process.env, MOVIX_PLIST_PATH: absolutePath },
+      env: { ...process.env, ORVIX_PLIST_PATH: absolutePath },
     });
     return;
   }
@@ -84,26 +84,26 @@ function assertBalancedPBX(project) {
   assert.deepEqual(stack, [], 'PBX delimiters must be balanced');
 }
 
-test('iOS pins the official Google Cast pod inside the Movix target', async () => {
+test('iOS pins the official Google Cast pod inside the Orvix target', async () => {
   const podfile = await read('../ios/Podfile');
   const declarations = [...podfile.matchAll(/^\s*pod\s+['"]google-cast-sdk['"][^\r\n]*$/gm)]
     .map(match => match[0].trim());
 
   assert.deepEqual(declarations, ["pod 'google-cast-sdk', '~> 4.8.4'"]);
   assert.ok(
-    podfile.indexOf("target 'Movix' do") < podfile.indexOf("pod 'google-cast-sdk', '~> 4.8.4'"),
-    'Cast pod must be declared after the Movix target opens',
+    podfile.indexOf("target 'Orvix' do") < podfile.indexOf("pod 'google-cast-sdk', '~> 4.8.4'"),
+    'Cast pod must be declared after the Orvix target opens',
   );
   assert.ok(
-    podfile.indexOf("pod 'google-cast-sdk', '~> 4.8.4'") < podfile.indexOf("target 'MovixTests' do"),
-    'Cast pod must be declared in Movix before the inheriting test target',
+    podfile.indexOf("pod 'google-cast-sdk', '~> 4.8.4'") < podfile.indexOf("target 'OrvixTests' do"),
+    'Cast pod must be declared in Orvix before the inheriting test target',
   );
-  assert.match(podfile, /target 'MovixTests' do\s+inherit! :complete\s+end/);
+  assert.match(podfile, /target 'OrvixTests' do\s+inherit! :complete\s+end/);
 });
 
 test('iOS declares the exact Google Cast Bonjour services in a valid plist', async () => {
-  const plist = await read('../ios/Movix/Info.plist');
-  await assertValidPlist('../ios/Movix/Info.plist');
+  const plist = await read('../ios/Orvix/Info.plist');
+  await assertValidPlist('../ios/Orvix/Info.plist');
 
   for (const key of ['NSBonjourServices', 'NSLocalNetworkUsageDescription', 'NSAllowsLocalNetworking']) {
     assert.equal(occurrences(plist, new RegExp(`<key>${key}<\\/key>`, 'g')), 1, `${key} must be unique`);
@@ -121,13 +121,13 @@ test('iOS declares the exact Google Cast Bonjour services in a valid plist', asy
   assert.equal(occurrences(plist, /<string>_CC1AD845\._googlecast\._tcp<\/string>/g), 1);
   assert.match(
     plist,
-    /<key>NSLocalNetworkUsageDescription<\/key>\s*<string>Movix utilise votre réseau local pour détecter votre Chromecast et lui transmettre la vidéo\.<\/string>/,
+    /<key>NSLocalNetworkUsageDescription<\/key>\s*<string>Orvix utilise votre réseau local pour détecter votre Chromecast et lui transmettre la vidéo\.<\/string>/,
   );
   assert.match(plist, /<key>NSAllowsLocalNetworking<\/key>\s*<true\/>/);
 });
 
 test('CastBootstrap initializes the default receiver once and only on the main thread', async () => {
-  const bootstrap = await readIfPresent('../ios/Movix/Cast/CastBootstrap.swift');
+  const bootstrap = await readIfPresent('../ios/Orvix/Cast/CastBootstrap.swift');
 
   assert.match(bootstrap, /import GoogleCast/);
   assert.match(bootstrap, /@objc\s+final class CastBootstrap:\s*NSObject/);
@@ -156,9 +156,9 @@ test('CastBootstrap initializes the default receiver once and only on the main t
 });
 
 test('AppDelegate bootstraps Cast before React Native and super', async () => {
-  const delegate = await read('../ios/Movix/AppDelegate.mm');
+  const delegate = await read('../ios/Orvix/AppDelegate.mm');
 
-  assert.equal(occurrences(delegate, /^#import "Movix-Swift\.h"$/gm), 1);
+  assert.equal(occurrences(delegate, /^#import "Orvix-Swift\.h"$/gm), 1);
   assert.equal(occurrences(delegate, /\[CastBootstrap configure\];/g), 1);
   assert.match(
     delegate,
@@ -166,16 +166,16 @@ test('AppDelegate bootstraps Cast before React Native and super', async () => {
   );
 
   const configure = delegate.indexOf('[CastBootstrap configure];');
-  const reactNativeConfiguration = delegate.indexOf('self.moduleName = @"Movix";');
+  const reactNativeConfiguration = delegate.indexOf('self.moduleName = @"Orvix";');
   const superLaunch = delegate.indexOf('[super application:application didFinishLaunchingWithOptions:launchOptions]');
   assert.ok(configure < reactNativeConfiguration, 'Cast must initialize before React Native configuration');
   assert.ok(configure < superLaunch, 'Cast must initialize before the React Native super implementation');
 });
 
 test('iOS exposes the React Native CastModule backed by the native relay and receiver client', async () => {
-  const module = await readIfPresent('../ios/Movix/Cast/CastModule.swift');
-  const bridge = await readIfPresent('../ios/Movix/Cast/CastModule.m');
-  const project = await read('../ios/Movix.xcodeproj/project.pbxproj');
+  const module = await readIfPresent('../ios/Orvix/Cast/CastModule.swift');
+  const bridge = await readIfPresent('../ios/Orvix/Cast/CastModule.m');
+  const project = await read('../ios/Orvix.xcodeproj/project.pbxproj');
 
   assert.match(module, /@objc\(CastModule\)/);
   assert.match(module, /RCTEventEmitter/);
@@ -227,12 +227,12 @@ test('iOS exposes the React Native CastModule backed by the native relay and rec
   assert.equal(occurrences(project, /CastModule\.m in Sources/g), 2);
 });
 
-test('Xcode wires CastBootstrap once into only the Movix Sources phase', async () => {
-  const project = await read('../ios/Movix.xcodeproj/project.pbxproj');
+test('Xcode wires CastBootstrap once into only the Orvix Sources phase', async () => {
+  const project = await read('../ios/Orvix.xcodeproj/project.pbxproj');
   assertBalancedPBX(project);
 
   assert.equal(occurrences(project, /\/\* Cast \*\/ = \{\s*isa = PBXGroup;/g), 1);
-  assert.equal(occurrences(project, /path = Movix\/Cast;/g), 1);
+  assert.equal(occurrences(project, /path = Orvix\/Cast;/g), 1);
   assert.equal(
     occurrences(project, /\/\* CastBootstrap\.swift \*\/ = \{isa = PBXFileReference;[^\r\n]*path = CastBootstrap\.swift;/g),
     1,

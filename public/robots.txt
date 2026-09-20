@@ -28,4 +28,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: __MOVIX_SITE_URL__/sitemap.xml
+Sitemap: __ORVIX_SITE_URL__/sitemap.xml

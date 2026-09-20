@@ -28,7 +28,7 @@ const escaped = source
   .replace(/\$\{/g, '\\${');
 
 const output = `/**
- * Source du userscript Movix.
+ * Source du userscript Orvix.
  *
  * AUTO-GÉNÉRÉ par scripts/build-userscript.js
  * Ne pas modifier manuellement.

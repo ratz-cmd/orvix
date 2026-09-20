@@ -89,7 +89,7 @@ function loadExtractors() {
         Response: globalThis.Response,
         Buffer,
         crypto: globalThis.crypto,
-        chrome: { runtime: { id: 'movix-server' } },
+        chrome: { runtime: { id: 'orvix-server' } },
         fetch: async (url, options = {}) => {
             const headers = {
                 'User-Agent': BROWSER_UA,
@@ -115,7 +115,7 @@ function loadExtractors() {
     const extractorsCode = fs.readFileSync(extractorsPath, 'utf8');
     vm.runInContext(extractorsCode, ctx);
 
-    extractors = sandbox.MovixExtractors;
+    extractors = sandbox.OrvixExtractors;
     console.log('[nativeExtract] ✓ Moteur universel chargé : voe, fsvid, vidzy, vidmoly, sibnet, uqload, veev, doodstream, lulustream, vidara, seekstreaming');
     return extractors;
 }

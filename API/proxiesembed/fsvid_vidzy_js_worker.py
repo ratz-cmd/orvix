@@ -149,7 +149,7 @@ BOOTSTRAP = r"""
   globalThis.RTCPeerConnection = undefined;
 
   const nativeEval = eval;
-  globalThis.__movixRunPlayerScript = function (source) {
+  globalThis.__orvixRunPlayerScript = function (source) {
     try {
       nativeEval(String(source));
       return null;
@@ -157,7 +157,7 @@ BOOTSTRAP = r"""
       return String(error && error.name ? error.name : 'runtime_error');
     }
   };
-  globalThis.__movixCandidatesJson = function () {
+  globalThis.__orvixCandidatesJson = function () {
     return JSON.stringify(candidates.slice(0, 16));
   };
 })();
@@ -254,13 +254,13 @@ def main() -> None:
         )
         if location_patch:
             context.eval(location_patch)
-        run_script = context.get("__movixRunPlayerScript")
+        run_script = context.get("__orvixRunPlayerScript")
         runtime_error = None
         for script in scripts:
             error = run_script(script)
             if error:
                 runtime_error = str(error)
-        candidates_json = context.get("__movixCandidatesJson")()
+        candidates_json = context.get("__orvixCandidatesJson")()
         candidates = json.loads(candidates_json)
     except Exception as error:
         error_text = str(error).lower()

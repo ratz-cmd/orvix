@@ -52,7 +52,7 @@ export interface NextContentPrefs {
 
 const STORAGE_KEY = 'playerNextContent';
 
-export const NEXT_CONTENT_PREFS_CHANGE_EVENT = 'movix-next-content-prefs-changed';
+export const NEXT_CONTENT_PREFS_CHANGE_EVENT = 'orvix-next-content-prefs-changed';
 
 export const PERCENTAGE_MIN = 50;
 export const PERCENTAGE_MAX = 99;

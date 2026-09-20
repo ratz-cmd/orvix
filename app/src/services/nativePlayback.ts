@@ -45,7 +45,7 @@ export function isNativePlaybackHandoffId(value: unknown): value is string {
   return typeof value === 'string' && HANDOFF_ID_PATTERN.test(value);
 }
 
-export function isCanonicalMovixLoopbackURL(value: unknown): value is string {
+export function isCanonicalOrvixLoopbackURL(value: unknown): value is string {
   if (typeof value !== 'string' || FORBIDDEN_URL_CHARACTERS.test(value)) {
     return false;
   }
@@ -103,7 +103,7 @@ export function normalizePreparedNativePlaybackSource(
     || !protocolVersion.present
     || protocolVersion.value !== PREPARED_NATIVE_PLAYBACK_SOURCE_PROTOCOL_VERSION
     || !url.present
-    || !isCanonicalMovixLoopbackURL(url.value)
+    || !isCanonicalOrvixLoopbackURL(url.value)
     || !positionSec.present
     || typeof positionSec.value !== 'number'
     || !Number.isFinite(positionSec.value)

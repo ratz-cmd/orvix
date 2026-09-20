@@ -135,7 +135,7 @@ async function handleSegments(req, res, mediaType) {
       }),
     ]);
 
-    res.set('X-Movix-Segments-Cache', result.cache);
+    res.set('X-Orvix-Segments-Cache', result.cache);
     const { cache, ...payload } = result;
     return res.json({
       ...payload,

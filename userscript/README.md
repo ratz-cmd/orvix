@@ -1,6 +1,6 @@
-# Userscript Movix
+# Userscript Orvix
 
-Le userscript Movix est la variante Tampermonkey de l'outillage navigateur. Il reprend la logique utile pour les navigateurs Chromium quand l'installation d'une extension locale n'est pas l'option la plus pratique.
+Le userscript Orvix est la variante Tampermonkey de l'outillage navigateur. Il reprend la logique utile pour les navigateurs Chromium quand l'installation d'une extension locale n'est pas l'option la plus pratique.
 
 Le fichier installé est `userscript/orvix.user.js`.
 
@@ -17,7 +17,7 @@ Sur Firefox, l'extension native reste généralement le choix le plus propre.
 1. Installe [Tampermonkey](https://www.tampermonkey.net/).
 2. Ouvre [`orvix.user.js`](./orvix.user.js).
 3. Utilise le bouton `Raw` ou l'équivalent de ta forge pour lancer l'installation.
-4. Recharge Movix.
+4. Recharge Orvix.
 
 ## Ce que le script fait
 

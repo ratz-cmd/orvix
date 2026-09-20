@@ -121,7 +121,7 @@ test('rejects every non-canonical or non-MediaProxy loopback URL shape', () => {
     `http://127.0.0.1:49152\\p\\${TOKEN_A}\\${TOKEN_B}\\${TOKEN_C}`,
     `${VALID_URL}\n`,
     `\u0000${VALID_URL}`,
-    'blob:https://movix.example/source-id',
+    'blob:https://orvix.example/source-id',
     'https://cdn.example/video.m3u8',
   ];
 

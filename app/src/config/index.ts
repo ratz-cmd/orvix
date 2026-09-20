@@ -1,9 +1,9 @@
 export const CONFIG = {
-  SITE_URL: 'https://movix.tax',
+  SITE_URL: 'https://orvix.tax',
   DNS_PRIMARY: '1.1.1.1',
   DNS_SECONDARY: '1.0.0.1',
   DNS_DOH_URL: 'https://cloudflare-dns.com/dns-query',
-  APP_NAME: 'Movix',
+  APP_NAME: 'Orvix',
   USER_AGENT:
     'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36',
   USER_AGENT_IOS:
@@ -11,7 +11,7 @@ export const CONFIG = {
 };
 
 export const UPDATE_CHECK = {
-  RENTRY_URL: 'https://rentry.co/movix',
+  RENTRY_URL: 'https://rentry.co/orvix',
   MANIFEST_PATH: '/app/version.json',
   GITHUB_VERSION_RAW_PATH: '/raw/refs/heads/main/app/version.json',
   TIMEOUT_MS: 5000,
@@ -19,12 +19,12 @@ export const UPDATE_CHECK = {
 };
 
 export const FALLBACK_CONFIG = {
-  PRIMARY_URL: 'https://movix.tax',
+  PRIMARY_URL: 'https://orvix.tax',
   // Repli utilisé seulement si rentry.co puis <miroir>/address.json sont
   // injoignables. Il doit désigner un dépôt qui existe réellement et qui
-  // contient app/version.json : l'ancien dépôt (Movix-STMG) répond 404, donc
+  // contient app/version.json : l'ancien dépôt (ratz-cmd) répond 404, donc
   // la vérification de mise à jour échouait dans exactement le cas où elle sert
   // — quand le réseau est filtré.
   GITHUB_URL: 'https://github.com/ratz-cmd/orvix',
-  TELEGRAM_URL: 'https://t.me/movix_site',
+  TELEGRAM_URL: 'https://t.me/orvix_site',
 };

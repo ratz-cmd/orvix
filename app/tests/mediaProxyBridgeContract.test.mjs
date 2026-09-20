@@ -97,9 +97,9 @@ test('Fsvid media headers preserve the user agent used to sign playback URLs', a
   assert.deepEqual(
     applyMediaProxyHeaderRules(
       'https://fsvid.lol.attacker.example/master.m3u8',
-      { Referer: 'https://movix.fun/' },
+      { Referer: 'https://orvix.fun/' },
     ),
-    { Referer: 'https://movix.fun/' },
+    { Referer: 'https://orvix.fun/' },
   );
 });
 
@@ -153,8 +153,8 @@ test('Fsvid, Vidzy and Uqload keep browser encoding tokens without requesting co
   ]) {
     for (const resource of ['master.m3u8', 'seg-1.ts', 'video.mp4']) {
       const input = {
-        origin: 'https://movix.tax',
-        referer: 'https://movix.tax/',
+        origin: 'https://orvix.tax',
+        referer: 'https://orvix.tax/',
         'accept-encoding': 'gzip',
         Range: 'bytes=0-1023',
       };
@@ -168,7 +168,7 @@ test('Fsvid, Vidzy and Uqload keep browser encoding tokens without requesting co
     }
   }
   for (const host of ['uqload.vc.attacker.example', 'notuqload.vc', 'media.example']) {
-    const input = { 'Accept-Encoding': 'gzip', Referer: 'https://movix.tax/' };
+    const input = { 'Accept-Encoding': 'gzip', Referer: 'https://orvix.tax/' };
     assert.deepEqual(applyMediaProxyHeaderRules(`https://${host}/master.m3u8`, input), input);
   }
 });
@@ -339,37 +339,37 @@ test('LuluStream, Veev and Vidara media requests carry their player origin', asy
   // servent les segments, comme le dit RE_VIDARA côté relais Python.
   assert.deepEqual(
     applyMediaProxyHeaderRules('https://s1q2105.com/hls/master.m3u8', {
-      Referer: 'https://movix.fun/',
+      Referer: 'https://orvix.fun/',
     }),
-    { Referer: 'https://movix.fun/' },
+    { Referer: 'https://orvix.fun/' },
   );
   // Les apex tnmr.org et veevcdn.co n'appartiennent pas à ces hébergeurs :
   // seuls leurs sous-domaines servent les flux.
   for (const apex of ['https://tnmr.org/hls2/master.m3u8', 'https://veevcdn.co/x']) {
     assert.deepEqual(
-      applyMediaProxyHeaderRules(apex, { Referer: 'https://movix.fun/' }),
-      { Referer: 'https://movix.fun/' },
+      applyMediaProxyHeaderRules(apex, { Referer: 'https://orvix.fun/' }),
+      { Referer: 'https://orvix.fun/' },
       `apex hors règle : ${apex}`,
     );
   }
   // Et un domaine qui se contente de suffixer le nôtre reste hors règle.
   assert.deepEqual(
     applyMediaProxyHeaderRules('https://veev.to.attacker.example/master.m3u8', {
-      Referer: 'https://movix.fun/',
+      Referer: 'https://orvix.fun/',
     }),
-    { Referer: 'https://movix.fun/' },
+    { Referer: 'https://orvix.fun/' },
   );
 });
 
 test('Android registers the MediaProxy native package', async () => {
   const application = await read(
-    'android/app/src/main/java/com/movix/app/MainApplication.kt',
+    'android/app/src/main/java/com/orvix/app/MainApplication.kt',
   );
   const packageSource = await read(
-    'android/app/src/main/java/com/movix/app/proxy/MediaProxyPackage.kt',
+    'android/app/src/main/java/com/orvix/app/proxy/MediaProxyPackage.kt',
   );
   const moduleSource = await read(
-    'android/app/src/main/java/com/movix/app/proxy/MediaProxyModule.kt',
+    'android/app/src/main/java/com/orvix/app/proxy/MediaProxyModule.kt',
   );
 
   assert.match(application, /add\(MediaProxyPackage\(\)\)/);
@@ -381,13 +381,13 @@ test('Android registers the MediaProxy native package', async () => {
 
 test('Android native media proxy adds browser Fetch Metadata for every provider', async () => {
   const policy = await read(
-    'android/app/src/main/java/com/movix/app/proxy/MediaProxyPolicy.kt',
+    'android/app/src/main/java/com/orvix/app/proxy/MediaProxyPolicy.kt',
   );
   const castUpstream = await read(
-    'android/app/src/main/java/com/movix/app/proxy/NetworkBoundMediaProxyUpstream.kt',
+    'android/app/src/main/java/com/orvix/app/proxy/NetworkBoundMediaProxyUpstream.kt',
   );
   const localUpstream = await read(
-    'android/app/src/main/java/com/movix/app/proxy/MediaProxyServer.kt',
+    'android/app/src/main/java/com/orvix/app/proxy/MediaProxyServer.kt',
   );
 
   for (const [lowercase, canonical, value] of [
@@ -409,12 +409,12 @@ test('Android native media proxy adds browser Fetch Metadata for every provider'
 
 test('every native upstream defaults Sec-Ch-Ua, whatever the caller sent', async () => {
   const [kotlinPolicy, swiftPolicy, swiftUpstream, ...kotlinUpstreams] = await Promise.all([
-    read('android/app/src/main/java/com/movix/app/proxy/MediaProxyPolicy.kt'),
-    read('ios/Movix/Proxy/MediaProxyPolicy.swift').catch(() => ''),
-    read('ios/Movix/Proxy/MediaProxyUpstream.swift').catch(() => ''),
-    read('android/app/src/main/java/com/movix/app/proxy/MediaProxyServer.kt'),
-    read('android/app/src/main/java/com/movix/app/proxy/CronetMediaProxyUpstream.kt'),
-    read('android/app/src/main/java/com/movix/app/proxy/NetworkBoundMediaProxyUpstream.kt'),
+    read('android/app/src/main/java/com/orvix/app/proxy/MediaProxyPolicy.kt'),
+    read('ios/Orvix/Proxy/MediaProxyPolicy.swift').catch(() => ''),
+    read('ios/Orvix/Proxy/MediaProxyUpstream.swift').catch(() => ''),
+    read('android/app/src/main/java/com/orvix/app/proxy/MediaProxyServer.kt'),
+    read('android/app/src/main/java/com/orvix/app/proxy/CronetMediaProxyUpstream.kt'),
+    read('android/app/src/main/java/com/orvix/app/proxy/NetworkBoundMediaProxyUpstream.kt'),
   ]);
 
   // Sans cet en-tete, Fsvid repond 302 vers son flux leurre et Vidzy 403.
@@ -461,8 +461,8 @@ test('every native upstream defaults Sec-Ch-Ua, whatever the caller sent', async
 
 test('both native media proxies reject the same reserved local host names', async () => {
   const [kotlin, swift] = await Promise.all([
-    read('android/app/src/main/java/com/movix/app/proxy/MediaProxyPolicy.kt'),
-    read('ios/Movix/Proxy/MediaProxyPolicy.swift').catch(() => ''),
+    read('android/app/src/main/java/com/orvix/app/proxy/MediaProxyPolicy.kt'),
+    read('ios/Orvix/Proxy/MediaProxyPolicy.swift').catch(() => ''),
   ]);
 
   // Le chemin Cast LAN ne fait que valider la syntaxe (aucune resolution DNS),
@@ -484,8 +484,8 @@ test('both native media proxies reject the same reserved local host names', asyn
 test('the Cast header allow list covers every header the native proxy emits', async () => {
   const [bridge, kotlin, swift] = await Promise.all([
     read('src/services/bridge.ts'),
-    read('android/app/src/main/java/com/movix/app/proxy/MediaProxyPolicy.kt'),
-    read('ios/Movix/Proxy/MediaProxyPolicy.swift').catch(() => ''),
+    read('android/app/src/main/java/com/orvix/app/proxy/MediaProxyPolicy.kt'),
+    read('ios/Orvix/Proxy/MediaProxyPolicy.swift').catch(() => ''),
   ]);
 
   const allowList = bridge.match(

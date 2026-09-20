@@ -40,7 +40,7 @@ ${playbackAwakeShim}
 
 ${bridge}
 
-// --- Userscript Movix ---
+// --- Userscript Orvix ---
 ${USERSCRIPT_SOURCE}
 
 true;

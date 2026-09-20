@@ -11,21 +11,21 @@ export const isExtensionAvailable = (): boolean => {
     if (typeof window === 'undefined') return false;
     const w = window as Window & {
         hasOrvixExtension?: boolean;
-        hasMovixExtension?: boolean;
+        hasOrvixExtension?: boolean;
         __ORVIX_EXTENSION_INSTALLED?: boolean;
-        __MOVIX_EXTENSION_INSTALLED?: boolean;
+        __ORVIX_EXTENSION_INSTALLED?: boolean;
         hasOrvixUserscript?: boolean;
-        hasMovixUserscript?: boolean;
+        hasOrvixUserscript?: boolean;
     };
     return (
         w.hasOrvixExtension === true ||
-        w.hasMovixExtension === true ||
+        w.hasOrvixExtension === true ||
         w.__ORVIX_EXTENSION_INSTALLED === true ||
-        w.__MOVIX_EXTENSION_INSTALLED === true ||
+        w.__ORVIX_EXTENSION_INSTALLED === true ||
         w.hasOrvixUserscript === true ||
-        w.hasMovixUserscript === true ||
+        w.hasOrvixUserscript === true ||
         document.documentElement?.dataset.orvixExtension === 'true' ||
-        document.documentElement?.dataset.movixExtension === 'true'
+        document.documentElement?.dataset.orvixExtension === 'true'
     );
 };
 
@@ -52,7 +52,7 @@ export const fetchFromExtension = <T = unknown>(
             if (
                 event.source !== window ||
                 !response ||
-                (response.source !== "ORVIX_EXTENSION" && response.source !== "MOVIX_EXTENSION")
+                (response.source !== "ORVIX_EXTENSION" && response.source !== "ORVIX_EXTENSION")
             ) return;
 
             if (response.messageId === messageId) {

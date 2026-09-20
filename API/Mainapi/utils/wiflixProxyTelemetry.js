@@ -98,7 +98,7 @@ function buildTimingMetrics(timestamps, blockedAtMs) {
 
 function buildDiscordPayload({ identity, status, blockedAtMs, metrics, context }) {
   return {
-    username: 'Movix Wiflix Monitor',
+    username: 'Orvix Wiflix Monitor',
     allowed_mentions: { parse: [] },
     embeds: [{
       title: `Proxy Wiflix bloqué — HTTP ${status}`,

@@ -2,7 +2,7 @@
 // Dev override: when the requesting page is localhost (Vite dev on :3000),
 // talk to the local backend (:25565) instead of prod. Set per-message from
 // the sender origin (see maybeUseLocalApi in the onMessage listener below).
-const PROD_API_BASE_URL = "https://api.movix.fun";
+const PROD_API_BASE_URL = "https://api.orvix.fun";
 const LOCAL_API_BASE_URL = "http://localhost:25565";
 let API_BASE_URL = PROD_API_BASE_URL;
 
@@ -24,7 +24,7 @@ const STREAM_PROXY_USER_AGENT =
 // Import extractors module
 importScripts("fsvid-vidzy-quickjs.js");
 importScripts("extractors.js");
-const Extractors = globalThis.MovixExtractors;
+const Extractors = globalThis.OrvixExtractors;
 
 // BEGIN KISSKH FALLBACK
 const KISSKH_BROWSER_API = chrome;
@@ -530,16 +530,16 @@ async function setupRules() {
         initiatorDomains: [
           "localhost",
           "127.0.0.1",
-          "movix.cash",
-          "movix.cloud",
-          "movix.tax",
-          "movix.club",
-          "movix.chat",
-          "movix.golf",
-          "movix.date",
-          "movix.fun",
-          "movix.show",
-          "movix.men",
+          "orvix.cash",
+          "orvix.cloud",
+          "orvix.tax",
+          "orvix.club",
+          "orvix.chat",
+          "orvix.golf",
+          "orvix.date",
+          "orvix.fun",
+          "orvix.show",
+          "orvix.men",
         ],
         resourceTypes: [
           "xmlhttprequest",
@@ -1003,8 +1003,8 @@ function handleDetectEmbeds(payload) {
 function buildBackendApiHeaders(accessKey, extraHeaders = {}) {
   const headers = {
     Accept: "application/json",
-    Origin: "https://movix.fun",
-    Referer: "https://movix.fun/",
+    Origin: "https://orvix.fun",
+    Referer: "https://orvix.fun/",
     ...extraHeaders,
   };
 

@@ -14,8 +14,8 @@ async function loadUserscriptHarness() {
   };
   pageWindow.postMessage = () => {};
   pageWindow.location = {
-    hostname: 'movix.fun',
-    origin: 'https://movix.fun',
+    hostname: 'orvix.fun',
+    origin: 'https://orvix.fun',
   };
 
   const context = vm.createContext({
@@ -64,14 +64,14 @@ async function loadUserscriptHarness() {
 
 test('prepares Cast source headers from matching dynamic rules using the media allow-list', async () => {
   const window = await loadUserscriptHarness();
-  const resolver = window.__MOVIX_PREPARE_CAST_SOURCE__;
+  const resolver = window.__ORVIX_PREPARE_CAST_SOURCE__;
   const descriptor = Object.getOwnPropertyDescriptor(
     window,
-    '__MOVIX_PREPARE_CAST_SOURCE__',
+    '__ORVIX_PREPARE_CAST_SOURCE__',
   );
   assert.equal(descriptor.configurable, false);
   assert.equal(
-    Reflect.defineProperty(window, '__MOVIX_PREPARE_CAST_SOURCE__', {
+    Reflect.defineProperty(window, '__ORVIX_PREPARE_CAST_SOURCE__', {
       value: () => ({
         url: 'https://attacker.example/fake.m3u8',
         headers: { Authorization: 'Bearer fake' },
@@ -80,7 +80,7 @@ test('prepares Cast source headers from matching dynamic rules using the media a
     }),
     false,
   );
-  assert.equal(window.__MOVIX_PREPARE_CAST_SOURCE__, resolver);
+  assert.equal(window.__ORVIX_PREPARE_CAST_SOURCE__, resolver);
 
   await window.chrome.declarativeNetRequest.updateDynamicRules({
     addRules: [{
@@ -91,7 +91,7 @@ test('prepares Cast source headers from matching dynamic rules using the media a
           { header: 'Origin', operation: 'set', value: 'https://player.example' },
           { header: 'Referer', operation: 'set', value: 'https://player.example/watch' },
           { header: 'Accept', operation: 'set', value: 'application/vnd.apple.mpegurl' },
-          { header: 'User-Agent', operation: 'set', value: 'Movix/1.0' },
+          { header: 'User-Agent', operation: 'set', value: 'Orvix/1.0' },
           { header: 'Host', operation: 'set', value: 'cdn.example' },
           { header: 'Connection', operation: 'set', value: 'keep-alive' },
           { header: 'Cookie', operation: 'set', value: 'secret=1' },
@@ -107,12 +107,12 @@ test('prepares Cast source headers from matching dynamic rules using the media a
     }],
   });
 
-  assert.equal(typeof window.__MOVIX_PREPARE_CAST_SOURCE__, 'function');
+  assert.equal(typeof window.__ORVIX_PREPARE_CAST_SOURCE__, 'function');
   assert.equal(
-    Object.prototype.propertyIsEnumerable.call(window, '__MOVIX_PREPARE_CAST_SOURCE__'),
+    Object.prototype.propertyIsEnumerable.call(window, '__ORVIX_PREPARE_CAST_SOURCE__'),
     false,
   );
-  const prepared = window.__MOVIX_PREPARE_CAST_SOURCE__({
+  const prepared = window.__ORVIX_PREPARE_CAST_SOURCE__({
     type: 'CAST_PREPARE_SOURCE',
     url: 'https://cdn.example/master.m3u8',
     contentType: 'application/vnd.apple.mpegurl',
@@ -124,7 +124,7 @@ test('prepares Cast source headers from matching dynamic rules using the media a
       Origin: 'https://player.example',
       Referer: 'https://player.example/watch',
       Accept: 'application/vnd.apple.mpegurl',
-      'User-Agent': 'Movix/1.0',
+      'User-Agent': 'Orvix/1.0',
     },
     contentType: 'application/vnd.apple.mpegurl',
     protocolVersion: 1,
@@ -149,7 +149,7 @@ test('prepares an external WebVTT descriptor independently', async () => {
     }],
   });
 
-  const prepared = window.__MOVIX_PREPARE_CAST_SOURCE__({
+  const prepared = window.__ORVIX_PREPARE_CAST_SOURCE__({
     type: 'CAST_PREPARE_SOURCE',
     url: 'https://captions.example/fr.vtt',
     contentType: 'text/vtt',
@@ -166,7 +166,7 @@ test('prepares an external WebVTT descriptor independently', async () => {
 
 test('prepares public sources without headers when no dynamic rule matches', async () => {
   const window = await loadUserscriptHarness();
-  const prepared = window.__MOVIX_PREPARE_CAST_SOURCE__({
+  const prepared = window.__ORVIX_PREPARE_CAST_SOURCE__({
     type: 'CAST_PREPARE_SOURCE',
     url: 'https://public.example/master.m3u8',
   });
@@ -182,7 +182,7 @@ test('hands an authenticated loopback media URL to the native Cast resolver', as
   const window = await loadUserscriptHarness();
   const localUrl =
     'http://127.0.0.1:36375/p/process-token/session-token/resource-token';
-  const prepared = window.__MOVIX_PREPARE_CAST_SOURCE__({
+  const prepared = window.__ORVIX_PREPARE_CAST_SOURCE__({
     type: 'CAST_PREPARE_SOURCE',
     url: localUrl,
     contentType: 'application/vnd.apple.mpegurl',
@@ -215,20 +215,20 @@ test('rejects non-HTTPS and oversized source inputs and drops oversized headers'
   });
 
   assert.equal(
-    window.__MOVIX_PREPARE_CAST_SOURCE__({
+    window.__ORVIX_PREPARE_CAST_SOURCE__({
       type: 'CAST_PREPARE_SOURCE',
       url: 'http://bounded.example/master.m3u8',
     }),
     null,
   );
   assert.equal(
-    window.__MOVIX_PREPARE_CAST_SOURCE__({
+    window.__ORVIX_PREPARE_CAST_SOURCE__({
       type: 'CAST_PREPARE_SOURCE',
       url: `https://bounded.example/${'x'.repeat(16384)}`,
     }),
     null,
   );
-  const prepared = window.__MOVIX_PREPARE_CAST_SOURCE__({
+  const prepared = window.__ORVIX_PREPARE_CAST_SOURCE__({
     type: 'CAST_PREPARE_SOURCE',
     url: 'https://bounded.example/master.m3u8',
   });

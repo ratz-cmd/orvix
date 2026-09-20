@@ -18,8 +18,8 @@ function methodSection(source, start, end) {
 
 test('iOS DNS module exports the existing promise API', async () => {
   const [swift, objc] = await Promise.all([
-    read('ios/Movix/Dns/DnsModuleSwift.swift'),
-    read('ios/Movix/Dns/DnsModule.m'),
+    read('ios/Orvix/Dns/DnsModuleSwift.swift'),
+    read('ios/Orvix/Dns/DnsModule.m'),
   ]);
 
   assert.match(swift, /@objc\(DnsModule\)/);
@@ -32,7 +32,7 @@ test('iOS DNS module exports the existing promise API', async () => {
 });
 
 test('DNS enable validates literal servers and an HTTPS DoH endpoint', async () => {
-  const manager = await read('ios/Movix/Dns/DnsManager.swift');
+  const manager = await read('ios/Orvix/Dns/DnsManager.swift');
 
   assert.match(manager, /IPv4Address\(server\)/);
   assert.match(manager, /IPv6Address\(server\)/);
@@ -42,7 +42,7 @@ test('DNS enable validates literal servers and an HTTPS DoH endpoint', async () 
 });
 
 test('DNS mutations load persisted preferences before changing them', async () => {
-  const manager = await read('ios/Movix/Dns/DnsManager.swift');
+  const manager = await read('ios/Orvix/Dns/DnsManager.swift');
   const enable = methodSection(manager, 'static func enable(', 'static func disable(');
   const disable = methodSection(manager, 'static func disable(', 'static func isEnabled(');
 
@@ -62,7 +62,7 @@ test('DNS mutations load persisted preferences before changing them', async () =
 });
 
 test('DNS uses the documented network-extension entitlement shape', async () => {
-  const entitlements = await read('ios/Movix/Movix.entitlements');
+  const entitlements = await read('ios/Orvix/Orvix.entitlements');
 
   assert.match(
     entitlements,
@@ -93,7 +93,7 @@ test('iOS DNS setup reports actual system activation instead of claiming success
 });
 
 test('DNS promise completion is exactly-once with stable public error codes', async () => {
-  const manager = await read('ios/Movix/Dns/DnsManager.swift');
+  const manager = await read('ios/Orvix/Dns/DnsManager.swift');
 
   for (const code of [
     'DNS_INVALID_SERVER',
@@ -111,7 +111,7 @@ test('DNS promise completion is exactly-once with stable public error codes', as
 });
 
 test('DNS isEnabled accepts only enabled persisted DoH settings with HTTPS URL', async () => {
-  const manager = await read('ios/Movix/Dns/DnsManager.swift');
+  const manager = await read('ios/Orvix/Dns/DnsManager.swift');
   const isEnabled = manager.slice(manager.indexOf('static func isEnabled('));
 
   assert.match(isEnabled, /loadFromPreferences/);
@@ -124,12 +124,12 @@ test('DNS isEnabled accepts only enabled persisted DoH settings with HTTPS URL',
 
 test('iOS project compiles the PlaybackAwake bridge and its XCTest', async () => {
   const [project, module, tests] = await Promise.all([
-    read('ios/Movix.xcodeproj/project.pbxproj'),
-    read('ios/Movix/Playback/PlaybackAwakeModule.swift'),
-    read('ios/MovixTests/PlaybackAwakeModuleTests.swift'),
+    read('ios/Orvix.xcodeproj/project.pbxproj'),
+    read('ios/Orvix/Playback/PlaybackAwakeModule.swift'),
+    read('ios/OrvixTests/PlaybackAwakeModuleTests.swift'),
   ]);
 
-  assert.match(project, /path = Movix\/Playback;/);
+  assert.match(project, /path = Orvix\/Playback;/);
   for (const source of [
     'PlaybackAwakeModule.swift',
     'PlaybackAwakeModule.m',

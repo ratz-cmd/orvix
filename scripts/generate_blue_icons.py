@@ -9,7 +9,7 @@ import os
 import numpy as np
 from PIL import Image
 
-PROJECT_ROOT = "/home/admin/Projects/movix"
+PROJECT_ROOT = "/home/admin/Projects/orvix"
 SOURCE_LOGO = "/tmp/orvix_original.png"
 SOURCE_THUMBNAIL = "/tmp/thumbnail_original.png"
 

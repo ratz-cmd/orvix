@@ -133,7 +133,7 @@ test('une date impossible est refusée', () => {
 
 test('categorie : les cinq valeurs connues passent, le reste devient « autre »', () => {
   const mod = load();
-  mod._store.set('movixCalendarEntries', JSON.stringify([
+  mod._store.set('orvixCalendarEntries', JSON.stringify([
     entry({ id: 'a', category: 'movie' }),
     entry({ id: 'b', category: 'tv' }),
     entry({ id: 'c', category: 'anime' }),
@@ -153,7 +153,7 @@ test('categorie : les cinq valeurs connues passent, le reste devient « autre »
 
 test('libelle libre : garde pour « autre », borne, ignore ailleurs', () => {
   const mod = load();
-  mod._store.set('movixCalendarEntries', JSON.stringify([
+  mod._store.set('orvixCalendarEntries', JSON.stringify([
     entry({ id: 'a', category: 'other', customCategory: '  Concert  ' }),
     entry({ id: 'b', category: 'movie', customCategory: 'Concert' }),
     entry({ id: 'c', category: 'other', customCategory: '   ' }),
@@ -182,7 +182,7 @@ test('le libelle libre suit jusque dans les occurrences', () => {
 
 test('le stockage rejette ce qui n a pas la bonne forme', () => {
   const mod = load();
-  mod._store.set('movixCalendarEntries', JSON.stringify([
+  mod._store.set('orvixCalendarEntries', JSON.stringify([
     entry(),
     { id: 'x', title: '', date: '2026-03-15' },        // titre vide
     { id: 'y', title: 'Sans date' },                    // pas de date
