@@ -256,24 +256,24 @@ jobs:
           IOS_SOURCE_MIN_OS: ${{ needs.build.outputs.min_os }}
           IOS_SOURCE_IPA_PATH: dist/Movix-unsigned.ipa
           IOS_SOURCE_DATE: ${{ github.event.head_commit.timestamp }}
-          IOS_SOURCE_DOWNLOAD_URL: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/movix-ios-unsigner.ipa
+          IOS_SOURCE_DOWNLOAD_URL: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/orvix-ios-unsigner.ipa
           IOS_SOURCE_ICON_URL: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/ios/Movix/Images.xcassets/AppIcon.appiconset/icon-1024.png
           IOS_SOURCE_NOTES_URL: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}
-          IOS_SOURCE_OUTPUT: app/movix-ios-source.json
-          IOS_SCARLET_OUTPUT: app/movix-scarlet-source.json
+          IOS_SOURCE_OUTPUT: app/orvix-ios-source.json
+          IOS_SCARLET_OUTPUT: app/orvix-scarlet-source.json
         run: node app/scripts/generate-ios-source.mjs
 
-      # L'IPA vit dans le dépôt à côté de movix-android.apk, pour être
+      # L'IPA vit dans le dépôt à côté de orvix-android.apk, pour être
       # téléchargeable en direct depuis raw.githubusercontent comme l'APK.
       # Seuls ces chemins sont indexés : dist/ reste non suivi.
       - name: Commit the IPA next to the Android build
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          install -m 644 dist/Movix-unsigned.ipa app/movix-ios-unsigner.ipa
+          install -m 644 dist/Movix-unsigned.ipa app/orvix-ios-unsigner.ipa
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- app/movix-ios-unsigner.ipa app/movix-ios-source.json app/movix-scarlet-source.json
+          git add -- app/orvix-ios-unsigner.ipa app/orvix-ios-source.json app/orvix-scarlet-source.json
           if git diff --cached --quiet; then
             echo "IPA et sources identiques à celles déjà publiées, rien à committer."
             exit 0
@@ -285,8 +285,8 @@ jobs:
           L'archive est identique à celle attachée à la release et a été
           vérifiée par son empreinte SHA-256 avant d'être indexée.
 
-          Les sources des stores (app/movix-ios-source.json pour AltStore et
-          SideStore, app/movix-scarlet-source.json pour Scarlet) sont
+          Les sources des stores (app/orvix-ios-source.json pour AltStore et
+          SideStore, app/orvix-scarlet-source.json pour Scarlet) sont
           régénérées dans le même commit : version, taille et URL restent
           cohérentes avec l'IPA servie par raw.githubusercontent.
 
@@ -310,4 +310,4 @@ jobs:
             Movix-unsigned.ipa \
             Movix-unsigned.ipa.sha256 \
             --title "Movix ${{ needs.build.outputs.version }} (iOS, non signee)" \
-            --notes "IPA non signee. Son installation est impossible tant qu'un utilisateur ne l'a pas signee par ses propres moyens. Verifiez l'archive avec: shasum -a 256 -c Movix-unsigned.ipa.sha256 — Source AltStore/SideStore : https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/movix-ios-source.json — Source Scarlet : https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/movix-scarlet-source.json"
+            --notes "IPA non signee. Son installation est impossible tant qu'un utilisateur ne l'a pas signee par ses propres moyens. Verifiez l'archive avec: shasum -a 256 -c Movix-unsigned.ipa.sha256 — Source AltStore/SideStore : https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/orvix-ios-source.json — Source Scarlet : https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}/app/orvix-scarlet-source.json"

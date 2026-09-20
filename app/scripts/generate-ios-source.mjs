@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Génère la source AltStore/SideStore de Movix (movix-ios-source.json).
+// Génère la source AltStore/SideStore de Movix (orvix-ios-source.json).
 //
 // Toutes les entrées viennent de l'environnement : le job de release du
 // workflow ios-unsigned est le seul appelant légitime, et une valeur hors
@@ -74,7 +74,7 @@ const versionDescription =
   `Version ${version} (build ${buildNumber}). Notes de version : ${notesURL}`;
 
 // Le domaine tourne sous blocage FAI : la liste vivante est celle de
-// VITE_MIRRORS_CONFIG_URL (rentry.co/movix), que l'app et le service worker
+// VITE_MIRRORS_CONFIG_URL (rentry.co/orvix), que l'app et le service worker
 // relisent au démarrage. On aligne ce lien à chaque rotation — il n'est lu que
 // par l'interface des stores, jamais par l'installation elle-même, donc un
 // domaine périmé ici n'empêche personne d'installer l'app.

@@ -135,14 +135,14 @@ test('tag releases are isolated in a write-enabled job fed only by the build art
 test('tagged releases commit the IPA next to the Android build', async () => {
   const workflow = await readWorkflow();
 
-  // Le fichier vit dans app/ comme movix-android.apk, pour rester
+  // Le fichier vit dans app/ comme orvix-android.apk, pour rester
   // téléchargeable depuis raw.githubusercontent.
   assert.match(
     workflow,
-    /install -m 644 dist\/Movix-unsigned\.ipa app\/movix-ios-unsigner\.ipa/,
+    /install -m 644 dist\/Movix-unsigned\.ipa app\/orvix-ios-unsigner\.ipa/,
   );
   // Rien d'autre que ce chemin ne doit être indexé : dist/ est dans le workspace.
-  assert.match(workflow, /git add -- app\/movix-ios-unsigner\.ipa/);
+  assert.match(workflow, /git add -- app\/orvix-ios-unsigner\.ipa/);
   // Le commit vient après la vérification d'empreinte, jamais avant.
   const checksumIndex = workflow.indexOf('Verify the checksum before publishing');
   const commitIndex = workflow.indexOf('Commit the IPA next to the Android build');
@@ -168,7 +168,7 @@ function generatorEnv(overrides = {}) {
     // N'importe quel fichier lisible fait office d'IPA pour la taille.
     IOS_SOURCE_IPA_PATH: generatorPath,
     IOS_SOURCE_DATE: '2026-01-02T03:04:05+02:00',
-    IOS_SOURCE_DOWNLOAD_URL: 'https://example.test/movix-ios-unsigner.ipa',
+    IOS_SOURCE_DOWNLOAD_URL: 'https://example.test/orvix-ios-unsigner.ipa',
     IOS_SOURCE_ICON_URL: 'https://example.test/icon-1024.png',
     IOS_SOURCE_NOTES_URL: 'https://example.test/releases/tag/ios-v9.9.9',
     ...overrides,
@@ -176,13 +176,13 @@ function generatorEnv(overrides = {}) {
 }
 
 test('sidestore source generator produces a source consistent with its inputs', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'movix-ios-source-'));
+  const dir = await mkdtemp(join(tmpdir(), 'orvix-ios-source-'));
   try {
-    const output = join(dir, 'movix-ios-source.json');
+    const output = join(dir, 'orvix-ios-source.json');
     execFileSync(process.execPath, [generatorPath], {
       env: generatorEnv({
         IOS_SOURCE_OUTPUT: output,
-        IOS_SCARLET_OUTPUT: join(dir, 'movix-scarlet-source.json'),
+        IOS_SCARLET_OUTPUT: join(dir, 'orvix-scarlet-source.json'),
       }),
     });
 
@@ -197,7 +197,7 @@ test('sidestore source generator produces a source consistent with its inputs', 
     assert.equal(latest.buildVersion, '42');
     assert.equal(latest.date, '2026-01-02');
     assert.equal(latest.minOSVersion, '15.1');
-    assert.equal(latest.downloadURL, 'https://example.test/movix-ios-unsigner.ipa');
+    assert.equal(latest.downloadURL, 'https://example.test/orvix-ios-unsigner.ipa');
     assert.equal(latest.size, (await stat(generatorPath)).size);
 
     // Champs hérités du premier format : duplication exacte de la dernière
@@ -221,10 +221,10 @@ test('sidestore source generator produces a source consistent with its inputs', 
 });
 
 test('scarlet source describes the same IPA in scarlet own format', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'movix-scarlet-source-'));
+  const dir = await mkdtemp(join(tmpdir(), 'orvix-scarlet-source-'));
   try {
-    const scarletOutput = join(dir, 'movix-scarlet-source.json');
-    const output = join(dir, 'movix-ios-source.json');
+    const scarletOutput = join(dir, 'orvix-scarlet-source.json');
+    const output = join(dir, 'orvix-ios-source.json');
     execFileSync(process.execPath, [generatorPath], {
       env: generatorEnv({
         IOS_SOURCE_OUTPUT: output,
@@ -254,10 +254,10 @@ test('scarlet source describes the same IPA in scarlet own format', async () => 
 });
 
 test('sidestore source generator refuses malformed or missing inputs', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'movix-ios-source-'));
+  const dir = await mkdtemp(join(tmpdir(), 'orvix-ios-source-'));
   try {
-    const output = join(dir, 'movix-ios-source.json');
-    const scarlet = join(dir, 'movix-scarlet-source.json');
+    const output = join(dir, 'orvix-ios-source.json');
+    const scarlet = join(dir, 'orvix-scarlet-source.json');
     const cases = [
       { IOS_SOURCE_OUTPUT: output, IOS_SCARLET_OUTPUT: scarlet, IOS_SOURCE_VERSION: 'v9.9.9' },
       { IOS_SOURCE_OUTPUT: output, IOS_SCARLET_OUTPUT: scarlet, IOS_SOURCE_BUILD_NUMBER: 'quarante-deux' },
@@ -294,19 +294,19 @@ test('tagged releases regenerate the sidestore source and commit it with the IPA
   assert.match(workflow, /IOS_SOURCE_IPA_PATH: dist\/Movix-unsigned\.ipa/);
   // Les deux sources sortent du même run et sont commitées ensemble : jamais
   // une source à jour à côté d'une autre restée sur la version précédente.
-  assert.match(workflow, /IOS_SOURCE_OUTPUT: app\/movix-ios-source\.json/);
-  assert.match(workflow, /IOS_SCARLET_OUTPUT: app\/movix-scarlet-source\.json/);
+  assert.match(workflow, /IOS_SOURCE_OUTPUT: app\/orvix-ios-source\.json/);
+  assert.match(workflow, /IOS_SCARLET_OUTPUT: app\/orvix-scarlet-source\.json/);
   assert.match(
     workflow,
-    /git add -- app\/movix-ios-unsigner\.ipa app\/movix-ios-source\.json app\/movix-scarlet-source\.json/,
+    /git add -- app\/orvix-ios-unsigner\.ipa app\/orvix-ios-source\.json app\/orvix-scarlet-source\.json/,
   );
   // L'URL de téléchargement pointe sur l'IPA commitée dans le dépôt, pour que
   // source et IPA restent servies depuis le même commit.
   assert.match(
     workflow,
-    /IOS_SOURCE_DOWNLOAD_URL: https:\/\/raw\.githubusercontent\.com\/\$\{\{ github\.repository \}\}\/\$\{\{ github\.event\.repository\.default_branch \}\}\/app\/movix-ios-unsigner\.ipa/,
+    /IOS_SOURCE_DOWNLOAD_URL: https:\/\/raw\.githubusercontent\.com\/\$\{\{ github\.repository \}\}\/\$\{\{ github\.event\.repository\.default_branch \}\}\/app\/orvix-ios-unsigner\.ipa/,
   );
-  assert.match(workflow, /git add -- app\/movix-ios-unsigner\.ipa app\/movix-ios-source\.json/);
+  assert.match(workflow, /git add -- app\/orvix-ios-unsigner\.ipa app\/orvix-ios-source\.json/);
   // min_os sort du binaire réellement compilé, côté build.
   assert.match(workflow, /min_os=\$MIN_OS/);
   assert.match(workflow, /min_os: \$\{\{ steps\.validate\.outputs\.min_os \}\}/);

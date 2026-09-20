@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 async function loadUserscriptHarness() {
   const source = await readFile(
-    new URL('../../userscript/movix.user.js', import.meta.url),
+    new URL('../../userscript/orvix.user.js', import.meta.url),
     'utf8',
   );
   const pageWindow = new EventTarget();
@@ -57,7 +57,7 @@ async function loadUserscriptHarness() {
     unsafeWindow: pageWindow,
     window: pageWindow,
   });
-  vm.runInContext(source, context, { filename: 'userscript/movix.user.js' });
+  vm.runInContext(source, context, { filename: 'userscript/orvix.user.js' });
   pageWindow.chrome = context.chrome;
   return pageWindow;
 }

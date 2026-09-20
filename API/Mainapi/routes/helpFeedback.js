@@ -7,6 +7,7 @@ const { getPool } = require('../mysqlPool');
 const { verifyTurnstileFromRequest } = require('../utils/turnstile');
 const { isAdmin } = require('../middleware/auth');
 const { createRedisRateLimitStore } = require('../utils/redisRateLimitStore');
+const { getIpHashSalt } = require('../utils/ipHashSalt');
 
 // Whitelist of valid tuto slugs. Must stay in sync with
 // src/pages/help/tutoRegistry.tsx TUTO_REGISTRY entries.
@@ -39,18 +40,15 @@ const VALID_SLUGS = new Set([
   'apparence',
 ]);
 
-const IP_SALT =
-  process.env.TURNSTILE_IP_SALT ||
-  process.env.JWT_SECRET ||
-  'movix-help-feedback-default-salt';
-
 function hashIp(req) {
   const ip =
     req.headers['cf-connecting-ip'] ||
     req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
     req.ip ||
     'unknown';
-  return crypto.createHash('sha256').update(`${IP_SALT}:${ip}`).digest('hex');
+  // Sel lu à chaque appel via le helper partagé : plus de constante par défaut
+  // devinable dans le dépôt (voir utils/ipHashSalt.js).
+  return crypto.createHash('sha256').update(`${getIpHashSalt()}:${ip}`).digest('hex');
 }
 
 const feedbackRateLimit = rateLimit({

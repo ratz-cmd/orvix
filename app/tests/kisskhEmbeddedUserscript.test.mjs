@@ -31,7 +31,7 @@ export const USERSCRIPT_SOURCE = \`${escaped}\`;
 }
 
 test('embedded mobile userscript is current, exposes KissKH without the generated policy and check mode does not write', async () => {
-  const userscriptUrl = new URL('userscript/movix.user.js', ROOT);
+  const userscriptUrl = new URL('userscript/orvix.user.js', ROOT);
   const embeddedUrl = new URL('app/src/injection/userscript-source.ts', ROOT);
   const buildUrl = new URL('app/scripts/build-userscript.js', ROOT);
   const [userscript, embedded] = await Promise.all([

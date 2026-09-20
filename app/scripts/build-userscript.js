@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Lit le userscript depuis ../userscript/movix.user.js,
+ * Lit le userscript depuis ../userscript/orvix.user.js,
  * supprime le header ==UserScript==,
  * et génère src/injection/userscript-source.ts avec le contenu en string.
  * Avec --check, compare les octets attendus sans écrire.
@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const userscriptPath = resolve(__dirname, '../../userscript/movix.user.js');
+const userscriptPath = resolve(__dirname, '../../userscript/orvix.user.js');
 const outputPath = resolve(__dirname, '../src/injection/userscript-source.ts');
 
 let source = readFileSync(userscriptPath, 'utf-8');

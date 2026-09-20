@@ -7,10 +7,21 @@ import { visualizer } from 'rollup-plugin-visualizer'
 const buildId = process.env.CF_PAGES_COMMIT_SHA || process.env.COMMIT_REF || new Date().toISOString()
 process.env.VITE_APP_BUILD_ID = buildId
 
-const normalizeSiteUrl = (value?: string): string => {
+const DEFAULT_MIRRORS = 'orvix.health'
+const DEFAULT_MIRRORS_CONFIG_URL = 'https://rentry.co/orvix'
+
+// `fallback` n'est fourni qu'en mode dev (`vite serve`), où l'URL publique
+// canonique n'a aucune conséquence. Un build sans VITE_SITE_URL échoue
+// volontairement : boulanger « localhost » dans les URLs canoniques, le
+// JSON-LD et le sitemap est pire qu'un build refusé.
+const normalizeSiteUrl = (value: string | undefined, fallback: string | null): string => {
   const candidate = value?.trim()
   if (!candidate) {
-    throw new Error('VITE_SITE_URL is required')
+    if (fallback) return fallback
+    throw new Error(
+      'VITE_SITE_URL est requis pour construire le site : renseigne l\'URL publique ' +
+      'canonique dans .env (ex. VITE_SITE_URL=https://orvix.example).',
+    )
   }
 
   try {
@@ -18,20 +29,27 @@ const normalizeSiteUrl = (value?: string): string => {
     if (!['http:', 'https:'].includes(url.protocol)) throw new Error()
     return url.origin
   } catch {
-    throw new Error('VITE_SITE_URL must contain a valid public URL')
+    throw new Error(`VITE_SITE_URL must contain a valid public URL: ${candidate}`)
   }
+}
+
+function parseMirrors(value: string | undefined): string[] {
+  return (value || DEFAULT_MIRRORS)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
 }
 
 function injectPublicConfig(): Plugin {
   let siteUrl: string | undefined
+  // Vite expose les variables de .env dans `config.env`, jamais dans
+  // `process.env`. Les lire depuis process.env faisait silencieusement ignorer
+  // VITE_DEFAULT_MIRRORS et VITE_MIRRORS_CONFIG_URL : le service worker
+  // partait toujours avec les valeurs par défaut, quoi qu'on écrive dans .env.
+  let mirrors: string[] = parseMirrors(undefined)
+  let configUrl = DEFAULT_MIRRORS_CONFIG_URL
 
   const replacePlaceholders = (source: string): string => {
-    const mirrors = (process.env.VITE_DEFAULT_MIRRORS || 'orvix.health')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-    const configUrl =
-      process.env.VITE_MIRRORS_CONFIG_URL || 'https://rentry.co/orvix'
     return source
       .replace(/__(?:MOVIX|ORVIX)_DEFAULT_MIRRORS__/g, JSON.stringify(mirrors))
       .replace(/__(?:MOVIX|ORVIX)_CONFIG_URL__/g, JSON.stringify(configUrl))
@@ -43,7 +61,21 @@ function injectPublicConfig(): Plugin {
   return {
     name: 'orvix-public-config-inject',
     configResolved(config) {
-      siteUrl = normalizeSiteUrl(config.env.VITE_SITE_URL)
+      const env = config.env as Record<string, string | undefined>
+      mirrors = parseMirrors(env.VITE_DEFAULT_MIRRORS)
+      configUrl = env.VITE_MIRRORS_CONFIG_URL?.trim() || DEFAULT_MIRRORS_CONFIG_URL
+      siteUrl = normalizeSiteUrl(
+        env.VITE_SITE_URL,
+        config.command === 'serve'
+          ? `http://localhost:${config.server.port ?? 3000}`
+          : null,
+      )
+      if (config.command === 'serve' && !env.VITE_SITE_URL?.trim()) {
+        config.logger.warn(
+          `[orvix] VITE_SITE_URL absent : repli sur ${siteUrl} pour le serveur de dev. ` +
+            'Un build de production échouera tant qu\'elle n\'est pas définie.',
+        )
+      }
     },
     transformIndexHtml(html) {
       return replacePlaceholders(html)

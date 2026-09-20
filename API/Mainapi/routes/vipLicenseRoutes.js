@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const store = require('../utils/vipLicenseStore');
 
@@ -138,17 +139,59 @@ router.get('/status', (req, res) => {
 });
 
 /**
+ * Vérifie la clé d'administration de la requête.
+ *
+ * Trois changements par rapport à l'ancien contrôle :
+ *  - la clé n'est acceptée que dans l'en-tête `x-admin-key`, plus en query
+ *    string : une URL finit dans les logs, les proxies et les historiques ;
+ *  - la comparaison est à temps constant et ne s'appuie sur aucune valeur par
+ *    défaut en dur — le repli public `'orvix_vip_admin_secret_2026'` ouvrait le
+ *    registre des licences à qui lisait le dépôt ;
+ *  - l'exemption `NODE_ENV !== 'production'` disparaît : sur un déploiement dont
+ *    NODE_ENV n'était pas exactement « production », le contrôle ne s'appliquait
+ *    pas du tout. Ici, pas de secret configuré = accès refusé.
+ */
+function checkAdminKey(req) {
+  const configured = (process.env.ADMIN_SECRET || process.env.JWT_SECRET || '').trim();
+  if (!configured) {
+    return {
+      ok: false,
+      status: 503,
+      error: 'Administration VIP non configurée : définir ADMIN_SECRET côté serveur',
+    };
+  }
+
+  const provided = String(req.headers['x-admin-key'] || '').trim();
+  if (!provided) {
+    return { ok: false, status: 403, error: 'Accès administrateur non autorisé' };
+  }
+
+  const providedBuffer = Buffer.from(provided, 'utf8');
+  const configuredBuffer = Buffer.from(configured, 'utf8');
+  const matches =
+    providedBuffer.length === configuredBuffer.length &&
+    crypto.timingSafeEqual(providedBuffer, configuredBuffer);
+
+  return matches
+    ? { ok: true }
+    : { ok: false, status: 403, error: 'Accès administrateur non autorisé' };
+}
+
+/**
  * GET /api/vip/admin/licenses
  * Endpoint d'administration pour consulter le registre et les statistiques
  */
 router.get('/admin/licenses', (req, res) => {
   try {
-    const adminKey = req.headers['x-admin-key'] || req.query.admin_key;
-    const expectedKey = process.env.ADMIN_SECRET || process.env.JWT_SECRET || 'orvix_vip_admin_secret_2026';
-
-    // Sécurité basique pour l'accès externe
-    if (adminKey !== expectedKey && process.env.NODE_ENV === 'production') {
-      return res.status(403).json({ success: false, error: 'Accès administrateur non autorisé' });
+    const auth = checkAdminKey(req);
+    if (!auth.ok) {
+      return res.status(auth.status).json({
+        success: false,
+        error: auth.error,
+        ...(auth.status === 403
+          ? { hint: "Fournir la clé dans l'en-tête x-admin-key." }
+          : {}),
+      });
     }
 
     const { search, status, limit } = req.query;

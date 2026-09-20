@@ -5,6 +5,7 @@ const ecc = require('tiny-secp256k1');
 const { BIP32Factory } = require('bip32');
 
 const { invalidateVipCache } = require('../checkVip');
+const { getIpHashSalt } = require('./ipHashSalt');
 const { fetchAddressTxs, fetchTipHeight } = require('./chainExplorer');
 const vipPaygate = require('./vipPaygate');
 const vipCryptoGate = require('./vipCryptoGate');
@@ -131,7 +132,9 @@ function getGiftPath(giftToken) {
 
 function hashIp(ipAddress) {
   if (!ipAddress) return null;
-  const secret = process.env.JWT_SECRET || 'movix-vip-ip';
+  // Sel lu à chaque appel (et non figé au chargement du module) : les tests
+  // peuvent le redéfinir, et le repli aléatoire reste utilisable sans redémarrage.
+  const secret = getIpHashSalt();
   return crypto.createHmac('sha256', secret).update(ipAddress).digest('hex');
 }
 

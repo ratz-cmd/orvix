@@ -19,12 +19,16 @@ const PATHS = {
     REPO_ROOT,
     'app/android/app/build/outputs/apk/release/app-release.apk',
   ),
-  publishedApk: path.join(REPO_ROOT, 'app/movix-android.apk'),
+  publishedApk: path.join(REPO_ROOT, 'app/orvix-android.apk'),
   manifest: path.join(REPO_ROOT, 'app/version.json'),
 };
 
+// L'URL publiée dans app/version.json doit désigner l'APK réellement committé
+// ci-dessus, dans le dépôt qui l'héberge : c'est ce que l'app télécharge et
+// vérifie par SHA-256. Surchargeable pour publier depuis un miroir.
 const APK_URL =
-  'https://github.com/Movix-STMG/MovixOpenSource/raw/refs/heads/main/app/movix-android.apk';
+  process.env.APK_PUBLIC_URL ||
+  'https://raw.githubusercontent.com/ratz-cmd/orvix/main/app/orvix-android.apk';
 
 function die(msg) {
   console.error(`\n[publish-app] ${msg}\n`);
@@ -185,7 +189,7 @@ async function main() {
     console.log(
       '\n─────────────────────────────────────────────\n' +
         '✓ Publish ready. Next steps:\n\n' +
-        '  git add app/version.json app/movix-android.apk app/android/app/build.gradle\n' +
+        '  git add app/version.json app/orvix-android.apk app/android/app/build.gradle\n' +
         `  git commit -m "release(app): v${versionName} (build ${versionCode})"\n` +
         '  git push\n' +
         '─────────────────────────────────────────────\n',

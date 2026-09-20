@@ -64,4 +64,4 @@ Ces permissions servent à :
 
 - Si tu modifies la logique partagée, compare toujours `Chrome/` et `Firefox/`.
 - Les deux variantes n'ont pas exactement le même manifest ; ne pars pas du principe qu'un copier-coller suffit.
-- Si la feature doit aussi exister en mode Tampermonkey, vérifie `userscript/movix.user.js`.
+- Si la feature doit aussi exister en mode Tampermonkey, vérifie `userscript/orvix.user.js`.

@@ -71,7 +71,24 @@ try {
   console.error('[vipLicenseStore] Migration warning:', e.message);
 }
 
-const SECRET = process.env.JWT_SECRET || 'orvix_vip_cryptographic_secret_key_2026_super_secure';
+// Ce secret signe les tokens VIP (signToken / verifyToken ci-dessous). Aucun
+// repli en dur : une valeur par défaut présente dans un dépôt public laisserait
+// n'importe qui forger une licence valide à durée illimitée. JWT_SECRET est de
+// toute façon obligatoire pour démarrer l'API (middleware/auth.js fait
+// process.exit(1) sans lui) : son absence est une erreur de configuration, pas
+// un cas d'usage à couvrir.
+function resolveSigningSecret() {
+  const secret = (process.env.JWT_SECRET || '').trim();
+  if (!secret) {
+    throw new Error(
+      '[vipLicenseStore] JWT_SECRET est requis pour signer les licences VIP. ' +
+      'Définis-le dans API/Mainapi/.env : aucune valeur de repli n\'est utilisée.',
+    );
+  }
+  return secret;
+}
+
+const SECRET = resolveSigningSecret();
 
 /**
  * Génère une clé formatée ORVIX-VIP-XXXX-XXXX-XXXX

@@ -10,7 +10,7 @@ const AES_IV = '1234567890oiuytr';
 
 test('mobile embedded userscript is generated exactly from the web source', async () => {
   const source = await readFile(
-    new URL('../../userscript/movix.user.js', import.meta.url),
+    new URL('../../userscript/orvix.user.js', import.meta.url),
     'utf8',
   );
   const generated = await readFile(

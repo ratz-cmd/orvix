@@ -1,7 +1,7 @@
 {
   "version": "2.5.27",
   "buildNumber": 36,
-  "apkUrl": "https://raw.githubusercontent.com/movixcorp/MovixOpenSource/main/app/movix-android.apk",
+  "apkUrl": "https://raw.githubusercontent.com/ratz-cmd/orvix/main/app/orvix-android.apk",
   "apkSizeBytes": 72584769,
   "apkSha256": "9a4bed5628b011b81880818c8ead413f9447d867ad9c229141edc9236b4ca56c",
   "mandatory": false,

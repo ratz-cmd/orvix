@@ -20,6 +20,11 @@ export const UPDATE_CHECK = {
 
 export const FALLBACK_CONFIG = {
   PRIMARY_URL: 'https://movix.tax',
-  GITHUB_URL: 'https://github.com/Movix-STMG/MovixOpenSource',
+  // Repli utilisé seulement si rentry.co puis <miroir>/address.json sont
+  // injoignables. Il doit désigner un dépôt qui existe réellement et qui
+  // contient app/version.json : l'ancien dépôt (Movix-STMG) répond 404, donc
+  // la vérification de mise à jour échouait dans exactement le cas où elle sert
+  // — quand le réseau est filtré.
+  GITHUB_URL: 'https://github.com/ratz-cmd/orvix',
   TELEGRAM_URL: 'https://t.me/movix_site',
 };
