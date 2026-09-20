@@ -694,6 +694,7 @@ Tout le traitement se fait sur la machine du membre : **le serveur ne reçoit au
 | Service | `src/utils/onTheFlyExtract.ts` : détection d'hébergeur extractible, extension d'abord, backend `/api/extract` ensuite, remontée des pistes (qualités) et délai strict |
 | Bascule | `src/hooks/useAdFreeAutoExtraction.ts` branché dans `WatchMovie` et `WatchTv` : extraction dès qu'un embed extractible est choisi, puis lecture dans le lecteur Orvix (`nexus_hls`) ; résultat mémorisé, une seule tentative par URL, échec = iframe conservée |
 | Contrôle utilisateur | Toast « Publicités supprimées » avec action « Revenir au lecteur tiers » (préférence `orvix_ad_free_autoplay`, désactivable) |
+| Déploiement | `API/Mainapi/utils/extractorsLocator.js` : le moteur d'extraction est cherché dans le monorepo, le répertoire courant ou `ORVIX_EXTRACTORS_PATH` — un backend déployé seul reste fonctionnel, avec un message clair sinon |
 | Serveur | Rien de lourd : `POST /api/extract` télécharge la page d'embed (~50 Ko) et renvoie l'URL du flux. Le relais `/api/extract/stream` n'existe que pour les hébergeurs qui exigent un `Referer` (mobile/TV) ; il relaie les octets, il ne transcode pas. L'upscaling, lui, ne passe jamais par là |
 
 ### Vérifications de cette passe produit
