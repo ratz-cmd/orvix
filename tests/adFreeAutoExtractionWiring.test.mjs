@@ -62,12 +62,18 @@ test('l’extracteur SeekStreaming n’est plus neutralisé', async () => {
 });
 
 test('le backend accepte SeekStreaming sur /api/extract', async () => {
-  const backend = await read('API/Mainapi/routes/nativeExtract.js');
+  const [backend, locator] = await Promise.all([
+    read('API/Mainapi/routes/nativeExtract.js'),
+    read('API/Mainapi/utils/extractorsLocator.js'),
+  ]);
 
   assert.match(backend, /seekstreaming/);
   assert.match(backend, /router\.post\('\/'/);
-  assert.match(backend, /extension\/Chrome\/extractors\.js/);
   assert.match(backend, /ext\.extractSingle\(embedType, url\)/);
+  // Le moteur d'extraction vit dans le dépôt web : le localisateur le trouve
+  // même quand le backend est déployé à côté du front.
+  assert.match(backend, /require\('\.\.\/utils\/extractorsLocator'\)/);
+  assert.match(locator, /extension\/Chrome\/extractors\.js/);
 });
 
 test('l’extracteur SeekStreaming sait déchiffrer la charge utile de l’API', async () => {

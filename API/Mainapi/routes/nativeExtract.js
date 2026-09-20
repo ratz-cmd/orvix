@@ -24,6 +24,10 @@ const vm      = require('vm');
 const fs      = require('fs');
 const dns     = require('node:dns');
 const { Agent, setGlobalDispatcher, buildConnector } = require('undici');
+const {
+    resolveExtractorsPath,
+    resolveQuickJsPath,
+} = require('../utils/extractorsLocator');
 
 const router = express.Router();
 
@@ -63,12 +67,10 @@ let extractors = null;
 function loadExtractors() {
     if (extractors) return extractors;
 
-    const extractorsPath = path.resolve(__dirname, '../../../extension/Chrome/extractors.js');
-    const quickjsPath    = path.resolve(__dirname, '../../../extension/Chrome/fsvid-vidzy-quickjs.js');
-
-    if (!fs.existsSync(extractorsPath)) {
-        throw new Error(`Fichier extractors.js introuvable à : ${extractorsPath}`);
-    }
+    // La localisation (et le message d'erreur actionnable) vit dans
+    // `utils/extractorsLocator.js`, testable sans Express ni undici.
+    const extractorsPath = resolveExtractorsPath();
+    const quickjsPath    = resolveQuickJsPath();
 
     const sandbox = {
         console,
@@ -107,16 +109,18 @@ function loadExtractors() {
 
     const ctx = vm.createContext(sandbox);
 
-    if (fs.existsSync(quickjsPath)) {
+    if (quickjsPath) {
         const quickjsCode = fs.readFileSync(quickjsPath, 'utf8');
         vm.runInContext(quickjsCode, ctx);
+    } else {
+        console.warn('[nativeExtract] Moteur QuickJS absent : fsvid/vidzy seront extraits par regex seulement.');
     }
 
     const extractorsCode = fs.readFileSync(extractorsPath, 'utf8');
     vm.runInContext(extractorsCode, ctx);
 
     extractors = sandbox.OrvixExtractors;
-    console.log('[nativeExtract] ✓ Moteur universel chargé : voe, fsvid, vidzy, vidmoly, sibnet, uqload, veev, doodstream, lulustream, vidara, seekstreaming');
+    console.log(`[nativeExtract] ✓ Moteur universel chargé (${extractorsPath}) : voe, fsvid, vidzy, vidmoly, sibnet, uqload, veev, doodstream, lulustream, vidara, seekstreaming`);
     return extractors;
 }
 
