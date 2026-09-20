@@ -117,11 +117,13 @@ export function selectLevelForPreference(
   options: HlsQualityOption[],
   preference: HlsQualityPreference,
   maxHeight = 1080,
+  minHeight = 0,
 ): number {
   if (options.length === 0) return -1;
 
   const requestedHeight = preference === 'auto' ? maxHeight : preference;
   let highestEligible: HlsQualityOption | undefined;
+  let highestBelowFloor: HlsQualityOption | undefined;
   let lowestAvailable: HlsQualityOption | undefined;
 
   for (const option of options) {
@@ -134,9 +136,39 @@ export function selectLevelForPreference(
     ) {
       highestEligible = option;
     }
+    // Piste de secours quand tout le flux est sous le plancher regardable :
+    // on prend la moins mauvaise plutôt que d'échouer sur un écran noir.
+    if (
+      option.height < minHeight
+      && (!highestBelowFloor || option.height > highestBelowFloor.height)
+    ) {
+      highestBelowFloor = option;
+    }
   }
 
-  return (highestEligible ?? lowestAvailable)?.index ?? -1;
+  return (highestEligible ?? highestBelowFloor ?? lowestAvailable)?.index ?? -1;
+}
+
+/**
+ * Débit minimal à imposer à la sélection automatique de hls.js
+ * (`config.minAutoBitrate`) pour que l'ABR ne descende pas sous le plancher
+ * regardable quand le manifeste propose mieux.
+ *
+ * Retourne 0 quand le flux entier est déjà sous le plancher (aucun blocage
+ * possible) ou quand aucun débit n'est annoncé dans le manifeste.
+ */
+export function computeMinAutoBitrate(
+  options: readonly HlsQualityOption[],
+  minHeight: number,
+): number {
+  if (minHeight <= 0) return 0;
+  // Flux intégralement sous le plancher : bloquer la sélection automatique
+  // n'aurait aucun sens, il ne resterait aucune piste jouable.
+  if (!options.some(option => option.height >= minHeight)) return 0;
+
+  const belowFloor = options.filter(option => option.height < minHeight && option.bitrate > 0);
+  if (belowFloor.length === 0) return 0;
+  return Math.max(...belowFloor.map(option => option.bitrate)) + 1;
 }
 
 export function selectLowerLevelIndex(

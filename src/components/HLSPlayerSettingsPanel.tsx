@@ -701,11 +701,11 @@ const HLSPlayerSettingsPanel = (props: HLSPlayerSettingsPanelProps) => {
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-semibold text-amber-200">Super Résolution 4K (PC)</span>
+                              <span className="text-xs font-semibold text-amber-200">Super Résolution 2K (PC)</span>
                               <span className="text-[9px] px-1 py-0.2 rounded bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-extrabold uppercase">VIP</span>
                             </div>
                             <p className="text-[11px] text-gray-400">
-                              {upscaleMode !== 'off' ? `Traitement actif : ${upscaleMode === 'cas' ? 'Standard CAS' : 'Ultra 4K'}` : 'Netteté ultra-haute fidélité par accélération GPU'}
+                              {upscaleMode !== 'off' ? `Traitement actif : ${upscaleMode === 'cas' ? 'Standard 1440p' : 'Ultra 2K'}` : 'Agrandissement 1080p → 2K calculé par votre GPU'}
                             </p>
                           </div>
                         </div>
@@ -2976,7 +2976,7 @@ const HLSPlayerSettingsPanel = (props: HLSPlayerSettingsPanelProps) => {
                         </span>
                       </div>
                       <p className="text-xs text-gray-400 mt-1">
-                        Algorithme de convolution et netteté adaptative calculé en temps réel sur carte graphique (Nvidia, AMD, Intel, Apple Silicon).
+                        La vidéo est agrandie en 2560 × 1440 par le GPU de votre ordinateur (WebGL), avec accentuation adaptative des contours. Calcul 100 % local : votre serveur Orvix ne traite aucune image.
                       </p>
                     </div>
 
@@ -2996,7 +2996,7 @@ const HLSPlayerSettingsPanel = (props: HLSPlayerSettingsPanelProps) => {
                         <div className="p-3 bg-black/40 rounded-lg border border-gray-800 space-y-2 text-xs text-gray-300">
                           <div className="flex items-start gap-2">
                             <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                            <span><strong>Rendu 4K & Netteté GPU :</strong> Élimine le flou de mise à l'échelle sur moniteurs PC et TV 4K.</span>
+                            <span><strong>Rendu 2K & netteté GPU :</strong> Agrandit la source 1080p en 2560 × 1440 par votre carte graphique, sans passer par le serveur.</span>
                           </div>
                           <div className="flex items-start gap-2">
                             <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
@@ -3051,15 +3051,15 @@ const HLSPlayerSettingsPanel = (props: HLSPlayerSettingsPanelProps) => {
                         >
                           <div className="flex flex-col">
                             <div className="flex items-center gap-1.5">
-                              <span className={upscaleMode === 'cas' ? 'text-amber-400 font-medium' : 'text-white'}>Standard (Netteté Adaptative CAS)</span>
+                              <span className={upscaleMode === 'cas' ? 'text-amber-400 font-medium' : 'text-white'}>Standard (1440p + netteté CAS)</span>
                               <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">1080p / 1440p</span>
                             </div>
-                            <span className="text-xs text-gray-400">Accentuation subtile des contours et texture sans bruit d'image. Recommandé pour moniteurs PC classiques.</span>
+                            <span className="text-xs text-gray-400">Agrandissement GPU 1080p → 2K puis accentuation légère des contours. Le meilleur rapport netteté / charge GPU.</span>
                           </div>
                           {upscaleMode === 'cas' && <span className="text-xs px-2 py-1 bg-amber-500 text-black font-bold rounded-full">Actif</span>}
                         </button>
 
-                        {/* Mode Ultra 4K */}
+                        {/* Mode Ultra 2K */}
                         <button
                           onClick={() => onUpscaleModeChange?.('ultra')}
                           className={`w-full px-4 py-3 text-sm text-left hover:bg-gray-800/80 rounded-lg flex justify-between items-center transition-colors cursor-pointer ${
@@ -3068,10 +3068,10 @@ const HLSPlayerSettingsPanel = (props: HLSPlayerSettingsPanelProps) => {
                         >
                           <div className="flex flex-col">
                             <div className="flex items-center gap-1.5">
-                              <span className={upscaleMode === 'ultra' ? 'text-yellow-400 font-medium' : 'text-white'}>Ultra 4K (Cinéma Haute Fidélité)</span>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 font-mono">Écrans 4K & TV</span>
+                              <span className={upscaleMode === 'ultra' ? 'text-yellow-400 font-medium' : 'text-white'}>Ultra 2K (cinéma haute fidélité)</span>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 font-mono">PC & écrans 2K+</span>
                             </div>
-                            <span className="text-xs text-gray-400">Convolution GPU profonde 4.2x avec micro-contraste renforcé. Rendu ultra-net pour grands écrans 4K.</span>
+                            <span className="text-xs text-gray-400">Ré-échantillonnage bicubique Catmull-Rom puis accentuation RCAS renforcée en 2560 × 1440. Pour les PC qui ont du GPU à revendre.</span>
                           </div>
                           {upscaleMode === 'ultra' && <span className="text-xs px-2 py-1 bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold rounded-full">Actif</span>}
                         </button>
@@ -3085,8 +3085,8 @@ const HLSPlayerSettingsPanel = (props: HLSPlayerSettingsPanelProps) => {
                           >
                             <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
                             <div className="text-xs">
-                              <span className="text-amber-200 font-medium">Traitement GPU hardware actif : </span>
-                              <span className="text-gray-300 font-mono">{upscaleMode === 'cas' ? 'feConvolveMatrix [3x3 Adaptive CAS]' : 'feConvolveMatrix [3x3 Deep 4K Matrix]'}</span>
+                              <span className="text-amber-200 font-medium">Moteur 2K local actif : </span>
+                              <span className="text-gray-300 font-mono">{upscaleMode === 'cas' ? 'WebGL · bilinéaire + CAS · 2560×1440' : 'WebGL · bicubique Catmull-Rom + RCAS · 2560×1440'}</span>
                             </div>
                           </motion.div>
                         )}
@@ -3098,7 +3098,7 @@ const HLSPlayerSettingsPanel = (props: HLSPlayerSettingsPanelProps) => {
                             <span>Accélération matérielle 100% locale</span>
                           </div>
                           <p>
-                            Le traitement s'exécute directement sur votre carte graphique en WebGL / Compositor GPU sans aucune surcharge serveur ni consommation de données supplémentaire.
+                            Le traitement s'exécute exclusivement dans votre navigateur (WebGL 2, repli WebGL 1) : aucune frame n'est envoyée au serveur, aucune donnée supplémentaire n'est téléchargée, et le mode se désactive automatiquement si votre GPU ne suit pas.
                           </p>
                         </div>
                       </div>

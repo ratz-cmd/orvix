@@ -127,6 +127,7 @@ import type {
 } from '../types/sourcePriority';
 import {
   buildHlsQualityOptions,
+  computeMinAutoBitrate,
   formatAvailableHlsQualities,
   getFailingLevelIndex,
   isVideoLevelFailure,
@@ -137,6 +138,21 @@ import type {
   HlsQualityOption,
   HlsQualityPreference,
 } from '../utils/hlsQuality';
+import {
+  buildQualityPolicy,
+  describeQualitySelection,
+  getPlaybackTargetHeight,
+  selectLevelUnderPolicy,
+} from '../utils/playbackQuality';
+import {
+  computeFallbackTarget,
+  computeRenderSize,
+  computeUpscaleTarget,
+  isUpscalingActive,
+} from '../utils/upscalingPolicy';
+import type { UpscaleMode } from '../utils/upscalingPolicy';
+import { OrvixVideoUpscaler } from '../utils/videoUpscaler';
+import type { UpscalerStats } from '../utils/videoUpscaler';
 import {
   countLogicalNexusSources,
   dedupeSeekStreamingEmbeds,
@@ -652,6 +668,14 @@ function resolveCastContentType(
 }
 
 // Utility function to create HLS config based on domain
+/**
+ * Plancher de débit appliqué à la sélection automatique de qualité hls.js.
+ * 900 kbps ≈ le haut du 360p / bas du 480p : sous ce seuil, l'image devient
+ * un bouillie de pixels sur un écran de salon. Le manifeste réel ajuste
+ * ensuite ce plancher via `computeMinAutoBitrate`.
+ */
+const MINIMUM_AUTO_BITRATE = 900_000;
+
 const createHlsConfig = (src: string) => {
   const isServersicuro = src.includes('serversicuro.cc');
 
@@ -663,6 +687,9 @@ const createHlsConfig = (src: string) => {
     enableWorker: true,
     lowLatencyMode: isLowLatencyEnabled('movies'), // opt-in via Settings › Performance
     startFragPrefetch: true,
+    // Plancher de débit de l'ABR : sous ~900 kbps on tombe dans le 240p/340p.
+    // Affiné ensuite d'après le manifeste réel (voir MANIFEST_PARSED).
+    minAutoBitrate: MINIMUM_AUTO_BITRATE,
     backBufferLength: isServersicuro ? 60 : 90,
     maxBufferLength: isServersicuro ? 20 : 30, // Augmenter pour serversicuro
     maxMaxBufferLength: isServersicuro ? 300 : 600, // Augmenter pour serversicuro
@@ -1476,13 +1503,24 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
   });
 
   // Super Résolution / Upscaling GPU (VIP PC)
-  const [upscaleMode, setUpscaleMode] = useState<'off' | 'cas' | 'ultra'>(() => {
+  const [upscaleMode, setUpscaleMode] = useState<UpscaleMode>(() => {
     try {
       const saved = localStorage.getItem('orvix_upscaling_mode');
-      if (saved === 'cas' || saved === 'ultra') return saved;
+      if (saved === 'off' || saved === 'cas' || saved === 'ultra') return saved;
     } catch {}
-    return 'off';
+    // Sans préférence enregistrée : les VIP reçoivent la 2K locale d'office
+    // (ils l'ont payée), les autres restent au natif.
+    return isUserVip() ? 'cas' : 'off';
   });
+  /** Canvas de la Super Résolution : c'est lui qui affiche les frames 2K. */
+  const upscaleCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const upscalerRef = useRef<OrvixVideoUpscaler | null>(null);
+  /** WebGL disponible sur cette machine (testé une seule fois). */
+  const [upscaleSupported] = useState(() => OrvixVideoUpscaler.isSupported());
+  const [isUpscalingRunning, setIsUpscalingRunning] = useState(false);
+  const [upscaleStats, setUpscaleStats] = useState<UpscalerStats | null>(null);
+  const [upscaleErrorMessage, setUpscaleErrorMessage] = useState<string | null>(null);
+  const upscaleStatsSeenAtRef = useRef(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState<number>(0);
   // Le lecteur peut être monté *pendant* un plein écran déjà en cours (épisode
@@ -1558,11 +1596,17 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
   const [qualities, setQualities] = useState<HlsQualityOption[]>([]);
   const qualitiesRef = useRef<HlsQualityOption[]>([]);
   const [qualityPreference, setQualityPreference] = useState<HlsQualityPreference>(
-    () => hlsQualityPreferences.get(contentQualityKey) ?? 1080,
+    () => hlsQualityPreferences.get(contentQualityKey) ?? getPlaybackTargetHeight(isUserVip()),
   );
   const contentQualityKeyRef = useRef(contentQualityKey);
   const qualityPreferenceRef = useRef<HlsQualityPreference>(qualityPreference);
   const [effectiveQualityHeight, setEffectiveQualityHeight] = useState<number | null>(null);
+  /**
+   * Avertissement français affiché quand la meilleure piste du flux reste
+   * sous le seuil regardable (360p/340p) — l'utilisateur est invité à changer
+   * de piste ou de source plutôt que de subir une image floue.
+   */
+  const [qualityFloorNotice, setQualityFloorNotice] = useState<string | null>(null);
   const failedLevelsRef = useRef(new Set<number>());
   const fallbackLevelRef = useRef<number | null>(null);
   const [sourceStreamQualities, setSourceStreamQualities] = useState<Record<string, string>>(() => getInitialSourceQualityState());
@@ -1640,7 +1684,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
 
   useEffect(() => {
     contentQualityKeyRef.current = contentQualityKey;
-    const rememberedPreference = hlsQualityPreferences.get(contentQualityKey) ?? 1080;
+    const rememberedPreference = hlsQualityPreferences.get(contentQualityKey) ?? getPlaybackTargetHeight(isUserVip());
     qualityPreferenceRef.current = rememberedPreference;
     setQualityPreference(rememberedPreference);
   }, [contentQualityKey]);
@@ -1656,6 +1700,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
     qualitiesRef.current = [];
     setQualities([]);
     setEffectiveQualityHeight(null);
+    setQualityFloorNotice(null);
   }, [src]);
 
   const handleQualityPreferenceChange = useCallback((preference: HlsQualityPreference) => {
@@ -1667,7 +1712,13 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
     hlsQualityPreferences.set(contentQualityKey, preference);
     if (!hls) return;
 
-    const target = selectLevelForPreference(qualitiesRef.current, preference, 1080);
+    // Politique de qualité : plafond 1440p (VIP) / 1080p, plancher 480p pour
+    // ne jamais se caler sur du 340p quand une meilleure piste existe.
+    const policy = buildQualityPolicy(isUserVip(), preference);
+    const target = selectLevelUnderPolicy(qualitiesRef.current, policy);
+    const floor = computeMinAutoBitrate(qualitiesRef.current, policy.minHeight);
+    if (floor > 0) hls.config.minAutoBitrate = floor;
+
     if (preference === 'auto') {
       hls.autoLevelCapping = target;
       hls.currentLevel = -1;
@@ -3808,7 +3859,15 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
         setQualities(nextOptions);
 
         const requested = nextOptions.length === 0 ? 'auto' : qualityPreferenceRef.current;
-        const targetLevel = selectLevelForPreference(nextOptions, requested, 1080);
+        // Plafond 1440p pour les VIP (2K), plancher 480p pour tout le monde :
+        // le lecteur ne démarre plus sur une piste 240p/340p s'il en existe
+        // une meilleure dans le manifeste.
+        const policy = buildQualityPolicy(isUserVip(), requested);
+        const targetLevel = selectLevelUnderPolicy(nextOptions, policy);
+        const autoFloor = computeMinAutoBitrate(nextOptions, policy.minHeight);
+        hls.config.minAutoBitrate = autoFloor > 0 ? autoFloor : MINIMUM_AUTO_BITRATE;
+        const qualityDescription = describeQualitySelection(data.levels, policy);
+        setQualityFloorNotice(qualityDescription.notice);
         if (requested === 'auto') {
           hls.autoLevelCapping = targetLevel;
           hls.startLevel = targetLevel;
@@ -5728,7 +5787,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
   }, [videoOledMode, customOled]);
 
   // Handle Super Resolution / Upscaling GPU change (VIP PC)
-  const handleUpscaleModeChange = useCallback((mode: 'off' | 'cas' | 'ultra') => {
+  const handleUpscaleModeChange = useCallback((mode: UpscaleMode) => {
     setUpscaleMode(mode);
     try {
       localStorage.setItem('orvix_upscaling_mode', mode);
@@ -5740,8 +5799,10 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
     if (!isPlaying) return undefined;
     const filters: string[] = [];
 
-    // Super Résolution VIP (PC only)
-    if (!isMobile && isUserVip() && upscaleMode !== 'off') {
+    // Repli SVG (feConvolveMatrix) : uniquement quand le moteur WebGL n'a pas
+    // pris la main. Quand le shader de Super Résolution tourne, l'accentuation
+    // est faite dans le GPU au bon moment — l'empiler doublerait les halos.
+    if (!isMobile && isUserVip() && upscaleMode !== 'off' && !isUpscalingRunning) {
       if (upscaleMode === 'cas') {
         filters.push('url(#orvix-upscale-cas) contrast(1.03) saturate(1.02)');
       } else if (upscaleMode === 'ultra') {
@@ -5758,7 +5819,195 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
     }
 
     return filters.length > 0 ? filters.join(' ') : undefined;
-  }, [isPlaying, isMobile, upscaleMode, videoOledMode, getVideoOledFilter]);
+  }, [isPlaying, isMobile, upscaleMode, isUpscalingRunning, videoOledMode, getVideoOledFilter]);
+
+  // ── Super Résolution 2K locale (VIP, GPU du membre) ──────────────────────
+  //
+  // Tout se passe ici, dans le navigateur : la vidéo décodée est recopiée dans
+  // un canvas 2560 × 1440 par le GPU du membre. Le serveur Orvix ne reçoit
+  // aucune frame et peut donc rester une petite instance.
+  const upscaleEligible = isUpscalingActive({
+    mode: upscaleMode,
+    isVip: isUserVip(),
+    isMobile,
+    supportsWebGL: upscaleSupported,
+    isPipActive,
+    isDocumentHidden: typeof document !== 'undefined' ? document.hidden : false,
+  });
+
+  /** Cadrage à reproduire : celui de l'`object-fit` courant du lecteur. */
+  const getUpscaleFit = useCallback(() => {
+    const objectFitClass = getVideoObjectFitClass();
+    const mode: 'contain' | 'cover' = objectFitClass.includes('object-contain') ? 'contain' : 'cover';
+    const boxAspect = videoAspectRatio === '16:9'
+      ? 16 / 9
+      : videoAspectRatio === '4:3'
+        ? 4 / 3
+        : undefined;
+    return { mode, boxAspect };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoAspectRatio]);
+
+  useEffect(() => {
+    if (!upscaleEligible) {
+      setIsUpscalingRunning(false);
+      return;
+    }
+
+    const canvas = upscaleCanvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
+
+    // Passe à `true` quand le GPU n'atteint pas le budget : la cible est alors
+    // ramenée à la résolution de la source (image nette, pas de surcoût).
+    const degradedRef = { current: false };
+    // Rempli après la définition de `syncSize` : `onDegrade` peut être appelé
+    // dès la construction du moteur.
+    const syncSizeRef = { current: () => {} };
+    let isFullscreenNow = false;
+
+    let upscaler: OrvixVideoUpscaler;
+    try {
+      upscaler = new OrvixVideoUpscaler(canvas, {
+        mode: upscaleMode,
+        onStats: (stats) => {
+          // Un rafraîchissement par seconde suffit pour l'overlay : inutile de
+          // faire re-rendre React à chaque image vidéo.
+          const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+          if (now - upscaleStatsSeenAtRef.current < 900) return;
+          upscaleStatsSeenAtRef.current = now;
+          setUpscaleStats(stats);
+        },
+        onDegrade: () => {
+          degradedRef.current = true;
+          setUpscaleErrorMessage('GPU un peu juste : Super Résolution ramenée à la résolution de la source.');
+          syncSizeRef.current();
+        },
+        onError: (message) => {
+          console.warn('[SuperRésolution]', message);
+          setUpscaleErrorMessage(message);
+        },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn('[SuperRésolution] Moteur indisponible :', message);
+      setUpscaleErrorMessage(message);
+      setIsUpscalingRunning(false);
+      return;
+    }
+
+    upscalerRef.current = upscaler;
+    setUpscaleErrorMessage(null);
+    setIsUpscalingRunning(true);
+
+    const syncFullscreenFlag = () => {
+      isFullscreenNow = Boolean(
+        typeof document !== 'undefined'
+        && (document.fullscreenElement || getFullscreenElement()),
+      );
+    };
+    syncFullscreenFlag();
+
+    const syncSize = () => {
+      const sourceWidth = video.videoWidth || 1920;
+      const sourceHeight = video.videoHeight || 1080;
+      const wrapper = videoWrapperRef.current;
+      const box = wrapper ? wrapper.getBoundingClientRect() : null;
+      const target = degradedRef.current
+        ? computeFallbackTarget(sourceWidth, sourceHeight)
+        : computeUpscaleTarget(sourceWidth, sourceHeight);
+      const renderSize = computeRenderSize({
+        target,
+        sourceWidth,
+        sourceHeight,
+        displayWidth: box?.width || target.width,
+        displayHeight: box?.height || target.height,
+        devicePixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio : 1,
+        // Le sur-échantillonnage 2K n'est payé qu'en plein écran et en mode Ultra.
+        supersample: upscaleMode === 'ultra' && isFullscreenNow,
+      });
+      upscaler.configure(target, renderSize);
+      upscaler.setFit(getUpscaleFit());
+    };
+    syncSizeRef.current = syncSize;
+
+    syncSize();
+
+    // La vidéo d'origine continue de fournir l'audio, les sous-titres et le
+    // casting : on ne masque que son rendu, le canvas prend l'affichage.
+    const previousVisibility = video.style.visibility;
+    video.style.visibility = 'hidden';
+
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => {
+        syncSize();
+      })
+      : null;
+    resizeObserver?.observe(videoWrapperRef.current ?? video);
+
+    const handleMetadata = () => syncSize();
+    const handleFullscreenChange = () => {
+      syncFullscreenFlag();
+      syncSize();
+    };
+    video.addEventListener('loadedmetadata', handleMetadata);
+    video.addEventListener('resize', handleMetadata);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange as EventListener);
+
+    let frameHandle = 0;
+    let cancelled = false;
+
+    const schedule = () => {
+      if (cancelled) return;
+      const requestFrame = (video as HTMLVideoElement & {
+        requestVideoFrameCallback?: (callback: () => void) => number;
+      }).requestVideoFrameCallback;
+      if (typeof requestFrame === 'function') {
+        frameHandle = requestFrame.call(video, () => step());
+      } else {
+        frameHandle = window.requestAnimationFrame(() => step());
+      }
+    };
+
+    const step = () => {
+      if (cancelled) return;
+      try {
+        upscaler.renderFrame(video);
+      } catch (error) {
+        console.warn('[SuperRésolution] Rendu interrompu :', error);
+        cancelled = true;
+        return;
+      }
+      schedule();
+    };
+
+    schedule();
+
+    return () => {
+      cancelled = true;
+      const cancelFrame = (video as HTMLVideoElement & {
+        cancelVideoFrameCallback?: (handle: number) => void;
+      }).cancelVideoFrameCallback;
+      if (typeof cancelFrame === 'function') {
+        cancelFrame.call(video, frameHandle);
+      } else {
+        window.cancelAnimationFrame(frameHandle);
+      }
+      resizeObserver?.disconnect();
+      video.removeEventListener('loadedmetadata', handleMetadata);
+      video.removeEventListener('resize', handleMetadata);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange as EventListener);
+      video.style.visibility = previousVisibility;
+      upscaler.dispose();
+      upscalerRef.current = null;
+      setUpscalingRunning(false);
+      setUpscaleStats(null);
+    };
+    // `src` est volontairement une dépendance : un nouveau flux change la
+    // résolution de la source et doit reconfigure la cible.
+  }, [upscaleEligible, upscaleMode, src, isCasting, getUpscaleFit, upscaleSupported]);
 
   // Handle volume boost change
   const handleVolumeBoostChange = useCallback((newBoost: number) => {
@@ -11662,6 +11911,42 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
               />
             ))}
           </video>
+
+          {/* Super Résolution 2K : le GPU du membre ré-échantillonne la source
+              (1080p → 2560 × 1440) et le canvas prend l'affichage. Réservé aux
+              VIP sur ordinateur ; la vidéo reste montée pour l'audio. */}
+          {upscaleMode !== 'off' && isUserVip() && !isMobile && (
+            <canvas
+              ref={upscaleCanvasRef}
+              aria-hidden="true"
+              data-testid="orvix-upscale-canvas"
+              className="absolute inset-0 h-full w-full pointer-events-none select-none"
+              style={{
+                display: isUpscalingRunning ? 'block' : 'none',
+                zIndex: 2,
+                backgroundColor: '#000',
+              }}
+            />
+          )}
+
+          {/* Indicateur « 2K » : visible uniquement quand le shader tourne. */}
+          {isUpscalingRunning && (
+            <div
+              className="absolute top-3 right-3 z-[3] flex items-center gap-1.5 rounded-full border border-amber-300/40 bg-black/70 px-2.5 py-1 text-[11px] font-semibold text-amber-200 backdrop-blur-sm"
+              role="status"
+              aria-live="off"
+            >
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-300 animate-pulse" />
+              {t('watch.upscaleBadge')}
+            </div>
+          )}
+
+          {/* Message de repli : GPU trop lent ou moteur refusé par le navigateur. */}
+          {upscaleMode !== 'off' && upscaleErrorMessage && (
+            <div className="absolute bottom-3 left-3 z-[3] max-w-xs rounded-lg border border-amber-400/30 bg-black/75 px-3 py-2 text-[11px] text-amber-100 backdrop-blur-sm">
+              {upscaleErrorMessage}
+            </div>
+          )}
         </div>
       )}
 
@@ -11917,6 +12202,26 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
             <p className="text-sm text-gray-300 text-center px-4 bg-black/50 rounded-lg py-2">
               {t('watch.loadingTip')}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Avertissement qualité : source plafonnée sous le seuil regardable */}
+      {qualityFloorNotice && !isLoading && (
+        <div
+          className="absolute top-3 left-1/2 -translate-x-1/2 z-[8800] max-w-[92%] sm:max-w-xl pointer-events-none"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-start gap-3 rounded-xl border border-amber-400/40 bg-black/80 px-4 py-3 shadow-lg backdrop-blur-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m0 3.75h.008M10.29 3.86 1.82 18a1.5 1.5 0 0 0 1.29 2.25h17.78A1.5 1.5 0 0 0 22.18 18L13.71 3.86a1.5 1.5 0 0 0-2.58 0Z" />
+            </svg>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-amber-300">{t('watch.qualityFloorTitle')}</p>
+              <p className="text-xs text-gray-200 leading-snug">{qualityFloorNotice}</p>
+              <p className="text-[11px] text-gray-400 mt-1">{t('watch.qualityFloorHint')}</p>
+            </div>
           </div>
         </div>
       )}
