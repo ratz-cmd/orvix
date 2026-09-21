@@ -213,6 +213,7 @@ else
 fi
 
 cd "$TARGET_DIR"
+ROOT="$PWD"          # chemin absolu : les logs/pids ne dépendent plus du cwd
 mkdir -p .orvix/logs .orvix/pid
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -415,19 +416,27 @@ fi
 
 start_background() {
   local name="$1" dir="$2"; shift 2
-  local log=".orvix/logs/${name}.log" pidfile=".orvix/pid/${name}.pid"
+  # Chemins absolus : les redirections sont faites depuis un sous-shell, donc
+  # un chemin relatif ou $OLDPWD partirait dans le dossier de lancement.
+  local log="$ROOT/.orvix/logs/${name}.log" pidfile="$ROOT/.orvix/pid/${name}.pid"
   : > "$log"
-  ( cd "$dir" && nohup "$@" >>"$OLDPWD/$log" 2>&1 & echo $! > "$OLDPWD/$pidfile" )
+  case "$dir" in
+    /*) local absdir="$dir" ;;
+    *)  local absdir="$ROOT/$dir" ;;
+  esac
+  ( cd "$absdir" && nohup "$@" >>"$log" 2>&1 & echo $! > "$pidfile" )
   sleep 2
   local pid; pid="$(cat "$pidfile" 2>/dev/null || true)"
   if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
-    ok "$name démarré (pid $pid, journal : $log)"
+    ok "$name démarré (pid $pid, journal : .orvix/logs/${name}.log)"
   else
     warn "$name n'a pas démarré — dernières lignes du journal :"
     tail -n 8 "$log" | sed 's/^/      /'
+    rm -f "$pidfile"
     return 1
   fi
 }
+
 
 step "6/6 · Lancement"
 
