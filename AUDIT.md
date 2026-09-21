@@ -709,3 +709,37 @@ Tout le traitement se fait sur la machine du membre : **le serveur ne reçoit au
 | Chaîne pages Watch → lecteur natif | `node --test tests/adFreeAutoExtractionWiring.test.mjs` | ✅ 5/5 |
 | Typecheck / build | `npx tsc --noEmit`, `npm run build` | ✅ les deux passent |
 | Suites existantes | `node --test tests/*.test.mjs`, `cd app && node --test tests/*.test.mjs` | ✅ aucun nouvel échec (9 et 5 échecs préexistants, identiques à HEAD) |
+
+---
+
+## ✅ Appliqué dans cette passe (correctif « la diffusion se bloque »)
+
+Symptôme rapporté : le lecteur se charge, mais la vidéo ne démarre pas. Trois
+causes distinctes ont été trouvées dans le code — aucune n'était visible en
+tests, d'où la correction accompagnée d'un protocole de vérification manuelle
+(`docs/verification-lecture.md`).
+
+| Cause | Correction |
+| --- | --- |
+| Le lecteur Frembed était dans un `<iframe sandbox="allow-scripts allow-same-origin">` : plus de `allow-popups` (démarrage de la diffusion chez plusieurs lecteurs), ni `allow-forms` (écran d'âge), ni `allow-presentation` (PiP) | Attribut `sandbox` retiré, `allow` explicite + garde anti-popups conservés ; injection dans `contentWindow.document` supprimée (impossible en cross-origin) |
+| Les flux extraits étaient joués en direct même quand le CDN refuse le CORS : hls.js lisait le manifeste puis échouait au premier segment | Sonde `src/utils/streamProbe.ts` (4 Ko en `Range`, annulée aussitôt) : lecture directe → relais Orvix → direct de dernier recours, avec message explicite |
+| Le relais `/api/extract/stream` relayait le manifeste **sans réécrire ses URI** : les segments partaient vers le CDN et se faisaient refuser | Réécriture des playlists HLS (segments, playlists enfants, clés AES, `EXT-X-MAP`) vers le relais |
+
+Durcissements associés : URLs de relais **signées** (HMAC `mediaSigning`, plus
+de proxy ouvert), garde anti-SSRF sur la cible, plafond de flux simultanés
+`ORVIX_RELAY_MAX_STREAMS` (défaut 8) avec réponse 503 propre, en-têtes
+`Range`/`Content-Range` respectés, libération des places sur `close` **et**
+`finish`.
+
+Contrôle utilisateur ajouté : préférence `orvix_stream_relay` — un membre peut
+refuser le relais ; les sources concernées restent alors dans le lecteur tiers,
+après un toast qui propose « Autoriser le relais ».
+
+| Vérification | Commande | Résultat |
+| --- | --- | --- |
+| Sonde de flux (direct, CORS refusé, 403, lenteur, page HTML, annulation du transfert) | `node --test tests/streamProbe.test.mjs` | ✅ 8/8 |
+| Relais (réécriture HLS, jeton signé, plafond de charge) | `node --test tests/streamRelay.test.mjs` | ✅ 6/6 |
+| Cadres de lecture (aucun `sandbox`, autorisations, WebView mobile) | `node --test src/components/__tests__/playerFramePermissions.test.mjs` | ✅ 4/4 |
+| Chaîne complète lecteurs tiers → lecteur Orvix | `node --test tests/adFreeAutoExtractionWiring.test.mjs` | ✅ 6/6 |
+| Suites existantes | `node --test tests/*.test.mjs`, `cd app && node --test tests/*.test.mjs` | ✅ aucun nouvel échec (9 et 5 préexistants) |
+| Typecheck / lint / build | `npx tsc --noEmit`, `npx eslint …`, `npm run build` | ✅ les trois passent |
