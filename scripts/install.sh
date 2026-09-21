@@ -222,13 +222,25 @@ mkdir -p .orvix/logs .orvix/pid
 
 stop_services() {
   step "Arrêt des services Orvix"
-  local stopped=0 pidfile name pid
+  local stopped=0 pidfile name pid waited
   for pidfile in .orvix/pid/*.pid; do
     [ -e "$pidfile" ] || continue
     name="$(basename "$pidfile" .pid)"
     pid="$(cat "$pidfile" 2>/dev/null || true)"
     if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
       kill "$pid" 2>/dev/null || true
+      # Laisse le temps au serveur de s'arrêter proprement (l'API prévient ses
+      # workers, le site termine les requêtes en cours).
+      waited=0
+      while [ "$waited" -lt 10 ] && kill -0 "$pid" 2>/dev/null; do
+        sleep 1
+        waited=$((waited + 1))
+      done
+      if kill -0 "$pid" 2>/dev/null; then
+        warn "$name ne répond pas : arrêt forcé."
+        command -v pkill >/dev/null 2>&1 && pkill -TERM -P "$pid" 2>/dev/null || true
+        kill -9 "$pid" 2>/dev/null || true
+      fi
       ok "$name arrêté (pid $pid)"
     else
       info "$name n'était plus actif"
@@ -424,9 +436,13 @@ start_background() {
     /*) local absdir="$dir" ;;
     *)  local absdir="$ROOT/$dir" ;;
   esac
-  ( cd "$absdir" && nohup "$@" >>"$log" 2>&1 & echo $! > "$pidfile" )
+  # `exec` remplace le sous-shell par le service : le pid enregistré est celui
+  # du service lui-même. Sans lui, on ne retenait que le pid du sous-shell et
+  # --stop tuait l'enveloppe en laissant le serveur tourner.
+  ( cd "$absdir" && exec nohup "$@" >>"$log" 2>&1 ) &
+  local pid=$!
+  printf '%s\n' "$pid" >"$pidfile"
   sleep 2
-  local pid; pid="$(cat "$pidfile" 2>/dev/null || true)"
   if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
     ok "$name démarré (pid $pid, journal : .orvix/logs/${name}.log)"
   else
