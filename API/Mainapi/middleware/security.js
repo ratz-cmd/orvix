@@ -4,6 +4,8 @@
  * and JSON parse error handler.
  */
 
+const { isOriginAllowed } = require('../utils/allowedOrigins');
+
 // Security headers (minimal set -- replaces Helmet)
 function securityHeaders(req, res, next) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -93,12 +95,9 @@ function domainRestriction(req, res, next) {
           return true;
         }
       }
-      // Allow exact matches or subdomains if needed (here we list full domains)
-      return allowedDomains.some(domain => {
-         // Handle localhost with port special case if needed, or just match hostname
-         if (domain.includes(':')) return url.includes(domain);
-         return hostname === domain || hostname.endsWith('.' + domain);
-      });
+      // Domaines en dur (miroirs officiels) + `ORVIX_ALLOWED_ORIGINS`, qui permet
+      // à un déploiement sur un domaine propre d'appeler l'API sans éditer le code.
+      return isOriginAllowed(url, allowedDomains);
     } catch (e) {
       return false;
     }

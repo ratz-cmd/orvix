@@ -5,6 +5,7 @@
 
 const cors = require("cors");
 const { getOAuthAllowedCorsOrigins } = require('../utils/oauthClients');
+const { isOriginAllowed } = require('../utils/allowedOrigins');
 
 const STATIC_ALLOWED_DOMAINS = [
     'localhost',
@@ -31,15 +32,9 @@ const STATIC_ALLOWED_DOMAINS = [
 
 function isAllowedStaticOrigin(origin) {
   try {
-    const parsedOrigin = new URL(origin);
-    const hostname = parsedOrigin.hostname;
-    const host = parsedOrigin.host;
-
-    return STATIC_ALLOWED_DOMAINS.some((domain) => (
-      hostname === domain ||
-      host === domain ||
-      hostname.endsWith(`.${domain}`)
-    ));
+    // Les domaines en dur + ceux de `ORVIX_ALLOWED_ORIGINS` (déploiement sur
+    // un domaine propre sans toucher au code).
+    return isOriginAllowed(origin, STATIC_ALLOWED_DOMAINS);
   } catch {
     return false;
   }

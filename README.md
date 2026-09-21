@@ -92,6 +92,19 @@ orvix-main/
 
 ## Démarrage rapide
 
+```bash
+git clone --depth 1 https://github.com/ratz-cmd/orvix.git && cd orvix
+bash scripts/install.sh
+```
+
+Le script vérifie l'environnement, installe les dépendances, crée les `.env`
+(secrets compris) et lance le site. Il affiche aussi la liste des APIs
+nécessaires. Options : `--check`, `--skip-backend`, `--with-proxies`, `--prod`,
+`--stop`, `--allow-host <domaine>`.
+
+👉 **[INSTALLATION.md](INSTALLATION.md)** : installation détaillée, APIs
+obligatoires / recommandées / optionnelles, mise en production et dépannage.
+
 <p align="center">
   <strong>⚠️ L'utilisation de ce code implique le maintien des crédits et l'interdiction stricte de le monétiser (Zéro pub et abonnements). Voir la License complète </strong>
 </p>
@@ -206,6 +219,8 @@ Pour un premier lancement local, configure au minimum :
 - [App mobile React Native](app/README.md) — Android fonctionnel, iOS non testé (aide recherchée)
 - [WatchParty Sync WASM](wasm/watchparty-sync/README.md)
 - [Cloudflare Proxy](cloudflareproxy/README.md)
+- [Installation et APIs nécessaires](INSTALLATION.md)
+- [Vérification de la lecture (qualité, extraction, relais)](VERIFICATION-LECTURE.md)
 
 ## Licence
 

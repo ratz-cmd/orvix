@@ -140,6 +140,27 @@ export default defineConfig({
   ],
   server: {
     host: true,
+    /**
+     * Hôtes acceptés par le serveur de développement.
+     *
+     * Vite refuse par défaut tout en-tête `Host` inconnu (protection contre le
+     * DNS rebinding) : derrière un tunnel (ngrok, Cloudflare Tunnel), un
+     * conteneur publié ou un proxy, le site répond alors
+     * « Blocked request. This host is not allowed. » et rien ne s'affiche.
+     * Comme le serveur écoute déjà sur toutes les interfaces (`host: true`),
+     * ces requêtes sont légitimes : on les accepte.
+     *
+     * `VITE_DEV_ALLOWED_HOSTS` (liste séparée par des virgules, un point en
+     * tête autorise les sous-domaines) permet de restreindre si besoin.
+     * N'a aucun effet sur le build ni sur `npm start`.
+     */
+    allowedHosts: (() => {
+      const configured = (process.env.VITE_DEV_ALLOWED_HOSTS || '')
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+      return configured.length > 0 ? configured : true;
+    })(),
     // 3000 par défaut. `PORT` permet d'ouvrir un second serveur de dev en
     // parallèle du premier (deux sessions d'agent, deux branches) sans se
     // disputer le port.
@@ -190,6 +211,9 @@ export default defineConfig({
   preview: {
     host: true,
     port: 3000,
+    // Même raison que pour le serveur de développement : `vite preview` sert
+    // souvent de vérification derrière un tunnel ou un conteneur.
+    allowedHosts: true,
   },
   build: {
     target: 'es2020', // explicit, was implicit es2020 in Vite 5
