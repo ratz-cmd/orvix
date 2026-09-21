@@ -112,7 +112,24 @@ const NATIVE_EXTRACT_API = MAIN_API;
  * (~50 Ko) et extrait l'URL par regex/décodeur. La vidéo transite ensuite
  * directement depuis le CDN de l'hébergeur vers le navigateur.
  */
-export async function callNativeBackendExtract(type: string, url: string): Promise<M3u8Result | null> {
+export interface NativeBackendExtractOptions {
+  /**
+   * Quand vrai, `m3u8Url` est l'URL **directe** du CDN et l'URL de relais est
+   * rendue séparément dans `streamUrl`. L'appelant décide alors lui-même quoi
+   * jouer (c'est ce que fait l'extraction à la volée, qui sonde d'abord la
+   * lecture directe pour épargner la bande passante du serveur).
+   *
+   * Par défaut `false` : comportement historique, l'URL de relais remplace
+   * l'URL directe quand il n'y a pas d'extension installée.
+   */
+  preferDirect?: boolean;
+}
+
+export async function callNativeBackendExtract(
+  type: string,
+  url: string,
+  options: NativeBackendExtractOptions = {},
+): Promise<M3u8Result | null> {
   try {
     const resp = await fetch(`${NATIVE_EXTRACT_API}/api/extract`, {
       method: 'POST',
@@ -129,7 +146,9 @@ export async function callNativeBackendExtract(type: string, url: string): Promi
         effectiveStreamUrl = `${NATIVE_EXTRACT_API}${effectiveStreamUrl}`;
       }
       // Si l'utilisateur n'a pas l'extension (mobile, smart TV, etc.) et qu'un flux relayé est nécessaire
-      const playUrl = (!hasNexusExtractors() && effectiveStreamUrl) ? effectiveStreamUrl : data.m3u8Url;
+      const playUrl = (!options.preferDirect && !hasNexusExtractors() && effectiveStreamUrl)
+        ? effectiveStreamUrl
+        : data.m3u8Url;
       return {
         success: true,
         m3u8Url: playUrl,

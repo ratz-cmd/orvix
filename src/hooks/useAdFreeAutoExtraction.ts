@@ -23,7 +23,12 @@ import {
   tryOnTheFlyExtraction,
   type OnTheFlyExtractResult,
 } from '../utils/onTheFlyExtract';
-import { isAdFreeAutoPlaybackEnabled, setAdFreeAutoPlaybackEnabled } from '../utils/adFreePlaybackPref';
+import {
+  isAdFreeAutoPlaybackEnabled,
+  isStreamRelayEnabled,
+  setAdFreeAutoPlaybackEnabled,
+  setStreamRelayEnabled,
+} from '../utils/adFreePlaybackPref';
 import { HOSTER_LABELS } from '../utils/hosterRegistry';
 
 export interface ExtractedPlayback {
@@ -33,6 +38,10 @@ export interface ExtractedPlayback {
   candidates: { url: string; label: string }[];
   hoster: string;
   source: 'extension' | 'backend';
+  /** Lecture directe depuis le navigateur (aucune bande passante serveur). */
+  corsOk: boolean;
+  /** Lecture via le relais d'en-têtes Orvix (bande passante du serveur). */
+  viaRelay: boolean;
 }
 
 export interface UseAdFreeAutoExtractionOptions {
@@ -81,6 +90,28 @@ export function useAdFreeAutoExtraction({
 
     const applyResult = (result: OnTheFlyExtractResult, fromCache: boolean) => {
       if (!result.success || !result.m3u8Url) return;
+
+      const viaRelay = result.viaRelay === true;
+
+      // Le relais consomme la bande passante du site : s'il est refusé par le
+      // membre, on ne bascule pas et le lecteur tiers reste affiché.
+      if (viaRelay && !isStreamRelayEnabled()) {
+        if (!fromCache) {
+          toast.message('Flux protégé : lecture dans le lecteur tiers conservée', {
+            description: 'Ce CDN refuse la lecture directe et le relais Orvix est désactivé sur cet appareil.',
+            action: {
+              label: 'Autoriser le relais',
+              onClick: () => {
+                setStreamRelayEnabled(true);
+                cacheRef.current.delete(key);
+                attemptedRef.current.delete(key);
+              },
+            },
+          });
+        }
+        return;
+      }
+
       const candidates = result.candidates && result.candidates.length > 0
         ? result.candidates
         : [{ url: result.m3u8Url, label: `${hosterLabel(hoster)} · flux direct` }];
@@ -90,15 +121,28 @@ export function useAdFreeAutoExtraction({
         candidates,
         hoster,
         source: result.source === 'extension' ? 'extension' : 'backend',
+        corsOk: result.corsOk === true,
+        viaRelay,
       });
 
       if (!fromCache) {
         toast.success(`Publicités supprimées — lecture via le lecteur Orvix (${hosterLabel(hoster)})`, {
-          description: 'Le flux est relu directement, sans iframe ni coupure publicitaire.',
+          description: viaRelay
+            ? 'Le flux est relu sans publicité, via le relais sécurisé d\'Orvix.'
+            : 'Le flux est relu directement depuis le CDN, sans iframe ni coupure publicitaire.',
           duration: 6000,
           action: {
-            label: 'Revenir au lecteur tiers',
+            label: viaRelay ? 'Couper le relais' : 'Revenir au lecteur tiers',
             onClick: () => {
+              if (viaRelay) {
+                setStreamRelayEnabled(false);
+                cacheRef.current.delete(key);
+                attemptedRef.current.delete(key);
+                toast.message('Relais Orvix désactivé', {
+                  description: 'Les sources sans lecture directe resteront dans le lecteur tiers.',
+                });
+                return;
+              }
               setAdFreeAutoPlaybackEnabled(false);
               cacheRef.current.delete(key);
               attemptedRef.current.delete(key);

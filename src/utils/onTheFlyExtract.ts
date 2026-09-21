@@ -27,6 +27,7 @@ import {
   hasNexusExtractors,
 } from './extractM3u8';
 import { isSeekStreamingEmbedUrl } from './seekStreamingCandidates';
+import { probeDirectStream } from './streamProbe';
 
 /** Forme minimale d'un résultat d'extraction renvoyé par l'extension. */
 interface HosterExtractionResult {
@@ -70,6 +71,19 @@ export interface OnTheFlyExtractResult {
   hoster?: string;
   headers?: Record<string, string>;
   source?: 'extension' | 'backend';
+  /**
+   * Vrai quand la lecture passe par le relais d'en-têtes Orvix : le flux est
+   * alors relayé par le serveur (bande passante), faute de CORS côté CDN.
+   */
+  viaRelay?: boolean;
+  /**
+   * Vrai quand le CDN sait servir le flux directement au navigateur (CORS
+   * ouvert, ou en-têtes ajoutés par l'extension). C'est le cas idéal : zéro
+   * charge serveur.
+   */
+  corsOk?: boolean;
+  /** Explication courte, affichée dans les journaux et l'overlay. */
+  reason?: string;
 }
 
 /**
@@ -185,6 +199,7 @@ export async function tryOnTheFlyExtraction(
 
   const fromBackend = async (): Promise<{
     m3u8Url: string;
+    relayUrl?: string;
     candidates?: { url: string; label: string }[];
     headers?: Record<string, string>;
   } | null> => {
@@ -194,12 +209,21 @@ export async function tryOnTheFlyExtraction(
       return null;
     }
     try {
-      const result = await callNativeBackendExtract(hoster, url);
+      // `preferDirect` : on veut l'URL du CDN, pas déjà l'URL de relais. Le
+      // choix final (direct / relais / iframe) revient à `tryOnTheFlyExtraction`.
+      const result = await callNativeBackendExtract(hoster, url, { preferDirect: true });
       const extractedUrl = result?.m3u8Url || result?.hlsUrl;
       if (!result?.success || !isValidMediaUrl(extractedUrl)) return null;
 
+      const relayUrl = typeof result.streamUrl === 'string'
+        && isValidMediaUrl(result.streamUrl)
+        && result.streamUrl !== extractedUrl
+        ? result.streamUrl
+        : undefined;
+
       return {
         m3u8Url: extractedUrl,
+        relayUrl,
         candidates: collectCandidates(hoster, result.hlsCandidates),
         headers: result.headers,
       };
@@ -211,17 +235,79 @@ export async function tryOnTheFlyExtraction(
 
   const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs));
 
+  /**
+   * Décide quoi jouer, dans cet ordre :
+   *   1. **direct** si le CDN autorise la lecture depuis le navigateur (CORS
+   *      ouvert, ou en-têtes posés par l'extension) — zéro charge serveur ;
+   *   2. **relais** quand il existe et que le direct est impossible ;
+   *   3. **direct quand même** en dernier recours : l'extension peut encore
+   *      débloquer la requête au moment de la lecture.
+   */
+  const decidePlayback = async (
+    hoster: string,
+    extraction: {
+      m3u8Url: string;
+      relayUrl?: string;
+      candidates?: { url: string; label: string }[];
+      headers?: Record<string, string>;
+    },
+    source: 'extension' | 'backend',
+  ): Promise<OnTheFlyExtractResult> => {
+    const probe = await probeDirectStream(extraction.m3u8Url, { timeoutMs: 4000 });
+
+    if (probe.ok) {
+      console.log(`[ON-THE-FLY] ✓ Lecture directe (${hoster}) — aucun relais serveur`);
+      return {
+        success: true,
+        m3u8Url: extraction.m3u8Url,
+        candidates: extraction.candidates,
+        headers: extraction.headers,
+        hoster,
+        source,
+        corsOk: true,
+        viaRelay: false,
+        reason: probe.reason,
+      };
+    }
+
+    if (extraction.relayUrl) {
+      console.log(`[ON-THE-FLY] ↻ Relais Orvix pour ${hoster} (${probe.reason})`);
+      return {
+        success: true,
+        m3u8Url: extraction.relayUrl,
+        candidates: extraction.candidates,
+        headers: extraction.headers,
+        hoster,
+        source,
+        corsOk: false,
+        viaRelay: true,
+        reason: probe.reason,
+      };
+    }
+
+    console.warn(`[ON-THE-FLY] ⚠ ${hoster} : ${probe.reason}, lecture directe tentée sans relais`);
+    return {
+      success: true,
+      m3u8Url: extraction.m3u8Url,
+      candidates: extraction.candidates,
+      headers: extraction.headers,
+      hoster,
+      source,
+      corsOk: false,
+      viaRelay: false,
+      reason: probe.reason,
+    };
+  };
+
   try {
     const extensionResult = await Promise.race([fromExtension(), timeout]);
     if (extensionResult) {
-      console.log(`[ON-THE-FLY] ✓ Flux extrait par l'extension (${hoster})`);
-      return { success: true, m3u8Url: extensionResult.m3u8Url, candidates: extensionResult.candidates, headers: extensionResult.headers, hoster, source: 'extension' };
+      return await decidePlayback(hoster, extensionResult, 'extension');
     }
 
     const backendResult = await Promise.race([fromBackend(), timeout]);
     if (backendResult) {
-      console.log(`[ON-THE-FLY] ✓ Flux extrait par le backend (${hoster})`);
-      return { success: true, m3u8Url: backendResult.m3u8Url, candidates: backendResult.candidates, headers: backendResult.headers, hoster, source: 'backend' };
+      return await decidePlayback(hoster, backendResult, 'backend');
     }
   } catch (error) {
     console.warn(`[ON-THE-FLY] Échec global (${hoster}) :`, error);

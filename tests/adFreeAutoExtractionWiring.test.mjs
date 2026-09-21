@@ -85,3 +85,25 @@ test('l’extracteur SeekStreaming sait déchiffrer la charge utile de l’API',
   assert.match(source, /h: '1080'/);
   assert.match(source, /seekstreaming: extractSeekStreaming/);
 });
+
+test('la bascule distingue lecture directe et relais serveur', async () => {
+  const [onTheFly, hook, prefs] = await Promise.all([
+    read('src/utils/onTheFlyExtract.ts'),
+    read('src/hooks/useAdFreeAutoExtraction.ts'),
+    read('src/utils/adFreePlaybackPref.ts'),
+  ]);
+
+  // La sonde décide : direct d'abord (aucune bande passante serveur), relais
+  // ensuite, et l'échec ne casse rien.
+  assert.match(onTheFly, /probeDirectStream\(extraction\.m3u8Url/);
+  assert.match(onTheFly, /viaRelay: false,/);
+  assert.match(onTheFly, /viaRelay: true,/);
+  assert.match(onTheFly, /preferDirect: true/);
+
+  // Le relais reste sous contrôle du membre.
+  assert.match(prefs, /isStreamRelayEnabled/);
+  assert.match(prefs, /setStreamRelayEnabled/);
+  assert.match(hook, /isStreamRelayEnabled\(\)/);
+  assert.match(hook, /Autoriser le relais/);
+  assert.match(hook, /Couper le relais/);
+});

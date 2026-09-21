@@ -28,6 +28,20 @@ const {
     resolveExtractorsPath,
     resolveQuickJsPath,
 } = require('../utils/extractorsLocator');
+const {
+    encodeSignedToken,
+    decodeSignedToken,
+    signingConfigured,
+    isPublicHttpUrl,
+} = require('../utils/mediaSigning');
+const { rewriteHlsPlaylist } = require('../utils/hlsManifestRewrite');
+const {
+    acquireStreamSlot,
+    relayLimit,
+} = require('../utils/relayLimiter');
+
+/** Route servant de contexte à la signature des URLs relayées. */
+const RELAY_TOKEN_ROUTE = '/api/extract/stream';
 
 const router = express.Router();
 
@@ -130,6 +144,13 @@ try {
     console.error('[nativeExtract] Échec init extracteurs :', e.message);
 }
 
+if (!signingConfigured()) {
+    console.warn(
+        '[nativeExtract] MEDIA_SIGNING_SECRET absent : les URLs du relais de flux '
+        + 'voyagent en clair (proxy ouvert). Renseignez ce secret en production.',
+    );
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // 3. Protection SSRF : Whitelist des domaines autorisés
 // ────────────────────────────────────────────────────────────────────────────
@@ -175,6 +196,31 @@ function isAllowedUrl(rawUrl) {
 // 4. Normalisation unifiée des flux & Génération de streamUrl de repli
 // ────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Construit l'URL de relais d'un flux.
+ *
+ * La cible et le Referer voyagent dans un jeton signé : sans lui, l'endpoint
+ * serait un proxy ouvert (n'importe qui pourrait faire télécharger n'importe
+ * quelle URL par le serveur, en-têtes compris). La signature n'est utilisée
+ * que si `MEDIA_SIGNING_SECRET` est configuré ; sinon on retombe sur les
+ * paramètres en clair pour ne pas casser les installations de développement,
+ * et un avertissement est journalisé au démarrage.
+ */
+function buildRelayUrl(rawUrl, referer, origin) {
+    if (signingConfigured()) {
+        const token = encodeSignedToken(
+            RELAY_TOKEN_ROUTE,
+            JSON.stringify({ u: rawUrl, r: referer, o: origin || null }),
+        );
+        return `/api/extract/stream?t=${encodeURIComponent(token)}`;
+    }
+
+    const params = new URLSearchParams({ url: rawUrl });
+    if (referer) params.set('referer', referer);
+    if (origin) params.set('origin', origin);
+    return `/api/extract/stream?${params.toString()}`;
+}
+
 function normalizeResult(result, embedUrl) {
     if (!result || !result.success) return null;
 
@@ -193,7 +239,7 @@ function normalizeResult(result, embedUrl) {
 
     let streamUrl = null;
     if (needsRelay && referer) {
-        streamUrl = `/api/extract/stream?url=${encodeURIComponent(rawUrl)}&referer=${encodeURIComponent(referer)}`;
+        streamUrl = buildRelayUrl(rawUrl, referer, result.origin || null);
     }
 
     return {
@@ -284,17 +330,82 @@ router.post('/', async (req, res) => {
  * Relais de flux ultra-léger pour smartphones iOS/Android et Smart TVs
  * injectant les headers Referer/Origin requis pour les hébergeurs stricts.
  */
-router.get('/stream', async (req, res) => {
-    const { url, referer, origin } = req.query;
+/**
+ * Résout la cible du relais.
+ *
+ * Deux formes acceptées :
+ *   - `?t=<jeton signé>` (production) : la cible et les en-têtes viennent du
+ *     jeton, le client ne peut pas les forger ;
+ *   - `?url=…&referer=…` (développement sans `MEDIA_SIGNING_SECRET`) : toléré
+ *     uniquement quand la signature n'est pas configurée, et seulement pour
+ *     une URL http(s) publique.
+ *
+ * Dans les deux cas la cible passe le garde anti-SSRF : le relais ne doit pas
+ * pouvoir viser le réseau interne.
+ */
+function resolveRelayTarget(req) {
+    const { t, url, referer, origin } = req.query;
 
-    if (!url || typeof url !== 'string') {
-        return res.status(400).send('Paramètre url manquant');
+    if (t && typeof t === 'string') {
+        const decoded = decodeSignedToken(RELAY_TOKEN_ROUTE, t);
+        if (!decoded) return { error: 403, message: 'Jeton de relais invalide ou expiré' };
+
+        let payload;
+        try { payload = JSON.parse(decoded); } catch { payload = null; }
+        if (!payload || typeof payload.u !== 'string') {
+            return { error: 403, message: 'Jeton de relais illisible' };
+        }
+        return { url: payload.u, referer: payload.r || null, origin: payload.o || null };
     }
 
-    let target;
-    try { target = new URL(url); } catch { return res.status(400).send('URL invalide'); }
-    if (target.protocol !== 'http:' && target.protocol !== 'https:') {
-        return res.status(400).send('Protocole non autorisé');
+    if (signingConfigured()) {
+        // Production : les URLs en clair sont refusées pour ne pas rouvrir un proxy ouvert.
+        return { error: 403, message: 'Jeton de relais requis' };
+    }
+
+    if (!url || typeof url !== 'string') {
+        return { error: 400, message: 'Paramètre url manquant' };
+    }
+    return {
+        url,
+        referer: typeof referer === 'string' ? referer : null,
+        origin: typeof origin === 'string' ? origin : null,
+    };
+}
+
+/** En-têtes de réponse communs au relais (le lecteur est sur une autre origine). */
+function setRelayCorsHeaders(res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Content-Type');
+}
+
+router.get('/stream', async (req, res) => {
+    const resolved = resolveRelayTarget(req);
+    if (resolved.error) {
+        setRelayCorsHeaders(res);
+        return res.status(resolved.error).json({ success: false, error: resolved.message });
+    }
+
+    const { url: targetUrl, referer, origin } = resolved;
+
+    if (!isPublicHttpUrl(targetUrl)) {
+        setRelayCorsHeaders(res);
+        return res.status(400).json({ success: false, error: 'URL de flux non autorisée' });
+    }
+
+    // Plafond de charge : mieux vaut refuser proprement (le client garde son
+    // lecteur tiers) que saturer la sortie réseau de l'instance.
+    const releaseSlot = acquireStreamSlot();
+    if (!releaseSlot) {
+        console.warn(`[nativeExtract] Relais saturé (${relayLimit()} flux simultanés) — demande refusée`);
+        setRelayCorsHeaders(res);
+        return res.status(503).json({
+            success: false,
+            error: 'Relais de flux momentanément saturé',
+            retryAfter: 5,
+        });
     }
 
     const headers = {
@@ -304,30 +415,80 @@ router.get('/stream', async (req, res) => {
     if (referer) headers['Referer'] = String(referer);
     if (origin)  headers['Origin']  = String(origin);
 
+    let released = false;
+    const releaseOnce = () => {
+        if (released) return;
+        released = true;
+        releaseSlot();
+    };
+    res.on('close', releaseOnce);
+    res.on('finish', releaseOnce);
+
     try {
-        const upstream = await fetch(url, { headers });
+        const upstream = await fetch(targetUrl, { headers });
+        const contentType = upstream.headers.get('content-type') || '';
+        const looksLikePlaylist = /\.m3u8(?:$|\?)/i.test(targetUrl)
+            || /mpegurl/i.test(contentType);
+
+        setRelayCorsHeaders(res);
+
+        if (req.method === 'HEAD') {
+            res.status(upstream.status);
+            if (contentType) res.setHeader('Content-Type', contentType);
+            releaseOnce();
+            return res.end();
+        }
+
+        // Playlist HLS : on la relit pour réécrire chaque URI vers le relais.
+        // Sans cette réécriture, hls.js lit le manifeste puis va chercher les
+        // segments directement sur le CDN, où le CORS (ou le Referer) le
+        // refuse : la lecture ne démarre jamais.
+        if (looksLikePlaylist && upstream.ok) {
+            const body = await upstream.text();
+            const rewritten = rewriteHlsPlaylist(
+                body,
+                upstream.url || targetUrl,
+                (absoluteUrl) => buildRelayUrl(absoluteUrl, referer, origin),
+            );
+            res.status(upstream.status);
+            res.setHeader('Content-Type', contentType || 'application/vnd.apple.mpegurl');
+            releaseOnce();
+            return res.send(rewritten);
+        }
+
         res.status(upstream.status);
 
-        const contentType = upstream.headers.get('content-type');
         if (contentType) res.setHeader('Content-Type', contentType);
 
         const contentLength = upstream.headers.get('content-length');
         if (contentLength) res.setHeader('Content-Length', contentLength);
 
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', '*');
+        const contentRange = upstream.headers.get('content-range');
+        if (contentRange) res.setHeader('Content-Range', contentRange);
 
-        if (req.method === 'HEAD' || !upstream.body) {
+        if (!upstream.body) {
+            releaseOnce();
             return res.end();
         }
 
         const { Readable } = require('stream');
-        Readable.fromWeb(upstream.body).pipe(res);
+        const stream = Readable.fromWeb(upstream.body);
+        stream.on('error', (error) => {
+            console.error('[nativeExtract] Relais interrompu :', error.message);
+            releaseOnce();
+            res.destroy();
+        });
+        res.on('close', releaseOnce);
+        stream.pipe(res);
 
     } catch (e) {
         console.error('[nativeExtract] Erreur stream relay :', e.message);
-        res.status(502).send('Erreur stream relay');
+        releaseOnce();
+        if (!res.headersSent) {
+            setRelayCorsHeaders(res);
+            return res.status(502).json({ success: false, error: 'Erreur stream relay' });
+        }
+        res.end();
     }
 });
 
