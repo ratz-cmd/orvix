@@ -717,7 +717,7 @@ Tout le traitement se fait sur la machine du membre : **le serveur ne reçoit au
 Symptôme rapporté : le lecteur se charge, mais la vidéo ne démarre pas. Trois
 causes distinctes ont été trouvées dans le code — aucune n'était visible en
 tests, d'où la correction accompagnée d'un protocole de vérification manuelle
-(`docs/verification-lecture.md`).
+(`VERIFICATION-LECTURE.md`).
 
 | Cause | Correction |
 | --- | --- |
@@ -743,3 +743,28 @@ après un toast qui propose « Autoriser le relais ».
 | Chaîne complète lecteurs tiers → lecteur Orvix | `node --test tests/adFreeAutoExtractionWiring.test.mjs` | ✅ 6/6 |
 | Suites existantes | `node --test tests/*.test.mjs`, `cd app && node --test tests/*.test.mjs` | ✅ aucun nouvel échec (9 et 5 préexistants) |
 | Typecheck / lint / build | `npx tsc --noEmit`, `npx eslint …`, `npm run build` | ✅ les trois passent |
+
+---
+
+## Installation en une commande et services externes
+
+Ajout de `scripts/install.sh` : clone, installation, création des `.env` (avec
+génération des secrets), lancement. Le détail et la liste des APIs se trouvent
+dans `INSTALLATION.md`.
+
+| Point | Correction |
+| --- | --- |
+| Le dépôt n'expliquait pas **quelles APIs** sont nécessaires, ni lesquelles sont optionnelles | `INSTALLATION.md` : tableau obligatoire / recommandé / selon activation, ports, mise en production, dépannage |
+| `docs/` est ignoré par git : les guides ne suivaient pas un clone | Guides déplacés à la racine (`INSTALLATION.md`, `VERIFICATION-LECTURE.md`), liés depuis le `README` |
+| CORS et restriction de domaine de l'API : liste d'origines **codée en dur** (`orvix.*`) | `ORVIX_ALLOWED_ORIGINS` (`API/Mainapi/utils/allowedOrigins.js`) : un déploiement sur un domaine propre n'a plus toutes ses requêtes refusées ; le script la renseigne depuis `VITE_SITE_URL` |
+| `Blocked request. This host is not allowed.` derrière un tunnel, un conteneur ou un proxy | `server.allowedHosts` / `preview.allowedHosts` configurables (`VITE_DEV_ALLOWED_HOSTS`, `--allow-host`) |
+| `start_background` du script : journal et pid construits via `$OLDPWD` → pid écrit hors du projet, service déclaré « non démarré » alors qu'il tournait | Chemins ancrés sur `$ROOT` (absolu) |
+| `--stop` tuait le sous-shell et laissait le serveur (donc le port) actif | Le sous-shell est remplacé par le service (`exec`) ; arrêt propre attendu 10 s, puis enfants terminés et arrêt forcé ; `--with-proxies` sans API locale génère un secret au lieu d'écrire une valeur vide |
+
+| Vérification | Commande | Résultat |
+| --- | --- | --- |
+| CORS / domaines autorisés | `node --test API/Mainapi/utils/__tests__/allowedOrigins.test.js` | ✅ 8/8 |
+| Journal, pid et arrêt réel d'un service lancé en arrière-plan | `bash scripts/install.sh --prod --skip-backend` puis `--stop` (clone GitHub) | ✅ port libéré, pid enregistré = pid du serveur |
+| Installation sur un clone neuf | `git clone --depth 1 … && bash scripts/install.sh --skip-backend` | ✅ `.env` créé, site servi sur le port demandé |
+| Suites front (aucune régression) | `node --test tests/*.test.mjs "src/**/__tests__/*.test.mjs"` | ✅ 147 réussites, 9 échecs préexistants |
+| Typecheck / build | `npx tsc --noEmit`, `npm run build` | ✅ les deux passent |

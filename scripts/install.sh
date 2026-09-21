@@ -388,8 +388,15 @@ fi
 if [ "$WITH_PROXIES" -eq 1 ] && [ -d API/proxiesembed ]; then
   # Le secret de signature doit être identique des deux côtés : on recopie
   # celui de Mainapi plutôt que d'en générer un second.
-  SHARED_SECRET="$(grep -E '^MEDIA_SIGNING_SECRET=' "$BACKEND_DIR/.env" | head -1 | cut -d= -f2-)"
-  SHARED_KEY="$(grep -E '^INTERNAL_API_KEY=' "$BACKEND_DIR/.env" | head -1 | cut -d= -f2-)"
+  SHARED_SECRET=""
+  SHARED_KEY=""
+  if [ -f "$BACKEND_DIR/.env" ]; then
+    SHARED_SECRET="$(grep -E '^MEDIA_SIGNING_SECRET=' "$BACKEND_DIR/.env" | head -1 | cut -d= -f2-)"
+    SHARED_KEY="$(grep -E '^INTERNAL_API_KEY=' "$BACKEND_DIR/.env" | head -1 | cut -d= -f2-)"
+  fi
+  # Sans API locale (--skip-backend), on génère plutôt que d'écrire du vide.
+  [ -n "$SHARED_SECRET" ] || SHARED_SECRET="$(random_secret)"
+  [ -n "$SHARED_KEY" ] || SHARED_KEY="$(random_secret)"
   PROXY_ENV="API/proxiesembed/.env"
   [ -f "$PROXY_ENV" ] || { [ -f API/proxiesembed/.env.example ] && cp API/proxiesembed/.env.example "$PROXY_ENV" || : > "$PROXY_ENV"; }
   set_env_var "$PROXY_ENV" MEDIA_SIGNING_SECRET "$SHARED_SECRET"
