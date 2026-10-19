@@ -18,32 +18,44 @@ import type { TopLevelSourceId } from '../../types/sourcePriority';
 /**
  * Labels UI pour les sources top-level (Films/Séries).
  * Exporté pour réutilisation par M6 (overrides dialog).
+ *
+ * Liste ordonnée comme `DEFAULT_MOVIES_TV_ORDER` (épine Movix) pour que les
+ * paliers soient lisibles d'un coup d'œil : sources VF d'abord, palier
+ * sous-titré français, puis lecteurs anglophones de secours.
+ *
+ * **Honnêteté des libellés** : les 7 lecteurs de secours sont des lecteurs
+ * tiers anglophones (audio original). Ils étaient annoncés « 1080p VF » /
+ * « 1080p FR », ce qui poussait les membres à les activer en croyant obtenir
+ * l'audio français. Ils sont désormais explicitement marqués VO.
  */
 export const SOURCE_LABELS: Record<TopLevelSourceId, string> = {
-  videasy: 'Videasy (1080p VF)',
+  // --- Palier 1 : lecture directe et sources françaises VF ---
+  nexus_hls: 'Lecteur Orvix Natif (0 Pub • HLS)',
+  swiftflux: 'SwiftFlux (MP4)',
+  bravo: 'Bravo/PurStream (1080p VF)',
+  mp4: 'MP4 direct',
+  darkino: 'Darkino (Direct FR)',
   fstream: 'French-Stream (Multi-hébergeurs 1080p)',
   seekstreaming: 'SeekStreaming (VF HD)',
+  omega: 'Omega',
   wiflix: 'Lynx (HD VF)',
-  bravo: 'Bravo/PurStream (1080p VF)',
-  peachify: 'Peachify (1080p FR)',
-  autoembed: 'AutoEmbed (1080p FR)',
-  embedsu: 'Embed.su (HD Multi FR)',
-  superembed: 'SuperEmbed (Multi FR)',
-  vidsrccc: 'VidSrc (1080p FR)',
-  '111movies': '111Movies (HD FR)',
-  darkino: 'Darkino (Direct FR)',
-  mp4: 'MP4 direct',
-  swiftflux: 'SwiftFlux (MP4)',
   j1f: '1jour1film',
   swiftflow: 'SwiftFlow',
-  omega: 'Omega',
-  coflix: 'Coflix',
   viper: 'Viper',
-  nexus_hls: 'Lecteur Orvix Natif (0 Pub • HLS)',
+  coflix: 'Coflix',
+  custom: 'Lecteur Orvix',
+  // --- Palier 2 : sous-titré français ---
   vox: 'Vox',
   kisskh: 'KissKH',
-  custom: 'Lecteur Orvix',
   vostfr: 'Videasy VOSTFR (Anglais ST-FR)',
+  // --- Palier 3 : lecteurs anglophones, dernier recours ---
+  videasy: 'Videasy (VO — secours anglophone)',
+  peachify: 'Peachify (VO — secours anglophone)',
+  autoembed: 'AutoEmbed (VO — secours anglophone)',
+  embedsu: 'Embed.su (VO — secours anglophone)',
+  superembed: 'SuperEmbed (VO — secours anglophone)',
+  vidsrccc: 'VidSrc (VO — secours anglophone)',
+  '111movies': '111Movies (VO — secours anglophone)',
 };
 
 interface SwitchProps {

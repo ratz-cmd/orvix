@@ -212,9 +212,10 @@ let customCacheEpoch = -1;
 const customCompiled = new Map<string, RegExp[]>();
 
 if (typeof window !== 'undefined') {
-  window.addEventListener('orvix-source-priority-changed', () => {
-    cacheEpoch += 1;
-  });
+  // Un seul écouteur : il était enregistré deux fois à l'identique, ce qui
+  // faisait bondir `cacheEpoch` de 2 à chaque changement de prefs. Sans effet
+  // visible (les caches sont vidés puis re-remplis) mais invalide aussi le
+  // cache `customCompiled` deux fois de suite pour rien.
   window.addEventListener('orvix-source-priority-changed', () => {
     cacheEpoch += 1;
   });

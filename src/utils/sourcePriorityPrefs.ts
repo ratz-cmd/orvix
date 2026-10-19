@@ -1,11 +1,17 @@
 // src/utils/sourcePriorityPrefs.ts
 import {
   TOP_LEVEL_SOURCE_IDS, BUILTIN_HOSTER_IDS, LANGUAGE_IDS,
-  DEPRECATED_SOURCE_IDS, DEPRECATED_HOSTER_IDS,
+  DEPRECATED_SOURCE_IDS, DEPRECATED_HOSTER_IDS, SUPPORTED_SCHEMA_VERSIONS,
   type TopLevelSourceId, type HosterId, type LanguageId,
   type SourcePriorityPrefs, type PriorityCategory,
   type MoviesTvPrefs, type AnimePrefs, type CustomHoster,
 } from '../types/sourcePriority';
+// Import statique (et non `require`) : `hosterRegistry` ne consomme que
+// `../types/sourcePriority`, il n'y a donc aucun cycle d'imports. Le
+// `require()` utilisé jusqu'ici par migrateV1toV2 n'existe pas dans le bundle
+// navigateur ESM — un client en prefs v1 tombait dans le `catch` de
+// getSourcePriorityPrefs et perdait silencieusement toute sa configuration.
+import { BUILTIN_HOSTER_PATTERNS } from './hosterRegistry';
 
 const STORAGE_KEY = 'settings_source_priority_prefs';
 const CHANGE_EVENT = 'orvix-source-priority-changed';
@@ -42,9 +48,21 @@ const CHANGE_EVENT = 'orvix-source-priority-changed';
  * j1f, swiftflow, viper, coflix, omega, nexus_hls, swiftflux, custom)
  * reprennent la tête absolue. Les lecteurs anglophones/VOSTFR (videasy, peachify,
  * autoembed, etc.) sont relégués en fin de liste en secours.
+ *
+ * **v8 → v9** (2026-10-19) : Parité Movix. L'ordre par défaut reprend l'épine
+ * `DEFAULT_MOVIES_TV_ORDER` du bundle de production Movix
+ * (`nexus_hls > swiftflux > bravo > mp4 > darkino > fstream > omega > wiflix >
+ * j1f > swiftflow > viper > coflix > custom > vox > kisskh > vostfr`), moins
+ * `frembed` (déprécié côté Orvix, aucun chemin de rendu), plus `seekstreaming`
+ * inséré après `fstream`. Les hosters built-in adoptent dans le même temps
+ * l'ordre `BUILTIN_HOSTER_IDS` de Movix. Les lecteurs anglophones restent en
+ * tout dernier recours, derrière les sources sous-titrées français.
+ * Migration : l'ordre n'est réécrit que si l'utilisateur ne l'a jamais
+ * personnalisé (comparaison avec l'ancien défaut v8), sinon on respecte son
+ * classement et on se contente de purger les ids dépréciés.
  */
-const SCHEMA_VERSION = 8 as const;
-type LegacySourcePriorityPrefs<V extends 1 | 2 | 3 | 4 | 5 | 6 | 7> = Omit<SourcePriorityPrefs, 'version'> & {
+const SCHEMA_VERSION = 9 as const;
+type LegacySourcePriorityPrefs<V extends 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8> = Omit<SourcePriorityPrefs, 'version'> & {
   version: V;
 };
 type PersistedSourcePriorityPrefs = SourcePriorityPrefs
@@ -54,7 +72,8 @@ type PersistedSourcePriorityPrefs = SourcePriorityPrefs
   | LegacySourcePriorityPrefs<4>
   | LegacySourcePriorityPrefs<5>
   | LegacySourcePriorityPrefs<6>
-  | LegacySourcePriorityPrefs<7>;
+  | LegacySourcePriorityPrefs<7>
+  | LegacySourcePriorityPrefs<8>;
 
 /** Ancien ordre built-in (pré-v3). Sert au comparateur du migrator v2→v3. */
 const V2_DEFAULT_BUILTIN_HOSTER_ORDER: readonly string[] = [
@@ -64,20 +83,77 @@ const V2_DEFAULT_BUILTIN_HOSTER_ORDER: readonly string[] = [
 ];
 
 /**
- * Ordre par défaut des sources top-level pour Films/Séries.
- *
- * Ordre v8 (100% VF Audio Français Doublé Prioritaire - Zéro Frembed) :
- * fstream > seekstreaming > wiflix > bravo > darkino > mp4 > j1f > swiftflow >
- * viper > coflix > omega > nexus_hls > swiftflux > custom >
- * videasy > peachify > autoembed > embedsu > superembed > vidsrccc > 111movies >
- * vox > kisskh > vostfr.
+ * Ordre built-in des hosters tel qu'il était en v8 (pré-parité Movix).
+ * Sert au comparateur du migrator v8→v9 : on ne réécrit l'ordre d'un
+ * utilisateur que s'il ne l'a jamais personnalisé.
  */
-const DEFAULT_MOVIES_TV_ORDER: readonly TopLevelSourceId[] = [
+const V8_DEFAULT_BUILTIN_HOSTER_ORDER: readonly string[] = [
+  'voe', 'fsvid', 'vidmoly', 'uqload', 'sibnet', 'veev', 'doodstream',
+  'lulustream', 'vidara', 'seekstreaming', 'smoothpre', 'minochinos',
+  'vidzy', 'darkibox', 'supervideo', 'dropload', 'oneupload',
+];
+
+/**
+ * Ordre par défaut des sources top-level en v8 (pré-parité Movix).
+ * Comparateur du migrator v8→v9, même règle que ci-dessus.
+ */
+const V8_DEFAULT_MOVIES_TV_ORDER: readonly string[] = [
   'fstream', 'seekstreaming', 'wiflix', 'bravo', 'darkino',
   'mp4', 'j1f', 'swiftflow', 'viper', 'coflix', 'omega',
   'nexus_hls', 'swiftflux', 'custom', 'videasy', 'peachify',
   'autoembed', 'embedsu', 'superembed', 'vidsrccc', '111movies',
   'vox', 'kisskh', 'vostfr',
+];
+
+/**
+ * Épine Movix : `DEFAULT_MOVIES_TV_ORDER` du bundle de production Movix,
+ * recopiée telle quelle. Elle sert de référence à la vérification de parité
+ * (`tests/sourcePriorityParity.test.mjs`) : notre ordre par défaut doit la
+ * contenir comme sous-séquence, dans le même ordre relatif.
+ */
+export const MOVIX_REFERENCE_MOVIES_TV_ORDER: readonly string[] = [
+  'nexus_hls', 'swiftflux', 'bravo', 'mp4', 'darkino', 'fstream', 'omega',
+  'wiflix', 'j1f', 'swiftflow', 'viper', 'coflix', 'custom', 'frembed',
+  'vox', 'kisskh', 'vostfr',
+];
+
+/**
+ * Épine Movix pour les hosters : `BUILTIN_HOSTER_IDS` du bundle de production
+ * Movix. `BUILTIN_HOSTER_IDS` (src/types/sourcePriority.ts) doit y être égal,
+ * élément par élément — vérifié par test.
+ */
+export const MOVIX_REFERENCE_BUILTIN_HOSTER_IDS: readonly string[] = [
+  'voe', 'vidmoly', 'vidzy', 'uqload', 'sibnet', 'veev', 'doodstream',
+  'lulustream', 'vidara', 'seekstreaming', 'smoothpre', 'minochinos',
+  'darkibox', 'supervideo', 'dropload', 'oneupload', 'fsvid',
+];
+
+/**
+ * Ordre par défaut des sources top-level pour Films/Séries (v9 — parité Movix).
+ *
+ *   nexus_hls > swiftflux > bravo > mp4 > darkino > fstream > **seekstreaming** >
+ *   omega > wiflix > j1f > swiftflow > viper > coflix > custom >
+ *   vox > kisskh > vostfr >
+ *   videasy > peachify > autoembed > embedsu > superembed > vidsrccc > 111movies
+ *
+ * Écarts assumés et documentés vis-à-vis de Movix :
+ *   - `frembed` (14e chez Movix) est absent : déprécié côté Orvix depuis la v8,
+ *     il n'y a plus aucun chemin de rendu (`applyEmbedConfig` renvoie `false`,
+ *     aucune iframe `playerType === 'frembed'`). Le conserver exposerait dans
+ *     Réglages une source fantôme qui échoue systématiquement.
+ *   - `seekstreaming` est inséré juste après `fstream` : Movix le traite comme
+ *     un simple hoster, Orvix en fait aussi une source top-level VF (bouton
+ *     « SeekStreaming VF HD »). Sa position préserve l'ordre relatif Movix.
+ *   - les 7 lecteurs anglophones ferment la liste, derrière les sources
+ *     sous-titrées français (`vox`/`kisskh`/`vostfr`) : dernier recours
+ *     automatique, jamais devant une source française.
+ */
+export const DEFAULT_MOVIES_TV_ORDER: readonly TopLevelSourceId[] = [
+  'nexus_hls', 'swiftflux', 'bravo', 'mp4', 'darkino', 'fstream',
+  'seekstreaming', 'omega', 'wiflix', 'j1f', 'swiftflow', 'viper',
+  'coflix', 'custom', 'vox', 'kisskh', 'vostfr',
+  'videasy', 'peachify', 'autoembed', 'embedsu', 'superembed',
+  'vidsrccc', '111movies',
 ];
 
 /**
@@ -89,6 +165,21 @@ const DEFAULT_ANIME_HOSTER_ORDER: readonly HosterId[] = [
   'vidmoly', 'sibnet', 'smoothpre', 'seekstreaming', 'minochinos',
 ];
 
+/**
+ * Sources désactivées par défaut (opt-in explicite dans Réglages › Sources).
+ *
+ * Historiquement `vidlink`, lecteur tiers anglophone depuis retiré du modèle —
+ * d'où l'ancien test figé `id !== 'vidlink'`, devenu une comparaison morte
+ * (TS2367) une fois l'id disparu de `TOP_LEVEL_SOURCE_IDS`.
+ *
+ * La liste est aujourd'hui vide : les lecteurs anglophones restants (videasy,
+ * peachify, autoembed, embedsu, superembed, vidsrccc, 111movies) sont gardés en
+ * tout dernier recours automatique. C'est leur position en fin de
+ * `DEFAULT_MOVIES_TV_ORDER` — derrière les sources sous-titrées français — qui
+ * les tient à distance, pas un flag d'activation.
+ */
+const SOURCES_DISABLED_BY_DEFAULT: readonly string[] = [];
+
 export function buildDefaults(): SourcePriorityPrefs {
   // Safety net : si DEFAULT_MOVIES_TV_ORDER oublie un id présent dans
   // TOP_LEVEL_SOURCE_IDS, on l'append à la fin pour préserver la couverture totale.
@@ -97,7 +188,10 @@ export function buildDefaults(): SourcePriorityPrefs {
   const sourceOrderIds: TopLevelSourceId[] = [...DEFAULT_MOVIES_TV_ORDER, ...extras];
 
   const moviesTv: MoviesTvPrefs = {
-    sourceOrder: sourceOrderIds.map((id) => ({ id, enabled: id !== 'vidlink' })),
+    sourceOrder: sourceOrderIds.map((id) => ({
+      id,
+      enabled: !SOURCES_DISABLED_BY_DEFAULT.includes(id),
+    })),
     hosterOrder: [...BUILTIN_HOSTER_IDS],
     // Même liste que Anime mais appliquée aux sources films/séries qui ont
     // plusieurs versions (fstream/wiflix/viper). VF + VOSTFR activés par
@@ -133,7 +227,11 @@ export const DEFAULT_SOURCE_PRIORITY_PREFS: SourcePriorityPrefs = buildDefaults(
 function isValidPrefs(obj: unknown): obj is PersistedSourcePriorityPrefs {
   if (!obj || typeof obj !== 'object') return false;
   const p = obj as Partial<Omit<SourcePriorityPrefs, 'version'>> & { version?: unknown };
-  const versionOk = p.version === 1 || p.version === 2 || p.version === 3 || p.version === 4 || p.version === 5 || p.version === 6 || p.version === 7 || p.version === 8;
+  // Liste dérivée de SUPPORTED_SCHEMA_VERSIONS : ajouter un schéma ne demande
+  // plus de retoucher ce test (l'ancienne énumération manuelle s'arrêtait à 8
+  // et aurait fait rejeter — donc réinitialiser — toutes les prefs v9).
+  const versionOk = typeof p.version === 'number'
+    && (SUPPORTED_SCHEMA_VERSIONS as readonly number[]).includes(p.version);
   return versionOk
     && !!p.categories
     && !!p.categories.moviesTv
@@ -148,19 +246,16 @@ function isValidPrefs(obj: unknown): obj is PersistedSourcePriorityPrefs {
  * replace-mode (les patterns listés = liste effective). On préfixe donc
  * les built-ins pour que l'utilisateur retrouve son comportement.
  *
- * `BUILTIN_HOSTER_PATTERNS` est importé dynamiquement dans la fonction
- * pour éviter un cycle d'imports (hosterRegistry consomme sourcePriorityPrefs
- * indirectement via les getters).
+ * `BUILTIN_HOSTER_PATTERNS` vient d'un import statique en tête de module : le
+ * cycle d'imports redouté n'existe pas, `hosterRegistry` ne consomme que
+ * `../types/sourcePriority` et n'appelle jamais ce module. L'ancien
+ * `require('./hosterRegistry')` levait `require is not defined` dans le bundle
+ * navigateur ESM, et le `catch` de `getSourcePriorityPrefs` réduisait alors
+ * silencieusement les prefs v1 aux valeurs par défaut.
  */
 function migrateV1toV2(
   parsed: LegacySourcePriorityPrefs<1>,
 ): LegacySourcePriorityPrefs<2> {
-  // Import dynamique synchrone : le module est déjà chargé côté runtime.
-  // (Le cycle d'imports théorique est rompu en pratique car hosterRegistry
-  // n'appelle JAMAIS getSourcePriorityPrefs au import-time.)
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { BUILTIN_HOSTER_PATTERNS } = require('./hosterRegistry') as typeof import('./hosterRegistry');
-
   const migratedOverrides: SourcePriorityPrefs['patternOverrides'] = {};
   for (const [id, userPatterns] of Object.entries(parsed.patternOverrides ?? {})) {
     if (!userPatterns || userPatterns.length === 0) continue;
@@ -273,13 +368,17 @@ function migrateV4toV5(
       return { ...parsed, version: 5 } as SourcePriorityPrefs;
     }
     const order = moviesTv.sourceOrder;
-    const vidlinkIdx = order.findIndex((e) => e?.id === 'vidlink');
+    // Comparaison sur la forme string : `vidlink` a quitté `TopLevelSourceId`,
+    // mais les prefs v4 persistées en contiennent encore la trace brute. La
+    // garde doit rester fonctionnelle sur ces données — seul le typage de
+    // l'union est devenu trop étroit (TS2367).
+    const vidlinkIdx = order.findIndex((e) => String(e?.id) === 'vidlink');
 
     let sourceOrder = order;
     if (vidlinkIdx !== -1) {
       const vidlinkEntry = order[vidlinkIdx];
       const withoutVidlink = order.filter((_, i) => i !== vidlinkIdx);
-      const vostfrIdx = withoutVidlink.findIndex((e) => e?.id === 'vostfr');
+      const vostfrIdx = withoutVidlink.findIndex((e) => String(e?.id) === 'vostfr');
       const insertAt = vostfrIdx === -1 ? withoutVidlink.length : vostfrIdx;
       sourceOrder = [
         ...withoutVidlink.slice(0, insertAt),
@@ -316,9 +415,11 @@ function migrateV5toV6(
     if (!moviesTv || !Array.isArray(moviesTv.sourceOrder)) {
       return { ...parsed, version: 6 } as SourcePriorityPrefs;
     }
-    // Désactiver vidlink dans la liste existante de l'utilisateur
+    // Désactiver vidlink dans la liste existante de l'utilisateur.
+    // Comparaison sur la forme string, même raison que migrateV4toV5 : l'id a
+    // quitté l'union `TopLevelSourceId` mais survit dans les prefs v5.
     const sourceOrder = moviesTv.sourceOrder.map((entry) =>
-      entry?.id === 'vidlink' ? { ...entry, enabled: false } : entry
+      String(entry?.id) === 'vidlink' ? { ...entry, enabled: false } : entry
     );
     return {
       ...parsed,
@@ -438,6 +539,76 @@ function migrateV7toV8(
   }
 }
 
+/**
+ * Migration v8 → v9 (2026-10-19) : parité Movix.
+ *
+ * Deux listes sont réalignées sur le bundle de production Movix :
+ *   - `sourceOrder`  → épine Movix (`nexus_hls … vostfr`), moins `frembed`,
+ *     plus `seekstreaming` après `fstream` ;
+ *   - `hosterOrder`  → `BUILTIN_HOSTER_IDS` Movix (même ensemble d'ids, ordre
+ *     canonique : `vidzy` remonte en 3e position, `fsvid` passe en dernier).
+ *
+ * Règle de respect du choix utilisateur, identique à migrateV2toV3 : on ne
+ * réécrit une liste que si l'utilisateur ne l'a JAMAIS personnalisée (sa liste
+ * équivaut élément par élément à l'ancien défaut v8). Un ordre volontaire est
+ * conservé tel quel ; `mergeWithDefaults` se charge ensuite de purger les ids
+ * dépréciés et d'appendre les nouveaux. Les hosters `custom_*` sont préservés à
+ * leur position relative en fin de liste dans les deux cas.
+ */
+function migrateV8toV9(
+  parsed: LegacySourcePriorityPrefs<8>,
+): SourcePriorityPrefs {
+  try {
+    const moviesTv = parsed.categories?.moviesTv;
+    if (!moviesTv || !Array.isArray(moviesTv.sourceOrder)) {
+      return { ...parsed, version: 9 };
+    }
+
+    // --- sourceOrder : réécriture seulement si jamais personnalisé ---
+    const orderIds = moviesTv.sourceOrder
+      .map((e) => e?.id)
+      .filter((id): id is TopLevelSourceId => typeof id === 'string');
+    const sourcesUntouched = orderIds.length === V8_DEFAULT_MOVIES_TV_ORDER.length
+      && orderIds.every((id, i) => id === V8_DEFAULT_MOVIES_TV_ORDER[i]);
+
+    let sourceOrder = moviesTv.sourceOrder;
+    if (sourcesUntouched) {
+      // On conserve les flags `enabled` existants : un utilisateur qui avait
+      // désactivé une source garde son choix, seul le rang change.
+      const enabledById = new Map<string, boolean>(
+        moviesTv.sourceOrder.map((e) => [String(e?.id), e?.enabled !== false]),
+      );
+      sourceOrder = DEFAULT_MOVIES_TV_ORDER.map((id) => ({
+        id,
+        enabled: enabledById.get(id) ?? !SOURCES_DISABLED_BY_DEFAULT.includes(id),
+      }));
+    }
+
+    // --- hosterOrder : même règle, customs préservés ---
+    const hosterOrder = Array.isArray(moviesTv.hosterOrder) ? moviesTv.hosterOrder : [];
+    const v8Builtins = new Set<string>(V8_DEFAULT_BUILTIN_HOSTER_ORDER);
+    const builtinsInUserOrder = hosterOrder.filter((id) => v8Builtins.has(id));
+    const customsInUserOrder = hosterOrder.filter((id) => !v8Builtins.has(id));
+    const hostersUntouched = builtinsInUserOrder.length === V8_DEFAULT_BUILTIN_HOSTER_ORDER.length
+      && builtinsInUserOrder.every((id, i) => id === V8_DEFAULT_BUILTIN_HOSTER_ORDER[i]);
+    const nextHosterOrder: HosterId[] = hostersUntouched
+      ? [...BUILTIN_HOSTER_IDS, ...customsInUserOrder]
+      : hosterOrder;
+
+    return {
+      ...parsed,
+      version: 9,
+      categories: {
+        ...parsed.categories,
+        moviesTv: { ...moviesTv, sourceOrder, hosterOrder: nextHosterOrder },
+      },
+    };
+  } catch (err) {
+    console.error('[sourcePriorityPrefs] Error during migrateV8toV9:', err);
+    return { ...parsed, version: 9 };
+  }
+}
+
 
 /** Merge parsed prefs with defaults (forward-compat pour nouveaux ids + purge deprecated). */
 function mergeWithDefaults(parsed: PersistedSourcePriorityPrefs): SourcePriorityPrefs {
@@ -547,21 +718,26 @@ export function getSourcePriorityPrefs(): SourcePriorityPrefs {
     if (!raw) return buildDefaults();
     const parsed = JSON.parse(raw);
     if (!isValidPrefs(parsed)) return buildDefaults();
+    // Chaîne de migrations. Chaque étape reçoit un cast explicite : depuis que
+    // `SourcePriorityPrefs.version` couvre tout `SUPPORTED_SCHEMA_VERSIONS`
+    // (1…9), le rétrécissement par discriminant ne suffit plus à isoler la
+    // version legacy attendue — `SourcePriorityPrefs` admet lui aussi ces
+    // valeurs. Le cast est la convention déjà en place pour v5→v6 et suivantes.
     // Migration v1 → v2 (patternOverrides : append → replace)
     const v2 = parsed.version === 1
-      ? migrateV1toV2(parsed)
+      ? migrateV1toV2(parsed as LegacySourcePriorityPrefs<1>)
       : parsed;
     // Migration v2 → v3 (default hoster order : vidzy avant uqload)
     const v3 = v2.version === 2
-      ? migrateV2toV3(v2)
+      ? migrateV2toV3(v2 as LegacySourcePriorityPrefs<2>)
       : v2;
     // Migration v3 → v4 (swiftflux promu juste après nexus_hls)
     const v4 = v3.version === 3
-      ? migrateV3toV4(v3)
+      ? migrateV3toV4(v3 as LegacySourcePriorityPrefs<3>)
       : v3;
     // Migration v4 → v5 (vidlink relégué en fin de liste, sources VF en tête)
     const v5 = v4.version === 4
-      ? migrateV4toV5(v4)
+      ? migrateV4toV5(v4 as LegacySourcePriorityPrefs<4>)
       : v4;
     // Migration v5 → v6 (vidlink désactivé — plus jamais auto-sélectionné)
     const v6 = v5.version === 5
@@ -575,7 +751,11 @@ export function getSourcePriorityPrefs(): SourcePriorityPrefs {
     const v8 = v7.version === 7
       ? migrateV7toV8(v7 as LegacySourcePriorityPrefs<7>)
       : v7;
-    return mergeWithDefaults(v8);
+    // Migration v8 → v9 (parité Movix : épine des sources + ordre des hosters)
+    const v9 = v8.version === 8
+      ? migrateV8toV9(v8 as LegacySourcePriorityPrefs<8>)
+      : v8;
+    return mergeWithDefaults(v9);
   } catch {
     return buildDefaults();
   }

@@ -11,12 +11,30 @@ export interface SourceAvailability {
 }
 
 /**
+ * Ids qui ne doivent jamais reprendre la main via la mémoire du « dernier
+ * lecteur ».
+ *
+ * `vidlink` a été retiré du modèle (`DEPRECATED_SOURCE_IDS`) : la comparaison
+ * directe avec l'union `TopLevelSourceId` est désormais rejetée par le
+ * compilateur (TS2367) alors que la garde, elle, doit rester — un
+ * `localStorage` ancien peut encore porter ces ids. D'où le typage `string`.
+ *
+ * En pratique `availMap` ne contient que des ids courants, la garde est donc
+ * redondante ; elle reste comme filet explicite et documenté.
+ */
+const NEVER_AUTO_LOCK_SOURCE_IDS: readonly string[] = [
+  'vidlink', 'frembed', 'nexus_file', 'rivestream', 'rivestream_hls',
+];
+
+/**
  * Retourne la première source top-level activée et disponible selon l'ordre utilisateur.
  * `null` si aucune source dispo n'est activée.
  *
  * Priorité (M11) : si l'option "se souvenir du dernier lecteur" est activée
  * ET qu'un dernier lecteur est sauvé ET qu'il est disponible dans la liste,
- * il l'emporte sur le tri user. Fallback sur l'ordre user sinon.
+ * il l'emporte sur le tri user. Fallback sur l'ordre user sinon. Les ids
+ * retirés du modèle (`NEVER_AUTO_LOCK_SOURCE_IDS`) ne peuvent pas bénéficier
+ * de cette mémoire.
  */
 export function pickAutoSelectedSource(
   availability: SourceAvailability[],
@@ -26,10 +44,10 @@ export function pickAutoSelectedSource(
 
   if (getRememberLastPlayer()) {
     const last = getLastPlayer();
-    // Ne jamais verrouiller sur vidlink via la mémoire du dernier lecteur.
-    // Vidlink est un lecteur tiers anglophone — il doit rester en dernier recours
-    // et ne jamais prendre la main automatiquement sur les sources VF.
-    if (last && last !== 'vidlink' && availMap.get(last)) return last;
+    // Ne jamais verrouiller sur un lecteur retiré du modèle via la mémoire du
+    // dernier lecteur : ces ids ne doivent pas prendre la main automatiquement
+    // sur les sources VF.
+    if (last && !NEVER_AUTO_LOCK_SOURCE_IDS.includes(last) && availMap.get(last)) return last;
   }
 
   const { sourceOrder } = getSourcePriorityPrefs().categories.moviesTv;

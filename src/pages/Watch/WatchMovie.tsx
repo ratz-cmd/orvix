@@ -14,7 +14,7 @@ import { useAdFreeAutoExtraction } from '../../hooks/useAdFreeAutoExtraction';
 import type { ExtractedPlayback } from '../../hooks/useAdFreeAutoExtraction';
 import { runExtractionPass } from '../../utils/runExtractionPass';
 import { pickAutoSelectedSource, sortHostersByPriority, type SourceAvailability } from '../../utils/sourceAutoSelect';
-import type { TopLevelSourceId } from '../../types/sourcePriority';
+import type { AutoSelectSourceId } from '../../types/sourcePriority';
 import { getSourcePriorityPrefs, subscribeToPriorityChanges } from '../../utils/sourcePriorityPrefs';
 import { detectHoster } from '../../utils/hosterRegistry';
 import { setLastPlayer } from '../../utils/lastPlayerPref';
@@ -220,7 +220,22 @@ interface NightflixSource {
   label?: string;
 }
 
-type PlayerSourceType = 'primary' | 'vostfr' | 'videasy' | 'peachify' | 'autoembed' | 'embedsu' | 'superembed' | 'vidsrccc' | '111movies' | 'vidsrcsu' | 'vidsrcwtf1' | 'vidsrcwtf5' | 'multi' | 'omega' | 'darkino' | 'mp4' | 'coflix' | 'frembed' | 'custom' | 'nexus_hls' | 'nexus_file' | 'fstream' | 'wiflix' | 'j1f' | 'swiftflow' | 'viper' | 'vidmoly' | 'dropload' | 'adfree' | 'bravo' | 'kisskh' | 'seekstreaming' | number;
+// `swiftflux` manquait à l'union : `setSelectedSource('swiftflux')` et les
+// comparaisons `selectedSource === 'swiftflux'` étaient rejetées par le
+// compilateur alors que le chemin SwiftFlux est bien vivant à l'exécution.
+type PlayerSourceType = 'primary' | 'vostfr' | 'videasy' | 'peachify' | 'autoembed' | 'embedsu' | 'superembed' | 'vidsrccc' | '111movies' | 'vidsrcsu' | 'vidsrcwtf1' | 'vidsrcwtf5' | 'multi' | 'omega' | 'darkino' | 'mp4' | 'coflix' | 'frembed' | 'custom' | 'nexus_hls' | 'nexus_file' | 'fstream' | 'wiflix' | 'j1f' | 'swiftflow' | 'swiftflux' | 'viper' | 'vidmoly' | 'dropload' | 'adfree' | 'bravo' | 'kisskh' | 'seekstreaming' | 'vox' | number;
+
+/**
+ * Lecteurs de repli non francophones (audio original, sans sous-titres
+ * français garantis). Ils ferment `DEFAULT_MOVIES_TV_ORDER` et ne sont atteints
+ * par la cascade qu'après épuisement des sources VF puis du palier VOSTFR.
+ *
+ * Sert uniquement à informer l'utilisateur via un bandeau non bloquant : une
+ * bascule sur l'un de ces lecteurs ne doit jamais être silencieuse.
+ */
+const ANGLOPHONE_FALLBACK_SOURCE_IDS: readonly string[] = [
+  'videasy', 'peachify', 'autoembed', 'embedsu', 'superembed', 'vidsrccc', '111movies',
+];
 
 function formatPremidSourceDetail(...parts: Array<string | null | undefined>) {
   const normalizedParts = parts
@@ -451,6 +466,10 @@ const WatchMovie: React.FC = () => {
   const [loadingExtractions, setLoadingExtractions] = useState(true); // Nouvel état pour les extractions
   const [, setVipRetryMessage] = useState<string | null>(null);
   const [onlyVostfrAvailable, setOnlyVostfrAvailable] = useState<boolean>(false);
+  // Bandeau de repli : la cascade peut aboutir sur un palier non francophone
+  // (VOSTFR puis lecteurs anglophones). Le repli reste automatique, mais il ne
+  // doit jamais être silencieux — d'où cet avertissement non bloquant, masquable.
+  const [fallbackNoticeDismissed, setFallbackNoticeDismissed] = useState<boolean>(false);
 
   // KissKH resolution is movie-scoped. Abort plus generation checks keep a
   // late response from a previous route from replacing the current movie.
@@ -788,6 +807,17 @@ const WatchMovie: React.FC = () => {
     setIsLoading(true);
     setLoadingText(t('watch.loadingSources'));
 
+    // ========== CONTAINERS DE SOURCES — PORTÉE FONCTION ==========
+    // Déclarés AVANT le `try` : le bloc `catch` de récupération d'urgence doit
+    // pouvoir lire ce qui a déjà été extrait au moment du crash. Déclarés dans
+    // le `try`, ils étaient hors de portée dans le `catch` et la récupération
+    // levait `ReferenceError` — le joueur restait alors bloqué sur écran noir /
+    // spinner, sans jamais atteindre `setIsLoading(false)`.
+    let finalHlsSources: SeekStreamingHlsSource[] = [];
+    let finalFileSources: { url: string; label: string }[] = [];
+    let localBravoSources: { url: string; label: string }[] = [];
+    let fstreamProcessedSources: { url: string; label: string; category: string }[] = [];
+    let wiflixProcessedSources: { url: string; label: string; category: string }[] = [];
 
     try {
       // Get movie details for title (needed for ad-free search and Darkino)
@@ -1104,10 +1134,8 @@ const WatchMovie: React.FC = () => {
         }
       }
 
-      // ========== INITIALISATION DES CONTAINERS POUR SOURCES EXTRAITES ==========
-      let finalHlsSources: SeekStreamingHlsSource[] = [];
-      let finalFileSources: { url: string; label: string }[] = [];
-      let localBravoSources: { url: string; label: string }[] = [];
+      // ========== CONTAINERS POUR SOURCES EXTRAITES ==========
+      // (déclarés en tête de `fetchVideoSources` — visibles du `catch`)
 
       // ========== PURSTREAM (BRAVO) SOURCES (réservé VIP/extension) ==========
       if (purstreamResult && purstreamResult.sources && purstreamResult.sources.length > 0) {
@@ -1289,7 +1317,7 @@ const WatchMovie: React.FC = () => {
       console.log(' Final HLS sources after supervideo/dropload processing:', finalHlsSources);
 
       // =========== TRAITEMENT DES RÉSULTATS FSTREAM ===========
-      let fstreamProcessedSources: { url: string; label: string; category: string }[] = [];
+      // (`fstreamProcessedSources` déclaré en tête de `fetchVideoSources`)
       const fstreamHlsSources: { url: string; label: string; category: string }[] = [];
       const fsvidSources: { url: string; label: string; category: string }[] = [];
 
@@ -1468,7 +1496,7 @@ const WatchMovie: React.FC = () => {
       }
 
       // =========== TRAITEMENT DES RÉSULTATS WIFLIX (LYNX) ===========
-      let wiflixProcessedSources: { url: string; label: string; category: string }[] = [];
+      // (`wiflixProcessedSources` déclaré en tête de `fetchVideoSources`)
 
       if (wiflixResult && wiflixResult.success && wiflixResult.players) {
         console.log(' Processing Wiflix/Lynx result:', wiflixResult);
@@ -1732,10 +1760,10 @@ const WatchMovie: React.FC = () => {
       console.log('Wiflix/Lynx sources available:', wiflixProcessedSources.length);
       console.log('Viper sources available:', viperProcessedSources.length);
 
-      const applyEmbedConfig = async (sourceId: TopLevelSourceId): Promise<boolean> => {
+      const applyEmbedConfig = async (sourceId: AutoSelectSourceId): Promise<boolean> => {
         switch (sourceId) {
           case 'videasy': {
-            console.log('🎬 Sélection de VIDEASY 1080p VF (Film)');
+            console.log('🎬 Sélection de VIDEASY (VO — secours anglophone, Film)');
             const videasyUrl = `https://player.videasy.net/movie/${id}`;
             setSelectedSource('videasy');
             setEmbedUrl(videasyUrl);
@@ -2105,9 +2133,22 @@ const WatchMovie: React.FC = () => {
             setOnlyVostfrAvailable(false);
             return true;
           }
-          // Les ids restants (vostfr, vox) ne sont pas auto-sélectionnables dans
-          // le flux Movie (vostfr = fallback final géré ci-dessous,
-          // vox = WatchTv uniquement).
+          // Palier sous-titré français : aucune extraction n'est nécessaire,
+          // l'URL se construit depuis l'id TMDB. Placé par l'ordre par défaut
+          // AVANT les lecteurs anglophones — à VF absente, un film sous-titré
+          // français reste préférable à une version originale sans sous-titres.
+          case 'vostfr': {
+            const vostfrUrl = `https://player.videasy.net/fr/movie/${id}`;
+            console.log('[WatchMovie] 🇫🇷 Aucune source VF — palier VOSTFR:', vostfrUrl);
+            setSelectedSource('vostfr');
+            setEmbedUrl(vostfrUrl);
+            setEmbedType('vostfr');
+            setVideoSource(null);
+            currentSourceRef.current = 'vostfr';
+            setOnlyVostfrAvailable(false);
+            return true;
+          }
+          // `vox` reste non auto-sélectionnable côté film (fetch WatchTv uniquement).
           default:
             return false;
         }
@@ -2165,8 +2206,19 @@ const WatchMovie: React.FC = () => {
         }
       }
       else {
-        // Priority-driven auto-select. Construit la liste d'availability à partir
-        // des sources françaises VF d'abord, et garde les embeds VO/VOSTFR en queue de secours.
+        // Priority-driven auto-select.
+        //
+        // L'ORDRE de ce tableau n'a aucun effet sur la sélection : il ne fait
+        // que renseigner `hasData` par id. C'est `pickAutoSelectedSource` qui
+        // impose l'ordre, en parcourant `sourceOrder` des prefs (épine Movix,
+        // voir DEFAULT_MOVIES_TV_ORDER). Les commentaires de paliers ci-dessous
+        // décrivent donc l'ordre effectif, pas celui du tableau.
+        //
+        // Paliers effectifs :
+        //   1. sources VF (audio français doublé) ;
+        //   2. sources sous-titrées français (`vostfr`) — dernier recours
+        //      « français » avant les lecteurs anglophones ;
+        //   3. lecteurs anglophones, en fin d'ordre par défaut.
         const availability: SourceAvailability[] = [
           // 1. Sources françaises 100% VF (Audio Français Doublé)
           { id: 'fstream', hasData: fstreamProcessedSources.length > 0 },
@@ -2182,9 +2234,19 @@ const WatchMovie: React.FC = () => {
           { id: 'coflix', hasData: !!(coflixResult && getMultiFromCoflix(coflixResult)) },
           { id: 'viper', hasData: viperProcessedSources.length > 0 },
           { id: 'nexus_hls', hasData: finalHlsSources.length > 0 },
-          { id: 'nexus_file', hasData: finalFileSources.length > 0 },
+          // `nexus_file` n'est plus listé : l'id est déprécié
+          // (DEPRECATED_SOURCE_IDS), donc absent de `sourceOrder` —
+          // `pickAutoSelectedSource` ne pouvait jamais le renvoyer et cette
+          // entrée ne servait qu'à afficher un id non sélectionnable. Les
+          // sources fichier restent accessibles via `nexus_hls` et via le menu
+          // des sources (chemin manuel, lui toujours câblé).
           { id: 'custom', hasData: customLinks.length > 0 },
-          // 2. Sources de secours anglophones / VOSTFR (utilisées uniquement si aucune VF n'existe ou si expressément épinglées)
+          // 2. Palier sous-titré français : toujours disponible, l'URL est
+          //    construite depuis l'id TMDB (`player.videasy.net/fr/...`).
+          //    Placé avant les lecteurs anglophones par l'ordre par défaut.
+          { id: 'vostfr', hasData: true },
+          // 3. Lecteurs anglophones — tout dernier recours automatique, jamais
+          //    devant une source française ni devant le palier VOSTFR.
           { id: 'videasy', hasData: true },
           { id: 'peachify', hasData: true },
           { id: 'autoembed', hasData: true },
@@ -2192,9 +2254,8 @@ const WatchMovie: React.FC = () => {
           { id: 'superembed', hasData: true },
           { id: 'vidsrccc', hasData: true },
           { id: '111movies', hasData: true },
-          // Sources sans fetch dédié côté film — placées après, désactivées via hasData: false
+          // Sources sans fetch dédié côté film (vox = WatchTv uniquement).
           { id: 'vox', hasData: false },
-          { id: 'vostfr', hasData: false },
         ];
 
         // pickAutoSelectedSource retourne le 1er id activé dans l'ordre utilisateur
@@ -2251,12 +2312,16 @@ const WatchMovie: React.FC = () => {
             setOnlyVostfrAvailable(false);
             setLoadingError(false);
           } else {
-            console.log('[WatchMovie] 🛡️ Sauvetage de secours ultime sur Videasy');
-            setSelectedSource('videasy');
+            // Ultime recours : la cascade n'a rien pu appliquer. On termine sur
+            // le palier sous-titré français plutôt que sur la version originale
+            // nue, et le bandeau `fallbackTier` informe le membre.
+            const rescueVostfrUrl = `https://player.videasy.net/fr/movie/${id}`;
+            console.log('[WatchMovie] 🛡️ Sauvetage de secours ultime sur le palier VOSTFR:', rescueVostfrUrl);
+            setSelectedSource('vostfr');
             setVideoSource(null);
-            setEmbedUrl(`https://player.videasy.net/movie/${id}`);
-            setEmbedType('videasy');
-            currentSourceRef.current = 'videasy';
+            setEmbedUrl(rescueVostfrUrl);
+            setEmbedType('vostfr');
+            currentSourceRef.current = 'vostfr';
             setOnlyVostfrAvailable(false);
             setLoadingError(false);
           }
@@ -2307,15 +2372,33 @@ const WatchMovie: React.FC = () => {
         setOnlyVostfrAvailable(false);
         setLoadingError(false);
         rescued = true;
+      } else if (localBravoSources.length > 0 && canUseBravo) {
+        // Récupérable depuis le `catch` uniquement grâce au hoisting des
+        // conteneurs en tête de fonction.
+        console.log('[WatchMovie] 🛡️ Récupération d\'urgence sur Bravo/PurStream:', localBravoSources.length);
+        setSelectedSource('bravo');
+        setVideoSource(localBravoSources[0].url);
+        setEmbedUrl(null);
+        setEmbedType(null);
+        currentSourceRef.current = 'bravo';
+        setOnlyVostfrAvailable(false);
+        setLoadingError(false);
+        rescued = true;
       }
 
       if (!rescued) {
-        console.log('[WatchMovie] 🛡️ Sauvetage auto-select d\'urgence sur Videasy 1080p VF');
-        setSelectedSource('videasy');
+        // Aucune source française n'a survécu au crash. On termine sur le
+        // palier sous-titré français (VOSTFR), pas sur la version originale
+        // nue : pour un membre francophone, un film sous-titré français reste
+        // préférable. Le bandeau de repli (`fallbackTier`) signale la bascule —
+        // elle n'est jamais silencieuse.
+        const vostfrUrl = `https://player.videasy.net/fr/movie/${id}`;
+        console.log('[WatchMovie] 🛡️ Sauvetage d\'urgence sur le palier VOSTFR:', vostfrUrl);
+        setSelectedSource('vostfr');
         setVideoSource(null);
-        setEmbedUrl(`https://player.videasy.net/movie/${id}`);
-        setEmbedType('videasy');
-        currentSourceRef.current = 'videasy';
+        setEmbedUrl(vostfrUrl);
+        setEmbedType('vostfr');
+        currentSourceRef.current = 'vostfr';
         setOnlyVostfrAvailable(false);
         setLoadingError(false);
       }
@@ -2964,6 +3047,20 @@ const WatchMovie: React.FC = () => {
     onExtracted: handleAutoExtractedPlayback,
   });
 
+  /**
+   * Palier de repli atteint par la cascade, dérivé de `selectedSource`.
+   *
+   * Valeur dérivée et non état indépendant : impossible de la désynchroniser du
+   * lecteur réellement monté, y compris après un changement de source manuel
+   * depuis le menu. `null` dès qu'une source francophone (VF) est active.
+   */
+  const fallbackTier: 'vostfr' | 'anglophone' | null = (() => {
+    if (typeof selectedSource !== 'string') return null;
+    if (selectedSource === 'vostfr') return 'vostfr';
+    return ANGLOPHONE_FALLBACK_SOURCE_IDS.includes(selectedSource) ? 'anglophone' : null;
+  })();
+  const showFallbackNotice = fallbackTier !== null && !fallbackNoticeDismissed;
+
   return (
     <div style={{ minHeight: 'calc(var(--vh, 1vh) * 100)', overflow: 'hidden' }} className="w-full bg-black overflow-hidden fixed inset-0">
       <style dangerouslySetInnerHTML={{
@@ -3022,6 +3119,57 @@ const WatchMovie: React.FC = () => {
         data-premid-source-label={embedType || selectedSource || undefined}
         data-premid-source-detail={preMidSourceDetail}
       />
+      {/*
+        Bandeau de repli non bloquant. Rendu dans le portail d'overlay déjà
+        utilisé par le menu des sources : il reste au-dessus du lecteur quelle
+        que soit la branche de rendu active (iframe, HLS natif, SwiftFlux…),
+        sans dépendre du contexte d'empilement de chacune.
+
+        La cascade reste automatique — ce bandeau informe, il n'interrompt pas
+        la lecture et se masque d'un clic.
+      */}
+      {showFallbackNotice && (
+        <PlayerOverlayPortal>
+          <div
+            role="status"
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[10001] w-[calc(100%-2rem)] max-w-2xl pointer-events-auto"
+          >
+            <div className={`flex items-start gap-3 rounded-lg border px-4 py-3 shadow-2xl backdrop-blur-sm ${
+              fallbackTier === 'vostfr'
+                ? 'bg-amber-950/90 border-amber-600/60'
+                : 'bg-red-950/90 border-red-600/60'
+            }`}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className={`h-5 w-5 shrink-0 mt-0.5 ${fallbackTier === 'vostfr' ? 'text-amber-400' : 'text-red-400'}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p className="flex-1 text-sm text-gray-100">
+                {fallbackTier === 'vostfr'
+                  ? t('watch.fallbackVostfrNotice')
+                  : t('watch.fallbackAnglophoneNotice')}
+              </p>
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  onClick={() => { setShowEmbedQuality(true); setFallbackNoticeDismissed(true); }}
+                  className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20 transition-colors"
+                >
+                  {t('watch.fallbackNoticeAction')}
+                </button>
+                <button
+                  onClick={() => setFallbackNoticeDismissed(true)}
+                  aria-label={t('watch.fallbackNoticeDismiss')}
+                  className="rounded-md px-2 py-1.5 text-xs text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+        </PlayerOverlayPortal>
+      )}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center h-full bg-black">
           <div className="loading-container">
@@ -3285,7 +3433,6 @@ const WatchMovie: React.FC = () => {
                     setSelectedWiflixSource(0);
                     setEmbedUrl(sortedWiflix[0].url);
                     setEmbedType('wiflix');
-                    setEmbedType('wiflix');
                   } else if (viperSources.length > 0) {
                     setSelectedSource('viper' as any);
                     setSelectedViperSource(0);
@@ -3303,10 +3450,12 @@ const WatchMovie: React.FC = () => {
                       setEmbedUrl(customSources[0]);
                       setEmbedType('custom');
                     } else {
-                      setSelectedSource('videasy');
+                      // Fin de l'échelle de récupération : palier sous-titré
+                      // français plutôt que version originale nue.
+                      setSelectedSource('vostfr');
                       setVideoSource(null);
-                      setEmbedUrl(`https://player.videasy.net/movie/${id}`);
-                      setEmbedType('videasy');
+                      setEmbedUrl(`https://player.videasy.net/fr/movie/${id}`);
+                      setEmbedType('vostfr');
                     }
                   }
                 }
@@ -4117,7 +4266,7 @@ const WatchMovie: React.FC = () => {
           <div className="fixed top-6 right-8 z-[10000] flex items-center gap-2">
             {/* Bouton Ouvrir dans une nouvelle page */}
             <button
-              onClick={() => window.open(embedUrl || (selectedSource === 'vostfr' ? `https://player.videasy.net/fr/movie/${id}` : `https://player.videasy.net/movie/${id}`), '_blank', 'noopener')}
+              onClick={() => window.open(embedUrl || `https://player.videasy.net/fr/movie/${id}`, '_blank', 'noopener')}
               className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/90 border border-gray-600 hover:bg-gray-700/90 text-white font-medium text-sm transition-all duration-200"
               title={t('watch.openInNewPage')}
             >
@@ -4137,7 +4286,7 @@ const WatchMovie: React.FC = () => {
           </div>
 
           <iframe
-            src={embedUrl || (selectedSource === 'vostfr' ? `https://player.videasy.net/fr/movie/${id}` : `https://player.videasy.net/movie/${id}`)}
+            src={embedUrl || `https://player.videasy.net/fr/movie/${id}`}
             className="w-full h-full border-0"
             allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"

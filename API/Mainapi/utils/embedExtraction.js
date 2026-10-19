@@ -67,8 +67,14 @@ const HOSTER_PATTERNS = Object.freeze({
     ],
     vidara: ['vidara\\.(?:to|so)'],
     seekstreaming: [
+        // `seekstreaming` et `seekstream` manquaient à cette liste alors que
+        // l'extracteur seekstreaming existe : une URL
+        // `https://seekstreaming.net/embed-…` était détectée côté frontend mais
+        // renvoyait `null` ici, donc jamais résolue serveur → lecteur VF en
+        // échec. Miroir exact de src/utils/hosterRegistry.ts.
+        'seekstreaming', 'seekstream',
         'embedseek', 'embed4me', 'servicecatalog',
-        'technicalcatalog', 'seekplayer', 'seeks.cloud', 'seekplays',
+        'technicalcatalog', 'seekplayer', 'seeks\\.cloud', 'seekplays',
     ],
     vidzy: ['vidzy'],
     fsvid: ['fsvid'],

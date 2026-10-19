@@ -1,12 +1,35 @@
 // src/types/sourcePriority.ts
 
-/** Sources top-level disponibles pour Films/Séries. Ordre = default hardcodé avec 1080p VF en tête (zéro Frembed). */
+/**
+ * Versions de schéma acceptées au chargement. `SCHEMA_VERSION`
+ * (src/utils/sourcePriorityPrefs.ts) doit toujours être le dernier élément :
+ * c'est la version écrite dans localStorage, les autres ne servent qu'aux
+ * migrators. L'ancienne déclaration figée à `4 | 5 | 6` faisait échouer le
+ * contrôle de types dès la v7/v8.
+ */
+export const SUPPORTED_SCHEMA_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+export type SourcePrioritySchemaVersion = typeof SUPPORTED_SCHEMA_VERSIONS[number];
+
+/**
+ * Ensemble des ids top-level valides pour Films/Séries.
+ *
+ * **L'ordre n'est PAS la priorité par défaut** : celle-ci vit dans
+ * `DEFAULT_MOVIES_TV_ORDER` (src/utils/sourcePriorityPrefs.ts). Cet ordre-ci
+ * suit la même épine pour rester lisible, mais seul l'ensemble compte —
+ * `buildDefaults()` s'en sert pour détecter les ids absents de l'ordre par
+ * défaut et les rappender.
+ *
+ * Épine = liste Movix (`nexus_hls … vostfr`), moins `frembed` (déprécié côté
+ * Orvix, aucun chemin de rendu), plus `seekstreaming` (source VF propre à
+ * Orvix, insérée après `fstream`) et les 7 lecteurs anglophones gardés en
+ * tout dernier recours.
+ */
 export const TOP_LEVEL_SOURCE_IDS = [
-  'fstream', 'seekstreaming', 'wiflix', 'bravo', 'darkino',
-  'mp4', 'j1f', 'swiftflow', 'viper', 'coflix', 'omega',
-  'nexus_hls', 'swiftflux', 'custom', 'videasy', 'peachify',
-  'autoembed', 'embedsu', 'superembed', 'vidsrccc', '111movies',
-  'vox', 'kisskh', 'vostfr',
+  'nexus_hls', 'swiftflux', 'bravo', 'mp4', 'darkino', 'fstream',
+  'seekstreaming', 'omega', 'wiflix', 'j1f', 'swiftflow', 'viper',
+  'coflix', 'custom', 'vox', 'kisskh', 'vostfr',
+  'videasy', 'peachify', 'autoembed', 'embedsu', 'superembed',
+  'vidsrccc', '111movies',
 ] as const;
 export type TopLevelSourceId = typeof TOP_LEVEL_SOURCE_IDS[number];
 
@@ -18,17 +41,37 @@ export const DEPRECATED_SOURCE_IDS = ['frembed', 'vidlink', 'nexus_file', 'rives
 export const DEPRECATED_HOSTER_IDS = [] as const;
 
 /**
+ * Ids retirés du modèle de priorité mais encore traités par les pages de
+ * visionnage.
+ *
+ * `pickAutoSelectedSource` ne peut plus les renvoyer (ils ne sont ni dans
+ * `TOP_LEVEL_SOURCE_IDS` ni dans l'ordre par défaut), donc ils ne participent
+ * plus à la cascade automatique. Leurs branches subsistent dans
+ * `applyEmbedConfig` et dans le menu des sources, d'où cet élargissement de
+ * signature : sans lui le compilateur rejette `case 'nexus_file'` /
+ * `case 'frembed'` (TS2678) alors que le menu peut toujours les émettre.
+ */
+export type LegacySelectableSourceId = 'nexus_file' | 'frembed';
+export type AutoSelectSourceId = TopLevelSourceId | LegacySelectableSourceId;
+
+/**
  * Hosters built-in connus. Les custom hosters utilisent des ids prefixés `custom_`.
  *
+ * **Parité Movix** : cet ordre est aligné sur `BUILTIN_HOSTER_IDS` du bundle de
+ * production Movix. Même ensemble d'ids, ordre canonique commun.
+ *
  * **L'ordre compte deux fois** : il fixe l'ordre de priorité par défaut ET
- * l'ordre de test dans `detectHoster`. `veev` doit donc rester AVANT
- * `doodstream`, dont les patterns couvrent aussi `doods.to`.
+ * l'ordre de test dans `detectHoster`. Deux contraintes de précédence en
+ * découlent et sont vérifiées par `tests/sourcePriorityParity.test.mjs` :
+ *   - `veev` AVANT `doodstream`, dont les patterns couvrent aussi `doods.to` ;
+ *   - `vidzy` AVANT `fsvid` n'est pas requis (motifs disjoints), mais `fsvid`
+ *     reste en dernier comme chez Movix sans shadowing constaté.
  */
 export const BUILTIN_HOSTER_IDS = [
-  'voe', 'fsvid', 'vidmoly', 'uqload', 'sibnet', 'veev', 'doodstream',
+  'voe', 'vidmoly', 'vidzy', 'uqload', 'sibnet', 'veev', 'doodstream',
   'lulustream', 'vidara',
-  'seekstreaming', 'smoothpre', 'minochinos', 'vidzy', 'darkibox',
-  'supervideo', 'dropload', 'oneupload',
+  'seekstreaming', 'smoothpre', 'minochinos', 'darkibox',
+  'supervideo', 'dropload', 'oneupload', 'fsvid',
 ] as const;
 export type BuiltinHosterId = typeof BUILTIN_HOSTER_IDS[number];
 export type HosterId = BuiltinHosterId | string; // string = custom_...
@@ -73,7 +116,7 @@ export interface CustomHoster {
 }
 
 export interface SourcePriorityPrefs {
-  version: 4 | 5 | 6;
+  version: SourcePrioritySchemaVersion;
   categories: {
     moviesTv: MoviesTvPrefs;
     anime: AnimePrefs;
