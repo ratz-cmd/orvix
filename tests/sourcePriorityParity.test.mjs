@@ -95,6 +95,7 @@ const {
   BUILTIN_HOSTER_IDS,
   DEPRECATED_SOURCE_IDS,
   ANGLOPHONE_SOURCE_IDS,
+  SUBTITLED_SOURCE_IDS,
 } = types;
 const {
   DEFAULT_MOVIES_TV_ORDER,
@@ -151,9 +152,11 @@ test('la référence Movix exportée pour les sources est exacte', () => {
 });
 
 test("DEFAULT_MOVIES_TV_ORDER contient l'épine Movix comme sous-séquence", () => {
-  // Seul écart autorisé et documenté : `frembed`, déprécié côté Orvix (aucun
-  // chemin de rendu). Tout le reste de l'épine doit être présent, dans l'ordre.
-  const spine = MOVIX_SOURCES.filter((id) => id !== 'frembed');
+  // Écarts autorisés et documentés : `frembed` (déprécié, aucun chemin de
+  // rendu) et le palier sous-titré (`vox`, `kisskh`, `vostfr`) supprimé en v11
+  // — Movix le conserve, Orvix ne sert que du doublage français. Tout le
+  // reste de l'épine doit être présent, dans l'ordre.
+  const spine = MOVIX_SOURCES.filter((id) => id !== 'frembed' && !SUBTITLED_SOURCE_IDS.includes(id));
   assert.ok(
     isOrderedSubsequence(spine, [...DEFAULT_MOVIES_TV_ORDER]),
     `épine Movix non respectée.\n  attendu (sous-séquence): ${spine.join(' > ')}\n  obtenu: ${DEFAULT_MOVIES_TV_ORDER.join(' > ')}`,
@@ -174,24 +177,30 @@ test('seekstreaming est le seul écart assumé avec Movix', () => {
   );
 });
 
-test("seekstreaming (VF) passe avant le palier VOSTFR", () => {
+test("seekstreaming (VF) suit fstream et le palier sous-titré a disparu", () => {
   const order = [...DEFAULT_MOVIES_TV_ORDER];
-  const idxSeek = order.indexOf('seekstreaming');
-  const idxVostfr = order.indexOf('vostfr');
-  assert.ok(idxSeek > -1 && idxVostfr > -1);
-  assert.ok(idxSeek < idxVostfr, 'seekstreaming doit précéder vostfr');
+  assert.equal(
+    order.indexOf('seekstreaming'),
+    order.indexOf('fstream') + 1,
+    'seekstreaming doit suivre immédiatement fstream',
+  );
+  for (const id of SUBTITLED_SOURCE_IDS) {
+    assert.ok(!order.includes(id), `${id} ne doit plus être dans l'ordre par défaut (v11)`);
+  }
 });
 
-test("l'épine Movix est conservée intégralement, sans queue anglophone", () => {
+test("l'ordre v11 = épine Movix moins frembed, moins le palier sous-titré", () => {
   const order = [...DEFAULT_MOVIES_TV_ORDER];
-  // `vostfr` ferme la liste : c'est le filet de sécurité final, plus aucun
-  // lecteur anglophone ne le suit.
-  assert.equal(order[order.length - 1], 'vostfr');
-  // L'épine Movix moins `frembed` doit être exactement notre ordre, au
-  // `seekstreaming` près (inséré après `fstream`).
-  const movixWithoutFrembed = MOVIX_SOURCES.filter((id) => id !== 'frembed');
+  // `custom` ferme la liste : plus aucun palier derrière lui, ni anglophone
+  // (v10) ni sous-titré (v11).
+  assert.equal(order[order.length - 1], 'custom');
+  // L'épine Movix moins les écarts documentés doit être exactement notre
+  // ordre, au `seekstreaming` près (inséré après `fstream`).
+  const movixV11 = MOVIX_SOURCES.filter(
+    (id) => id !== 'frembed' && !SUBTITLED_SOURCE_IDS.includes(id),
+  );
   const oursWithoutSeek = order.filter((id) => id !== 'seekstreaming');
-  assert.deepEqual(oursWithoutSeek, movixWithoutFrembed);
+  assert.deepEqual(oursWithoutSeek, movixV11);
 });
 
 test('les 7 lecteurs anglophones ont disparu du modèle (v10)', () => {
@@ -205,6 +214,21 @@ test('les 7 lecteurs anglophones ont disparu du modèle (v10)', () => {
       DEPRECATED_SOURCE_IDS.includes(id),
       `${id} doit être dans DEPRECATED_SOURCE_IDS pour être purgé des prefs persistées`,
     );
+  }
+});
+
+test('les sources sous-titrées ont disparu du modèle (v11)', () => {
+  const subtitled = ['vox', 'kisskh', 'vostfr'];
+  const order = [...DEFAULT_MOVIES_TV_ORDER];
+  const ids = [...TOP_LEVEL_SOURCE_IDS];
+  for (const id of subtitled) {
+    assert.ok(!order.includes(id), `${id} ne doit plus être dans DEFAULT_MOVIES_TV_ORDER`);
+    assert.ok(!ids.includes(id), `${id} ne doit plus être dans TOP_LEVEL_SOURCE_IDS`);
+    assert.ok(
+      DEPRECATED_SOURCE_IDS.includes(id),
+      `${id} doit être dans DEPRECATED_SOURCE_IDS pour être purgé des prefs persistées`,
+    );
+    assert.ok(SUBTITLED_SOURCE_IDS.includes(id), `${id} doit être dans SUBTITLED_SOURCE_IDS`);
   }
 });
 
@@ -359,24 +383,57 @@ const loadPrefsFromStorage = (obj) => {
   return getSourcePriorityPrefs();
 };
 
-test('v8 → v10 : des prefs non personnalisées adoptent la parité Movix 100 % française', () => {
+test('v8 → v11 : des prefs non personnalisées adoptent le modèle 100 % VF', () => {
   const result = loadPrefsFromStorage(makeV8Prefs({
     sourceOrder: V8_DEFAULT_SOURCES,
     hosterOrder: V8_DEFAULT_HOSTERS,
   }));
 
-  // La chaîne v8 → v9 (parité Movix) → v10 (éradication anglophone) tourne.
-  assert.equal(result.version, 10);
+  // La chaîne v8 → v9 (Movix) → v10 (éradication anglophone) → v11
+  // (éradication du palier sous-titré) tourne de bout en bout.
+  assert.equal(result.version, 11);
   const ids = result.categories.moviesTv.sourceOrder.map((e) => e.id);
   assert.deepEqual(ids.slice(0, DEFAULT_MOVIES_TV_ORDER.length), [...DEFAULT_MOVIES_TV_ORDER]);
   assert.deepEqual(
     result.categories.moviesTv.hosterOrder.slice(0, BUILTIN_HOSTER_IDS.length),
     [...BUILTIN_HOSTER_IDS],
   );
-  // Aucun lecteur anglophone ne survit à la double migration.
+  // Aucun lecteur anglophone ne survit à la chaîne de migration.
   for (const id of ANGLOPHONE_SOURCE_IDS) {
-    assert.ok(!ids.includes(id), `${id} a survécu à la migration v8 → v10`);
+    assert.ok(!ids.includes(id), `${id} a survécu à la migration v8 → v11`);
   }
+  // Ni aucune source sous-titrée (v11).
+  for (const id of SUBTITLED_SOURCE_IDS) {
+    assert.ok(!ids.includes(id), `${id} a survécu à la migration v8 → v11`);
+  }
+});
+
+test('v10 → v11 : un ordre v10 non personnalisé adopte le modèle 100 % VF', () => {
+  const v10Order = [
+    'nexus_hls', 'swiftflux', 'bravo', 'mp4', 'darkino', 'fstream',
+    'seekstreaming', 'omega', 'wiflix', 'j1f', 'swiftflow', 'viper',
+    'coflix', 'custom', 'vox', 'kisskh', 'vostfr',
+  ];
+  const prefs = { ...makeV8Prefs({ sourceOrder: v10Order, hosterOrder: V8_DEFAULT_HOSTERS }), version: 10 };
+  const result = loadPrefsFromStorage(prefs);
+
+  assert.equal(result.version, 11);
+  const ids = result.categories.moviesTv.sourceOrder.map((e) => e.id);
+  assert.deepEqual(ids.slice(0, DEFAULT_MOVIES_TV_ORDER.length), [...DEFAULT_MOVIES_TV_ORDER]);
+  for (const id of SUBTITLED_SOURCE_IDS) {
+    assert.ok(!ids.includes(id), `${id} a survécu à la migration v10 → v11`);
+  }
+});
+
+test('v10 → v11 : un ordre personnalisé perd le palier sous-titré mais garde le reste', () => {
+  const customOrder = ['wiflix', 'vostfr', 'fstream', 'vox', 'custom'];
+  const prefs = { ...makeV8Prefs({ sourceOrder: customOrder, hosterOrder: V8_DEFAULT_HOSTERS }), version: 10 };
+  const result = loadPrefsFromStorage(prefs);
+
+  const ids = result.categories.moviesTv.sourceOrder.map((e) => e.id);
+  // Les ids sous-titrés sont retirés, le reste de l'ordre volontaire est intact.
+  assert.deepEqual(ids.slice(0, 3), ['wiflix', 'fstream', 'custom']);
+  assert.ok(!ids.includes('vostfr') && !ids.includes('vox'));
 });
 
 test("v9 : un ordre source personnalisé par l'utilisateur est préservé", () => {
@@ -469,7 +526,7 @@ test('v1 : la migration patternOverrides ne lève plus (require → import)', ()
 
   const result = loadPrefsFromStorage(v1);
 
-  assert.equal(result.version, 10);
+  assert.equal(result.version, 11);
   const voePatterns = result.patternOverrides.voe;
   assert.ok(Array.isArray(voePatterns), 'les patternOverrides voe ont été perdus');
   assert.ok(
@@ -492,7 +549,7 @@ test('des prefs corrompues retombent sur les défauts sans lever', () => {
 
   store.clear();
   store.set(STORAGE_KEY, JSON.stringify({ version: 99, categories: {} }));
-  assert.equal(getSourcePriorityPrefs().version, 10);
+  assert.equal(getSourcePriorityPrefs().version, 11);
 });
 
 // ===========================================================================
@@ -502,18 +559,21 @@ test('des prefs corrompues retombent sur les défauts sans lever', () => {
 const availabilityFrom = (idsWithData) =>
   [...DEFAULT_MOVIES_TV_ORDER].map((id) => ({ id, hasData: idsWithData.includes(id) }));
 
-test('une source VF disponible bat le filet VOSTFR', () => {
+test('une source VF disponible est choisie', () => {
   store.clear();
   setSourcePriorityPrefs(buildDefaults());
-  const pick = pickAutoSelectedSource(availabilityFrom(['fstream', 'vostfr']));
+  const pick = pickAutoSelectedSource(availabilityFrom(['fstream']));
   assert.equal(pick, 'fstream');
 });
 
-test('le palier VOSTFR est atteint quand aucune source VF ne répond', () => {
+test('sans source VF, la cascade renvoie null (aucun repli sous-titré)', () => {
   store.clear();
   setSourcePriorityPrefs(buildDefaults());
-  const pick = pickAutoSelectedSource(availabilityFrom(['vostfr']));
-  assert.equal(pick, 'vostfr');
+  // v11 : il n'y a plus de filet de sécurité. `vostfr`/`vox`/`kisskh` ne sont
+  // même plus dans `DEFAULT_MOVIES_TV_ORDER`, donc invisibles pour la
+  // cascade : elle renvoie `null` et les pages affichent l'indisponibilité.
+  const pick = pickAutoSelectedSource(availabilityFrom(['vostfr', 'vox', 'kisskh']));
+  assert.equal(pick, null, 'une source sous-titrée a été auto-sélectionnée');
 });
 
 test('les lecteurs anglophones ne sont plus sélectionnables (v10)', () => {
@@ -523,15 +583,15 @@ test('les lecteurs anglophones ne sont plus sélectionnables (v10)', () => {
   // `availabilityFrom` ne construit la liste que depuis
   // `DEFAULT_MOVIES_TV_ORDER` : les ids anglophones n'y figurent plus, ils sont
   // donc invisibles pour la cascade. Si seuls eux « avaient » des données, la
-  // cascade renvoie `null` — aux pages de visionnage de prendre le relais sur
-  // leur chemin terminal VOSTFR, jamais sur un lecteur anglophone.
+  // cascade renvoie `null` — aux pages de visionnage d'afficher
+  // l'indisponibilité VF, jamais un lecteur anglophone ou sous-titré.
   const pick = pickAutoSelectedSource(availabilityFrom(['videasy', 'peachify', '111movies']));
   assert.equal(pick, null, 'un lecteur anglophone a été auto-sélectionné');
 
   // Aucun id anglophone ne peut être produit, même en mélangeant avec du VF.
   for (const id of ANGLOPHONE_SOURCE_IDS) {
-    const mixed = pickAutoSelectedSource(availabilityFrom([id, 'vostfr']));
-    assert.equal(mixed, 'vostfr', `${id} est passé devant le filet VOSTFR`);
+    const mixed = pickAutoSelectedSource(availabilityFrom([id, 'fstream']));
+    assert.equal(mixed, 'fstream', `${id} est passé devant une source VF`);
   }
 });
 
@@ -541,7 +601,7 @@ test('un id anglophone mémorisé comme dernier lecteur ne reprend pas la main',
   globalThis.localStorage.setItem('playerRememberLast', 'true');
   globalThis.localStorage.setItem('playerLastId', 'videasy');
   try {
-    const pick = pickAutoSelectedSource(availabilityFrom(['fstream', 'vostfr']));
+    const pick = pickAutoSelectedSource(availabilityFrom(['fstream']));
     assert.equal(pick, 'fstream', 'le dernier lecteur anglophone a repris la main');
   } finally {
     globalThis.localStorage.removeItem('playerRememberLast');
@@ -732,7 +792,7 @@ test('M3U8-first : une M3U8 extraite (nexus_hls) bat toujours une iframe', () =>
   store.clear();
   setSourcePriorityPrefs(buildDefaults());
   const pick = pickAutoSelectedSource(
-    availabilityFrom(['nexus_hls', 'fstream', 'wiflix', 'vostfr']),
+    availabilityFrom(['nexus_hls', 'fstream', 'wiflix']),
   );
   assert.equal(pick, 'nexus_hls');
 });

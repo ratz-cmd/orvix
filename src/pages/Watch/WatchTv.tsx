@@ -550,7 +550,6 @@ const WatchTv: React.FC = () => {
   // Bandeau de repli : la cascade peut aboutir sur un palier non francophone
   // (VOSTFR puis lecteurs anglophones). Le repli reste automatique, mais il ne
   // doit jamais être silencieux — d'où cet avertissement non bloquant, masquable.
-  const [fallbackNoticeDismissed, setFallbackNoticeDismissed] = useState<boolean>(false);
 
 
 
@@ -1067,16 +1066,12 @@ const WatchTv: React.FC = () => {
           setEmbedUrl(viperSources[0].url);
           setEmbedType('viper');
         }
-        // Fin de l'échelle de récupération : palier sous-titré français plutôt
-        // que version originale nue. (L'ancienne note « ne pas sélectionner
-        // automatiquement vostfr » datait d'une époque où `vostfr` n'était pas
-        // un palier de la cascade ; il l'est désormais, devant les lecteurs
-        // anglophones, et le bandeau `fallbackTier` signale la bascule.)
+        // v11 — VF uniquement : plus de repli sous-titré en fin d'échelle.
         else if (id) {
-          setSelectedSource('vostfr');
           setVideoSource(null);
-          setEmbedUrl(`https://player.videasy.net/fr/tv/${id}/${seasonNumber}/${episodeNumber}`);
-          setEmbedType('vostfr');
+          setEmbedUrl(null);
+          setEmbedType(null);
+          setOnlyVostfrAvailable(true);
         }
         else {
           console.log("[Debug] No sources available, waiting for user selection");
@@ -1529,7 +1524,8 @@ const WatchTv: React.FC = () => {
         const kisskhRequestIsCurrent = !kisskhController.signal.aborted
           && kisskhRequestGenerationRef.current === kisskhGeneration;
         if (kisskhRequestIsCurrent && kisskhResult) {
-          setKisskhSources(kisskhResult.sources);
+          // v11 : KissKH (sous-titré) a quitté le modèle — l'état reste vide.
+          setKisskhSources([]);
           setKisskhSubtitles(kisskhResult.subtitles);
         }
 
@@ -1775,7 +1771,9 @@ const WatchTv: React.FC = () => {
           const episodeData = fstreamResult.episodes[episodeNumber.toString()];
           if (episodeData && episodeData.languages) {
             // Process all FStream language categories with priority to fsvid sources
-            const categories = ['VF', 'VOSTFR', 'VOENG', 'Default'];
+            // v11 — VF uniquement : buckets 'VOSTFR'/'VOENG' jamais itérés.
+            // 'Default' (sans étiquette, sur un site VF-first) est conservé.
+            const categories = ['VF', 'Default'];
             const otherSources: { url: string; label: string; category: string }[] = [];
 
             categories.forEach(category => {
@@ -1972,7 +1970,7 @@ const WatchTv: React.FC = () => {
           const episodeData = wiflixResult.episodes[episodeNumber.toString()];
           if (episodeData) {
             // Process Wiflix categories with priority to VF sources
-            const categories = ['vf', 'vostfr'];
+            const categories = ['vf']; // v11 : bucket vostfr jamais itéré (VF uniquement)
             const vfSources: { url: string; label: string; category: string }[] = [];
             const vostfrSources: { url: string; label: string; category: string }[] = [];
 
@@ -2014,7 +2012,7 @@ const WatchTv: React.FC = () => {
           setJ1fData(j1fResult);
           const episodeData = j1fResult.episodes[episodeNumber.toString()];
           if (episodeData) {
-            const categories = ['vf', 'vostfr'];
+            const categories = ['vf']; // v11 : bucket vostfr jamais itéré (VF uniquement)
             const vfSources: { url: string; label: string; category: string }[] = [];
             const vostfrSources: { url: string; label: string; category: string }[] = [];
             categories.forEach(category => {
@@ -2055,7 +2053,7 @@ const WatchTv: React.FC = () => {
           setSwiftflowData(swiftflowResult);
           const episodeData = swiftflowResult.episodes[episodeNumber.toString()];
           if (episodeData) {
-            const categories = ['vf', 'vostfr'];
+            const categories = ['vf']; // v11 : bucket vostfr jamais itéré (VF uniquement)
             const vfSources: { url: string; label: string; category: string }[] = [];
             const vostfrSources: { url: string; label: string; category: string }[] = [];
             categories.forEach(category => {
@@ -2170,7 +2168,8 @@ const WatchTv: React.FC = () => {
           console.log('Vox sources found:', voxResult.data.length);
           setVoxData(voxResult);
           voxProcessedSources = voxResult.data;
-          setVoxSources(voxProcessedSources);
+          // v11 : Vox (sous-titré) a quitté le modèle — l'état reste vide.
+          setVoxSources([]);
 
           // =========== EXTRACTION M3U8 DEPUIS VOX (passe générique) ===========
           // Vox n'extrayait que voe et vidmoly ; la passe couvre tous les hosters.
@@ -2753,14 +2752,9 @@ const WatchTv: React.FC = () => {
             // sources fichier restent accessibles via `nexus_hls` et via le menu
             // des sources (chemin manuel, lui toujours câblé).
             { id: 'custom', hasData: !!(customLinksResult.customLinks && customLinksResult.customLinks.length) },
-            // 2. Palier sous-titré français : `vox` et `kisskh` quand le backend
-            //    les renvoie, puis `vostfr` (URL construite depuis l'id TMDB,
-            //    donc toujours disponible). `vostfr` est le filet de sécurité
-            //    final (schéma v10) : les 7 lecteurs anglophones ont été retirés
-            //    du modèle, il n'existe plus aucun palier derrière celui-ci.
-            { id: 'vox', hasData: voxProcessedSources.length > 0 },
-            { id: 'kisskh', hasData: kisskhRequestIsCurrent && !!kisskhResult?.sources.length },
-            { id: 'vostfr', hasData: true },
+            // v11 — VF uniquement : plus de palier sous-titré (`vox`,
+            // `kisskh`, `vostfr` ont quitté le modèle). Si aucune source
+            // VF ne répond, la cascade échoue sur l'indisponibilité VF.
           ];
 
           let applied = false;
@@ -2815,17 +2809,13 @@ const WatchTv: React.FC = () => {
               setOnlyVostfrAvailable(false);
               setLoadingError(false);
             } else {
-              // Ultime recours : la cascade n'a rien pu appliquer. On termine sur
-              // le palier sous-titré français plutôt que sur la version originale
-              // nue, et le bandeau `fallbackTier` informe le membre.
-              const rescueVostfrUrl = `https://player.videasy.net/fr/tv/${id}/${seasonNumber}/${episodeNumber}`;
-              console.log('[WatchTv] 🛡️ Sauvetage de secours ultime sur le palier VOSTFR:', rescueVostfrUrl);
-              setSelectedSource('vostfr');
+              // v11 — VF uniquement : la cascade n'a rien pu appliquer et il
+              // n'existe plus de palier de repli. Indisponibilité VF.
+              console.log('[WatchTv] ❌ Aucune source VF applicable — épisode indisponible en VF');
               setVideoSource(null);
-              setEmbedUrl(rescueVostfrUrl);
-              setEmbedType('vostfr');
-              currentSourceRef.current = 'vostfr';
-              setOnlyVostfrAvailable(false);
+              setEmbedUrl(null);
+              setEmbedType(null);
+              setOnlyVostfrAvailable(true);
               setLoadingError(false);
             }
           }
@@ -2870,17 +2860,14 @@ const WatchTv: React.FC = () => {
           setOnlyVostfrAvailable(false);
           setLoadingError(false);
         } else {
-          // `loadingError` n'est pas lu au rendu (`const [, setLoadingError]`) :
-          // seul, ce branch laissait le lecteur sur l'iframe générique. On
-          // termine donc sur le palier sous-titré français, comme côté film.
-          const rescueVostfrUrl = `https://player.videasy.net/fr/tv/${id}/${seasonNumber}/${episodeNumber}`;
-          console.log('[WatchTv] 🛡️ Récupération d\'urgence sur le palier VOSTFR:', rescueVostfrUrl);
-          setSelectedSource('vostfr');
+          // v11 — VF uniquement : plus de repli sous-titré après crash.
+          // (`loadingError` n'est pas lu au rendu — `const [, setLoadingError]` —
+          // seul le panneau d'indisponibilité est visible par le membre.)
+          console.log('[WatchTv] ❌ Aucune source VF récupérée — épisode indisponible en VF');
           setVideoSource(null);
-          setEmbedUrl(rescueVostfrUrl);
-          setEmbedType('vostfr');
-          currentSourceRef.current = 'vostfr';
-          setOnlyVostfrAvailable(false);
+          setEmbedUrl(null);
+          setEmbedType(null);
+          setOnlyVostfrAvailable(true);
           setLoadingError(true);
           setLoadingText(t('watch.dataLoadError'));
         }
@@ -3786,10 +3773,8 @@ const WatchTv: React.FC = () => {
     } : null
   ), [nextEpisodeData]);
 
-  // Function to load VO/VOSTFR player when user chooses to
-  const handleLoadVostfr = useCallback(() => {
-    setShowEmbedQuality(true); // Show sources menu only, keep "onlyVostfrAvailable" true for now
-  }, [setShowEmbedQuality]);
+  // v11 : l'ancien `handleLoadVostfr` (chargement VO/VOSTFR à la demande) a
+  // disparu avec le palier sous-titré — le panneau ouvre le menu des sources.
 
   // Listener pour l'événement showSourcesMenu (déclenché par HLSPlayer en cas d'erreur 403)
   useEffect(() => {
@@ -4136,17 +4121,8 @@ const WatchTv: React.FC = () => {
     onExtracted: handleAutoExtractedPlayback,
   });
 
-  /**
-   * Palier de repli atteint par la cascade, dérivé de `selectedSource`.
-   *
-   * Valeur dérivée et non état indépendant : impossible de la désynchroniser du
-   * lecteur réellement monté, y compris après un changement de source manuel
-   * depuis le menu. `null` dès qu'une source francophone (VF) est active.
-   */
-  // v10 : les lecteurs anglophones ont été supprimés du modèle — le seul
-  // palier de repli possible est le VOSTFR (sous-titres français).
-  const fallbackTier: 'vostfr' | null = selectedSource === 'vostfr' ? 'vostfr' : null;
-  const showFallbackNotice = fallbackTier !== null && !fallbackNoticeDismissed;
+  // v11 : le bandeau de repli VOSTFR a disparu avec le palier sous-titré —
+  // quand aucune VF ne répond, le panneau d'indisponibilité s'affiche.
 
   return (
     <div style={{ minHeight: 'calc(var(--vh, 1vh) * 100)', overflow: 'hidden' }} className="w-full bg-black text-white overflow-hidden fixed inset-0">
@@ -4211,51 +4187,6 @@ const WatchTv: React.FC = () => {
         data-premid-source-label={embedType || selectedSource || undefined}
         data-premid-source-detail={preMidSourceDetail}
       />
-      {/*
-        Bandeau de repli non bloquant. Rendu dans le portail d'overlay déjà
-        utilisé par le menu des sources : il reste au-dessus du lecteur quelle
-        que soit la branche de rendu active (iframe, HLS natif, SwiftFlux…),
-        sans dépendre du contexte d'empilement de chacune.
-
-        La cascade reste automatique — ce bandeau informe, il n'interrompt pas
-        la lecture et se masque d'un clic.
-      */}
-      {showFallbackNotice && (
-        <PlayerOverlayPortal>
-          <div
-            role="status"
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-[10001] w-[calc(100%-2rem)] max-w-2xl pointer-events-auto"
-          >
-            <div className="flex items-start gap-3 rounded-lg border px-4 py-3 shadow-2xl backdrop-blur-sm bg-amber-950/90 border-amber-600/60">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 shrink-0 mt-0.5 text-amber-400"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <p className="flex-1 text-sm text-gray-100">
-                {t('watch.fallbackVostfrNotice')}
-              </p>
-              <div className="flex shrink-0 items-center gap-2">
-                <button
-                  onClick={() => { setShowEmbedQuality(true); setFallbackNoticeDismissed(true); }}
-                  className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20 transition-colors"
-                >
-                  {t('watch.fallbackNoticeAction')}
-                </button>
-                <button
-                  onClick={() => setFallbackNoticeDismissed(true)}
-                  aria-label={t('watch.fallbackNoticeDismiss')}
-                  className="rounded-md px-2 py-1.5 text-xs text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          </div>
-        </PlayerOverlayPortal>
-      )}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center h-full bg-black">
           <div className="loading-container">
@@ -4273,9 +4204,9 @@ const WatchTv: React.FC = () => {
               <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-16 w-16 text-yellow-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <h2 className="text-2xl font-bold text-white mb-2">{t('watch.contentNotFoundInSources')}</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">{t('watch.noVfAvailableTitle')}</h2>
               <p className="text-gray-300 mb-6">
-                {t('watch.episodeNotFoundDesc')}
+                {t('watch.noVfAvailableDesc')}
               </p>
               <div className="flex justify-center gap-4">
                 <button
@@ -4285,10 +4216,10 @@ const WatchTv: React.FC = () => {
                   {t('watch.back')}
                 </button>
                 <button
-                  onClick={handleLoadVostfr}
+                  onClick={() => setShowEmbedQuality(true)}
                   className="px-6 py-3 bg-blue-800 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 shadow-lg"
                 >
-                  {t('watch.chooseVostfrPlayer')}
+                  {t('watch.changeSource')}
                 </button>
               </div>
             </div>
@@ -4611,6 +4542,7 @@ const WatchTv: React.FC = () => {
             src={embedUrl || ''}
             className="w-full h-full border-0"
             allowFullScreen
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             referrerPolicy={(embedUrl || '').toLowerCase().includes('ezplayer') ? 'no-referrer' : 'strict-origin-when-cross-origin'}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           ></iframe>
@@ -4879,9 +4811,7 @@ const WatchTv: React.FC = () => {
           {/* Bouton Ouvrir dans une nouvelle page */}
           <button
             onClick={() => {
-              const targetUrl = embedType === 'vostfr'
-                ? `https://player.videasy.net/fr/tv/${id}/${seasonNumber}/${episodeNumber}`
-                : embedUrl || '';
+              const targetUrl = embedUrl || '';
               window.open(targetUrl, '_blank', 'noopener');
             }}
             className="flex items-center gap-1 sm:gap-2 px-3 py-2 rounded-lg bg-gray-800/90 border border-gray-600 hover:bg-gray-700/90 text-white font-medium text-sm transition-all duration-200"

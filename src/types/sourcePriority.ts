@@ -7,7 +7,7 @@
  * migrators. L'ancienne déclaration figée à `4 | 5 | 6` faisait échouer le
  * contrôle de types dès la v7/v8.
  */
-export const SUPPORTED_SCHEMA_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+export const SUPPORTED_SCHEMA_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const;
 export type SourcePrioritySchemaVersion = typeof SUPPORTED_SCHEMA_VERSIONS[number];
 
 /**
@@ -19,20 +19,21 @@ export type SourcePrioritySchemaVersion = typeof SUPPORTED_SCHEMA_VERSIONS[numbe
  * `buildDefaults()` s'en sert pour détecter les ids absents de l'ordre par
  * défaut et les rappender.
  *
- * Épine = liste Movix (`nexus_hls … vostfr`), moins `frembed` (déprécié côté
- * Orvix, aucun chemin de rendu), plus `seekstreaming` (source VF propre à
- * Orvix, insérée après `fstream`).
+ * **100 % VF (schéma v11)** : toutes les sources restantes servent de l'audio
+ * français doublé. Après les lecteurs anglophones (v10), le palier sous-titré
+ * français (`vox`, `kisskh`, `vostfr`) a aussi quitté le modèle — voir
+ * `DEPRECATED_SOURCE_IDS`. Si aucun catalogue ne propose de VF pour un titre,
+ * le titre est tout simplement indisponible : aucun repli sous-titré ou VO.
  *
- * **100 % français (schéma v10)** : les 7 lecteurs anglophones (`videasy`,
- * `peachify`, `autoembed`, `embedsu`, `superembed`, `vidsrccc`, `111movies`)
- * ont été retirés du modèle — voir `DEPRECATED_SOURCE_IDS`. `vostfr` reste
- * seul en fin de liste comme filet de sécurité quand aucun audio français
- * n'existe.
+ * Écarts assumés vis-à-vis de Movix : `frembed` (déprécié, aucun chemin de
+ * rendu) et le palier sous-titré (`vox`, `kisskh`, `vostfr`) que Movix
+ * conserve en fin d'épine ; `seekstreaming` (source VF propre à Orvix)
+ * inséré après `fstream`.
  */
 export const TOP_LEVEL_SOURCE_IDS = [
   'nexus_hls', 'swiftflux', 'bravo', 'mp4', 'darkino', 'fstream',
   'seekstreaming', 'omega', 'wiflix', 'j1f', 'swiftflow', 'viper',
-  'coflix', 'custom', 'vox', 'kisskh', 'vostfr',
+  'coflix', 'custom',
 ] as const;
 export type TopLevelSourceId = typeof TOP_LEVEL_SOURCE_IDS[number];
 
@@ -49,12 +50,24 @@ export const ANGLOPHONE_SOURCE_IDS = [
 export type AnglophoneSourceId = typeof ANGLOPHONE_SOURCE_IDS[number];
 
 /**
+ * Sources sous-titrées français retirées du modèle au schéma v11.
+ *
+ * `vox`, `kisskh` et `vostfr` servaient de l'audio original sous-titré
+ * français — pas du doublage. La règle produit est désormais « VF ou rien » :
+ * `migrateV10toV11` les retire des profils persistés et la cascade ne peut
+ * plus les atteindre. Un titre sans VF est affiché indisponible.
+ */
+export const SUBTITLED_SOURCE_IDS = ['vox', 'kisskh', 'vostfr'] as const;
+export type SubtitledSourceId = typeof SUBTITLED_SOURCE_IDS[number];
+
+/**
  * Ids historiques retirés de l'UI de priorité.
  * mergeWithDefaults les strip des prefs persistées (cleanup migration).
  */
 export const DEPRECATED_SOURCE_IDS = [
   'frembed', 'vidlink', 'nexus_file', 'rivestream_hls', 'rivestream',
   ...ANGLOPHONE_SOURCE_IDS,
+  ...SUBTITLED_SOURCE_IDS,
 ] as const;
 export const DEPRECATED_HOSTER_IDS = [] as const;
 
@@ -66,18 +79,19 @@ export const DEPRECATED_HOSTER_IDS = [] as const;
  * `TOP_LEVEL_SOURCE_IDS` ni dans l'ordre par défaut), donc ils ne participent
  * plus à la cascade automatique. Leurs branches subsistent dans
  * `applyEmbedConfig`, d'où cet élargissement de signature : sans lui le
- * compilateur rejette `case 'nexus_file'` / `case 'videasy'` (TS2678) alors
- * que du code legacy peut encore les émettre.
+ * compilateur rejette `case 'nexus_file'` / `case 'videasy'` / `case 'vostfr'`
+ * (TS2678) alors que du code legacy peut encore les émettre.
  *
- * Pour les lecteurs anglophones, ces branches sont du code mort volontairement
- * conservé : les supprimer d'un bloc dans deux fichiers de ~200 Ko ferait
- * prendre un risque de régression disproportionné par rapport au gain, et le
- * modèle (seule source de vérité de l'auto-sélection) ne peut plus les
- * atteindre.
+ * Pour les lecteurs anglophones (v10) et sous-titrés (v11), ces branches sont
+ * du code mort volontairement conservé : les supprimer d'un bloc dans deux
+ * fichiers de ~200 Ko ferait prendre un risque de régression disproportionné
+ * par rapport au gain, et le modèle (seule source de vérité de
+ * l'auto-sélection) ne peut plus les atteindre.
  */
 export type LegacySelectableSourceId =
   | 'nexus_file' | 'frembed'
-  | AnglophoneSourceId;
+  | AnglophoneSourceId
+  | SubtitledSourceId;
 export type AutoSelectSourceId = TopLevelSourceId | LegacySelectableSourceId;
 
 /**

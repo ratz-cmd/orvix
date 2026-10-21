@@ -266,10 +266,9 @@ const SOURCE_MAIN_TO_TOP_LEVEL: Record<string, TopLevelSourceId> = {
   omega_main: 'omega',
   multi_main: 'coflix',
   viper_main: 'viper',
-  vox_main: 'vox',
-  kisskh_main: 'kisskh',
   bravo_main: 'bravo',
-  vostfr_main: 'vostfr',
+  // v11 : `vox_main`, `kisskh_main` et `vostfr_main` ont aussi quitté le
+  // modèle (palier sous-titré) — aucune source non-VF n'est épinglable.
   // Les lecteurs anglophones (`videasy_main`, `peachify`, `autoembed`,
   // `embedsu`, `superembed`, `vidsrccc`, `111movies`) ont quitté le modèle au
   // schéma v10 : ils ne sont plus épinglables depuis ce panneau.
@@ -1328,27 +1327,15 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
     onShowSourcesRef.current = onShowSources;
   }, [onShowSources]);
 
-  const { availability, probeSource, markAsUnavailable } = useClientSourceAvailability(
+  const { availability, markAsUnavailable } = useClientSourceAvailability(
     movieId ? 'movie' : 'tv',
     movieId || tvShowId,
     seasonNumber,
     episodeNumber
   );
 
-  useEffect(() => {
-    // v10 : seul le filet VOSTFR est sondé. `peachify` (lecteur anglophone
-    // supprimé du modèle) n'est plus探 ni listé ; l'id `vostfr` correspond à
-    // l'entrée poussée dans `embedSources`, donc les badges de disponibilité
-    // (`available` / `checking` / `unavailable`) s'affichent correctement.
-    const list = [
-      { id: 'vostfr', url: movieId ? `https://player.videasy.net/fr/movie/${movieId}` : `https://player.videasy.net/fr/tv/${tvShowId}/${seasonNumber}/${episodeNumber}` },
-    ];
-    list.forEach(item => {
-      if (movieId || (tvShowId && seasonNumber && episodeNumber)) {
-        probeSource(item.id, item.url);
-      }
-    });
-  }, [movieId, tvShowId, seasonNumber, episodeNumber, probeSource]);
+  // v11 : plus aucune sonde de disponibilité — la seule source sondée
+  // était le filet VOSTFR, supprimé du modèle (VF uniquement).
 
   useEffect(() => {
     kisskhFallbackAbortRef.current?.abort();
@@ -3225,32 +3212,12 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
     }
 
     // ==========================================
-    // 2. FILET DE SÉCURITÉ VOSTFR
+    // 2. AUCUN FILET SOUS-TITRÉ (v11)
     // ==========================================
-    // Schéma v10 : les lecteurs anglophones (`videasy` VO, `peachify`,
-    // `autoembed`, `embedsu`, `superembed`, `vidsrccc`, `111movies`) ont été
-    // retirés du modèle et de ce menu. Seul le palier **sous-titré français**
-    // subsiste : `player.videasy.net/fr/…`, qui est la source `vostfr` — un
-    // lecteur VOSTFR, pas un lecteur VO anglophone.
-    // `type: 'vostfr'` (et non `vostfr_main`) : ce dernier est traité comme un
-    // ouvre-sous-menu (L3388/3392) dont le sous-menu est aujourd'hui vide.
-    // Avec `vostfr`, l'entrée joue directement son URL et bénéficie des badges
-    // de disponibilité déjà câblés sur `availability[source.id]`.
-    if (movieId) {
-      embedSources.push({
-        type: 'vostfr',
-        id: 'vostfr',
-        label: t('watch.vostfrPlayer'),
-        url: `https://player.videasy.net/fr/movie/${movieId}`,
-      });
-    } else if (tvShowId && seasonNumber != null && episodeNumber != null) {
-      embedSources.push({
-        type: 'vostfr',
-        id: 'vostfr',
-        label: t('watch.vostfrPlayer'),
-        url: `https://player.videasy.net/fr/tv/${tvShowId}/${seasonNumber}/${episodeNumber}`,
-      });
-    }
+    // v10 avait conservé un filet VOSTFR (`player.videasy.net/fr/…`).
+    // v11 le supprime : le menu ne propose que des sources VF. Si
+    // aucune ne répond, la page affiche une indisponibilité VF
+    // plutôt qu'un lecteur sous-titré.
 
     // Add ad-free iframe if available
     if (embedUrl && embedType === 'adfree') {
@@ -10479,61 +10446,9 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
                               )}
                             </AnimatePresence>
                           )}
-                          {/* Ajout du menu déroulant VOSTFR */}
-                          {source.type === 'vostfr_main' && (
-                            <AnimatePresence>
-                              {showVostfrMenu && (
-                                <motion.div
-                                  initial={{ opacity: 0, scale: 0.95, transformOrigin: "top" }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  exit={{ opacity: 0, scale: 0.95 }}
-                                  transition={{ duration: 0.2, ease: "easeOut" }}
-                                  className="ml-4 pl-2 border-l-2 border-gray-700 mb-2"
-                                >
-                                  {/* v10 : peachify (lecteur anglophone) supprimé.
-                                      Il ne reste que le filet VOSTFR — l'URL
-                                      `player.videasy.net/fr/…` est la source
-                                      `vostfr` (sous-titrée français), d'où l'id. */}
-                                  {[
-                                        { id: 'vostfr', label: t('watch.vostfrPlayer') },
-                                  ]
-                                    .filter((vostfrSource) => availability[vostfrSource.id]?.status !== 'unavailable')
-                                    .map((vostfrSource, index) => {
-                                    const sourceUrl = movieId ?
-                                      `https://player.videasy.net/fr/movie/${movieId}` :
-                                      (tvShowId != null && seasonNumber != null && episodeNumber != null) ?
-                                      `https://player.videasy.net/fr/tv/${tvShowId}/${seasonNumber}/${episodeNumber}` :
-                                      '#';
-
-                                    // Active state check for VOSTFR sources in main menu
-                                    const isVostfrActive = embedType === 'vostfr' && embedUrl === sourceUrl;
-
-                                    return (
-                                      <motion.button
-                                        key={`vostfr_${index}`}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ duration: 0.2, delay: index * 0.03 }}
-                                        onClick={() => handleSourceChange('vostfr', vostfrSource.id, sourceUrl)}
-                                        className={`w-full px-4 py-2 text-sm text-left hover:bg-gray-800/80 rounded-lg mb-2 flex justify-between items-center bg-gray-900/40 text-gray-300 ${isVostfrActive ? 'ring-2 ring-red-500 bg-gray-800/80' : ''}`}
-                                      >
-                                        <div className="flex items-center gap-1.5">
-                                          <span>{vostfrSource.label}</span>
-                                          {availability[vostfrSource.id]?.status === 'available' && (
-                                            <span className="text-[10px] px-1.5 py-0.2 bg-emerald-900/80 border border-emerald-500/40 text-emerald-200 rounded font-medium">
-                                              🟢 1080p
-                                            </span>
-                                          )}
-                                        </div>
-                                        <span className="text-xs text-gray-400">{t('watch.voVostfr')}</span>
-                                        {isVostfrActive && <span className="ml-2 text-xs px-2 py-1 bg-red-600 text-white rounded-full">{t('watch.inProgress')}</span>}
-                                      </motion.button>
-                                    );
-                                  })}
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          )}
+                          {/* v11 : le sous-menu VOSTFR a disparu avec le palier
+                              sous-titré (VF uniquement) — aucun type `vostfr_main`
+                              n'est plus jamais émis. */}
                           {/* Ajout du menu déroulant FStream avec sous-catégories par langue */}
                           {source.type === 'fstream_main' && (
                             console.log('🔍 [HLSPlayer] Rendering FStream menu, showFstreamMenu:', showFstreamMenu, 'fstreamSources:', fstreamSources?.length),

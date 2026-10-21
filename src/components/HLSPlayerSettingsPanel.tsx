@@ -62,10 +62,9 @@ const SOURCE_MAIN_TO_TOP_LEVEL: Record<string, TopLevelSourceId> = {
   omega_main: 'omega',
   multi_main: 'coflix', // multi = coflix (naming historique)
   viper_main: 'viper',
-  vox_main: 'vox',
-  kisskh_main: 'kisskh',
   bravo_main: 'bravo',
-  vostfr_main: 'vostfr',
+  // v11 : `vox_main`, `kisskh_main` et `vostfr_main` ont aussi quitté le
+  // modèle (palier sous-titré) — aucune source non-VF n'est épinglable.
   // Les lecteurs anglophones (`videasy_main`, `peachify`, `autoembed`,
   // `embedsu`, `superembed`, `vidsrccc`, `111movies`) ont quitté le modèle au
   // schéma v10 : ils ne sont plus épinglables depuis ce panneau.
@@ -172,7 +171,6 @@ const HLSPlayerSettingsPanel = (props: HLSPlayerSettingsPanelProps) => {
     showBravoMenu,
     showViperMenu,
     showVoxMenu,
-    showVostfrMenu,
     omegaSources,
     coflixSources,
     fstreamSources,
@@ -1442,53 +1440,8 @@ const HLSPlayerSettingsPanel = (props: HLSPlayerSettingsPanelProps) => {
                                 </AnimatePresence>
                               )}
 
-                              {/* Ajout du menu déroulant VOSTFR */}
-                              {source.type === 'vostfr_main' && (
-                                <AnimatePresence>
-                                  {showVostfrMenu && (
-                                    <motion.div
-                                      initial={{ opacity: 0, y: -5 }}
-                                      animate={{ opacity: 1, y: 0 }}
-                                      exit={{ opacity: 0 }}
-                                      transition={getTransition({ duration: 0.15 })}
-                                      className="ml-4 pl-2 border-l-2 border-gray-700 mb-2"
-                                    >
-                                      {/* v10 : peachify (lecteur anglophone) supprimé.
-                                          Seul le filet VOSTFR subsiste. */}
-                                      {[
-                                        { id: 'vostfr', label: t('watch.vostfrPlayer') },
-                                      ].map((vostfrSource, index) => {
-                                        // IMPORTANT: `!= null` au lieu de truthy check — sinon seasonNumber=0
-                                        // (épisode spécial / Spéciaux TMDB) tombe dans le fallback '#' qui fait
-                                        // charger la page courante en boucle dans l'iframe.
-                                        const sourceUrl = movieId ?
-                                          `https://player.videasy.net/fr/movie/${movieId}` :
-                                          (tvShowId != null && seasonNumber != null && episodeNumber != null) ?
-                                            `https://player.videasy.net/fr/tv/${tvShowId}/${seasonNumber}/${episodeNumber}` :
-                                            '#'; // Fallback if neither movie nor TV info is present
-
-                                        // Active state check for VOSTFR sources in main menu
-                                        const isVostfrActive = embedType === 'vostfr' && embedUrl === sourceUrl;
-
-                                        return (
-                                          <motion.button
-                                            key={`vostfr_${index}`}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            transition={getTransition({ duration: 0.1, delay: index * 0.02 })}
-                                            onClick={() => handleSourceChange('vostfr', vostfrSource.id, sourceUrl)}
-                                            className={`w-full px-4 py-2 text-sm text-left hover:bg-gray-800/80 rounded-lg mb-2 flex justify-between items-center bg-gray-900/40 text-gray-300 ${isVostfrActive ? 'ring-2 ring-blue-500 bg-gray-800/80' : ''}`}
-                                          >
-                                            <span>{vostfrSource.label}</span>
-                                            <span className="text-xs text-gray-400">{t('watch.voVostfr')}</span>
-                                            {isVostfrActive && <span className="ml-2 text-xs px-2 py-1 bg-blue-600 text-white rounded-full">{t('watch.inProgress')}</span>}
-                                          </motion.button>
-                                        );
-                                      })}
-                                    </motion.div>
-                                  )}
-                                </AnimatePresence>
-                              )}
+                              {/* v11 : le sous-menu VOSTFR a disparu avec le palier
+                                  sous-titré (VF uniquement). */}
                               {/* Sous-menu Bravo (PurStream) */}
                               {source.type === 'bravo_main' && (
                                 <AnimatePresence>

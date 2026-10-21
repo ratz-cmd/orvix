@@ -2,7 +2,7 @@
 import {
   TOP_LEVEL_SOURCE_IDS, BUILTIN_HOSTER_IDS, LANGUAGE_IDS,
   DEPRECATED_SOURCE_IDS, DEPRECATED_HOSTER_IDS, SUPPORTED_SCHEMA_VERSIONS,
-  ANGLOPHONE_SOURCE_IDS,
+  ANGLOPHONE_SOURCE_IDS, SUBTITLED_SOURCE_IDS,
   type TopLevelSourceId, type HosterId, type LanguageId,
   type SourcePriorityPrefs, type PriorityCategory,
   type MoviesTvPrefs, type AnimePrefs, type CustomHoster,
@@ -73,9 +73,16 @@ const CHANGE_EVENT = 'orvix-source-priority-changed';
  * intégralement, sans aucun ajout anglophone en queue.
  * Migration : le migrator retire ces ids des profils persistés ; un ordre
  * personnalisé est otherwise respecté (même règle que v2→v3 et v8→v9).
+ *
+ * **v10 → v11** (2026-10-21) : VF uniquement, sans exception. Le palier
+ * sous-titré français (`vox`, `kisskh`, `vostfr` — audio original, pas du
+ * doublage) quitte le modèle à son tour : seul l'audio français doublé est
+ * servi. Un titre sans aucune source VF est affiché indisponible plutôt que
+ * basculé sur du sous-titré. C'est un écart assumé avec Movix, qui conserve
+ * ce palier en fin d'épine. Même règle de migration qu'en v10.
  */
-const SCHEMA_VERSION = 10 as const;
-type LegacySourcePriorityPrefs<V extends 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9> = Omit<SourcePriorityPrefs, 'version'> & {
+const SCHEMA_VERSION = 11 as const;
+type LegacySourcePriorityPrefs<V extends 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10> = Omit<SourcePriorityPrefs, 'version'> & {
   version: V;
 };
 type PersistedSourcePriorityPrefs = SourcePriorityPrefs
@@ -87,7 +94,8 @@ type PersistedSourcePriorityPrefs = SourcePriorityPrefs
   | LegacySourcePriorityPrefs<6>
   | LegacySourcePriorityPrefs<7>
   | LegacySourcePriorityPrefs<8>
-  | LegacySourcePriorityPrefs<9>;
+  | LegacySourcePriorityPrefs<9>
+  | LegacySourcePriorityPrefs<10>;
 
 /** Ancien ordre built-in (pré-v3). Sert au comparateur du migrator v2→v3. */
 const V2_DEFAULT_BUILTIN_HOSTER_ORDER: readonly string[] = [
@@ -156,15 +164,24 @@ const V9_DEFAULT_MOVIES_TV_ORDER: readonly string[] = [
 ];
 
 /**
- * Ordre par défaut des sources top-level pour Films/Séries (v10 — 100 % français).
+ * Ordre par défaut v10 (palier sous-titré encore présent).
+ * Comparateur du migrator v10→v11, même règle que `V9_DEFAULT_MOVIES_TV_ORDER`.
+ */
+const V10_DEFAULT_MOVIES_TV_ORDER: readonly string[] = [
+  'nexus_hls', 'swiftflux', 'bravo', 'mp4', 'darkino', 'fstream',
+  'seekstreaming', 'omega', 'wiflix', 'j1f', 'swiftflow', 'viper',
+  'coflix', 'custom', 'vox', 'kisskh', 'vostfr',
+];
+
+/**
+ * Ordre par défaut des sources top-level pour Films/Séries (v11 — 100 % VF).
  *
  *   nexus_hls > swiftflux > bravo > mp4 > darkino > fstream > **seekstreaming** >
- *   omega > wiflix > j1f > swiftflow > viper > coflix > custom >
- *   vox > kisskh > **vostfr**
+ *   omega > wiflix > j1f > swiftflow > viper > coflix > **custom**
  *
- * `vostfr` ferme la liste et constitue l'unique filet de sécurité quand aucun
- * audio français n'existe : c'est un lecteur sous-titré français
- * (`player.videasy.net/fr/…`), pas un lecteur anglophone.
+ * Toutes les sources restantes servent de l'audio français doublé. Il n'existe
+ * plus aucun palier de repli : si aucune ne répond pour un titre, la page
+ * affiche une indisponibilité VF plutôt qu'un lecteur sous-titré ou VO.
  *
  * Écarts assumés et documentés vis-à-vis de Movix :
  *   - `frembed` (14e chez Movix) est absent : déprécié côté Orvix depuis la v8,
@@ -175,14 +192,15 @@ const V9_DEFAULT_MOVIES_TV_ORDER: readonly string[] = [
  *     un simple hoster, Orvix en fait aussi une source top-level VF (bouton
  *     « SeekStreaming VF HD »). Sa position préserve l'ordre relatif Movix.
  *   - **v10** : les 7 lecteurs anglophones (`videasy`, `peachify`, `autoembed`,
- *     `embedsu`, `superembed`, `vidsrccc`, `111movies`) sont supprimés du
- *     modèle. L'épine Movix est donc désormais intégralement conservée, sans
- *     aucun ajout anglophone en queue.
+ *     `embedsu`, `superembed`, `vidsrccc`, `111movies`) sont supprimés du modèle.
+ *   - **v11** : le palier sous-titré français (`vox`, `kisskh`, `vostfr`) que
+ *     Movix conserve en fin d'épine est supprimé à son tour — audio français
+ *     doublé ou rien.
  */
 export const DEFAULT_MOVIES_TV_ORDER: readonly TopLevelSourceId[] = [
   'nexus_hls', 'swiftflux', 'bravo', 'mp4', 'darkino', 'fstream',
   'seekstreaming', 'omega', 'wiflix', 'j1f', 'swiftflow', 'viper',
-  'coflix', 'custom', 'vox', 'kisskh', 'vostfr',
+  'coflix', 'custom',
 ];
 
 /**
@@ -718,6 +736,75 @@ function migrateV9toV10(
   }
 }
 
+/**
+ * Migration v10 → v11 (2026-10-21) : VF uniquement.
+ *
+ * Les 3 ids `SUBTITLED_SOURCE_IDS` (`vox`, `kisskh`, `vostfr`) quittent le
+ * modèle — même mécanique que `migrateV9toV10` :
+ *
+ *   1. ordre jamais personnalisé → réécriture complète sur
+ *      `DEFAULT_MOVIES_TV_ORDER` v11, flags `enabled` conservés ;
+ *   2. ordre volontaire → respecté, ids sous-titrés simplement retirés.
+ *
+ * `mergeWithDefaults` purge ensuite les reliquats (pin/overrides orphelins).
+ */
+function migrateV10toV11(
+  parsed: LegacySourcePriorityPrefs<10>,
+): SourcePriorityPrefs {
+  try {
+    const moviesTv = parsed.categories?.moviesTv;
+    if (!moviesTv || !Array.isArray(moviesTv.sourceOrder)) {
+      return { ...parsed, version: 11 };
+    }
+
+    const subtitled = new Set<string>(SUBTITLED_SOURCE_IDS);
+
+    const orderIds = moviesTv.sourceOrder
+      .map((e) => (typeof e?.id === 'string' ? e.id : ''))
+      .filter((id) => id.length > 0);
+    const untouched = orderIds.length === V10_DEFAULT_MOVIES_TV_ORDER.length
+      && orderIds.every((id, i) => id === V10_DEFAULT_MOVIES_TV_ORDER[i]);
+
+    const enabledById = new Map<string, boolean>(
+      moviesTv.sourceOrder.map((e) => [String(e?.id), e?.enabled !== false]),
+    );
+
+    const sourceOrder = untouched
+      ? DEFAULT_MOVIES_TV_ORDER.map((id) => ({
+        id,
+        enabled: enabledById.get(id) ?? !SOURCES_DISABLED_BY_DEFAULT.includes(id),
+      }))
+      : moviesTv.sourceOrder.filter((e) => !subtitled.has(String(e?.id)));
+
+    const pinnedSource = moviesTv.pinnedSource as { id?: string } | null | undefined;
+    const nextPinnedSource = pinnedSource && subtitled.has(String(pinnedSource.id))
+      ? null
+      : moviesTv.pinnedSource;
+
+    const overrides = moviesTv.overrides ?? {};
+    const nextOverrides = Object.fromEntries(
+      Object.entries(overrides).filter(([key]) => !subtitled.has(key)),
+    ) as typeof overrides;
+
+    return {
+      ...parsed,
+      version: 11,
+      categories: {
+        ...parsed.categories,
+        moviesTv: {
+          ...moviesTv,
+          sourceOrder,
+          pinnedSource: nextPinnedSource,
+          overrides: nextOverrides,
+        } as typeof moviesTv,
+      },
+    };
+  } catch (err) {
+    console.error('[sourcePriorityPrefs] Error during migrateV10toV11:', err);
+    return { ...parsed, version: 11 };
+  }
+}
+
 
 /** Merge parsed prefs with defaults (forward-compat pour nouveaux ids + purge deprecated). */
 function mergeWithDefaults(parsed: PersistedSourcePriorityPrefs): SourcePriorityPrefs {
@@ -868,7 +955,11 @@ export function getSourcePriorityPrefs(): SourcePriorityPrefs {
     const v10 = v9.version === 9
       ? migrateV9toV10(v9 as LegacySourcePriorityPrefs<9>)
       : v9;
-    return mergeWithDefaults(v10);
+    // Migration v10 → v11 (VF uniquement — fin du palier sous-titré)
+    const v11 = v10.version === 10
+      ? migrateV10toV11(v10 as LegacySourcePriorityPrefs<10>)
+      : v10;
+    return mergeWithDefaults(v11);
   } catch {
     return buildDefaults();
   }

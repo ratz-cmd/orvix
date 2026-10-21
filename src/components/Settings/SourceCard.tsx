@@ -45,10 +45,8 @@ export const SOURCE_LABELS: Record<TopLevelSourceId, string> = {
   viper: 'Viper',
   coflix: 'Coflix',
   custom: 'Lecteur Orvix',
-  // --- Palier 2 : sous-titré français (filet de sécurité final) ---
-  vox: 'Vox',
-  kisskh: 'KissKH',
-  vostfr: 'Videasy VOSTFR (Anglais ST-FR)',
+  // v11 : le palier sous-titré (vox, kisskh, vostfr) a quitté le modèle —
+  // seules les sources en audio français doublé sont listées ici.
 };
 
 interface SwitchProps {
