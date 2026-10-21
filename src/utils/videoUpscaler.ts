@@ -7,11 +7,16 @@
  * image ne transite par le serveur : le lecteur ne lui demande que le flux
  * d'origine, et le PC du membre fait le reste.
  *
- * Pipeline :
- *   1. passe d'agrandissement → bilinéaire matériel (mode « Standard ») ou
- *      bicubique Catmull-Rom 4 taps via filtrage matériel (mode « Ultra »),
- *      rendue dans une cible au ratio exact de la source ;
- *   2. passe d'accentuation adaptative (inspirée RCAS) → canvas affiché.
+ * Pipeline (portage GLSL ES 1.00 de AMD FidelityFX Super Resolution 1.0,
+ * `ffx_fsr1.h`, licence MIT — AMD) :
+ *   1. **EASU** (Edge-Adaptive Spatial Upsampling) : agrandissement à 12 taps
+ *      en losange, analyse du gradient directionnel local, filtrage
+ *      Lanczos-2 anisotrope orienté le long de l'arête, clamp anti-ringing
+ *      sur les 4 plus proches voisins. En mode « Standard » ou quand le
+ *      budget GPU est dépassé, on retombe sur le bilinéaire matériel ;
+ *   2. **RCAS** (Robust Contrast-Adaptive Sharpening) : accentuation à 5 taps
+ *      dont le lobe négatif est borné par la dynamique locale
+ *      (`hitMin`/`hitMax`, `FSR_RCAS_LIMIT`), avec atténuation sur le bruit.
  *
  * Le module est volontairement autonome (aucun import React) pour rester
  * testable et réutilisable par l'app mobile (WebView) et le userscript.
@@ -61,54 +66,174 @@ void main() {
 `;
 
 /**
- * Passe 1 — agrandissement.
- * `uUseBicubic` = 0 : bilinéaire matériel ; 1 : bicubique Catmull-Rom
- * (4 prélèvements seulement, les moyennes étant déléguées au filtrage
- * bilinéaire du GPU — le compromis classique qualité/coût).
+ * Passe 1 — EASU (Edge-Adaptive Spatial Upsampling), FSR 1.0.
+ *
+ * Portage fidèle de `FsrEasuF` / `FsrEasuSetF` / `FsrEasuTapF` /
+ * `FsrEasuCon` (ffx_fsr1.h, AMD, MIT), adapté à GLSL ES 1.00 :
+ *   - pas de `textureGather` (WebGL 1) : les 12 taps sont prélevés par 12
+ *     `texture2D` aux centres de texels — équivalent exact du gather ;
+ *   - les RCP/RSQ « approximatifs » d'AMD (qui saturent) sont remplacés par
+ *     des inverses exacts protégés contre la division par zéro : écart
+ *     uniquement numérique, l'algorithme est inchangé ;
+ *   - constantes de `FsrEasuCon` réduites au cas plein cadre (viewport =
+ *     taille d'entrée) : `pp = vUv * uSourceSize - 0.5`.
+ *
+ * `uUseBicubic` (nom historique conservé : le test de câblage le verrouille)
+ * vaut 1 → EASU, 0 → bilinéaire matériel (mode Standard et repli budget).
  */
 const UPSCALE_FRAGMENT_SHADER = `
 precision highp float;
 uniform sampler2D uTexture;
 uniform vec2 uSourceTexel;
+uniform vec2 uSourceSize;
 uniform float uUseBicubic;
 varying vec2 vUv;
 
-vec4 cubic(float v) {
-  vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;
-  vec4 s = n * n * n;
-  float x = s.x;
-  float y = s.y - 4.0 * s.x;
-  float z = s.z - 4.0 * s.y + 6.0 * s.x;
-  float w = 6.0 - x - y - z;
-  return vec4(x, y, z, w) * (1.0 / 6.0);
+// Luma x2 d'AMD (approximation la moins chère possible : 2 FMA).
+float easuLuma(vec3 c) {
+  return c.b * 0.5 + (c.r * 0.5 + c.g);
 }
 
-vec4 sampleBicubic(vec2 uv) {
-  vec2 texSize = 1.0 / uSourceTexel;
-  vec2 position = uv * texSize - 0.5;
-  vec2 fraction = fract(position);
-  position -= fraction;
+// FsrEasuSetF : accumule direction + longueur depuis une croix de 5 lumas
+//        a
+//      b c d
+//        e
+// pondérée par le poids bilinéaire du quadrant.
+void easuSet(inout vec2 dir, inout float len, float w,
+             float lA, float lB, float lC, float lD, float lE) {
+  float dc = lD - lC;
+  float cb = lC - lB;
+  float lenX = max(abs(dc), abs(cb));
+  lenX = 1.0 / max(lenX, 1e-6);
+  float dirX = lD - lB;
+  dir.x += dirX * w;
+  lenX = clamp(abs(dirX) * lenX, 0.0, 1.0);
+  lenX *= lenX;
+  len += lenX * w;
 
-  vec4 xWeights = cubic(fraction.x);
-  vec4 yWeights = cubic(fraction.y);
-  vec4 corners = position.xxyy + vec2(-0.5, 1.5).xyxy;
-  vec4 sums = vec4(xWeights.xz + xWeights.yw, yWeights.xz + yWeights.yw);
-  vec4 offset = corners + vec4(xWeights.yw, yWeights.yw) / sums;
-  offset *= uSourceTexel.xxyy;
+  float ec = lE - lC;
+  float ca = lC - lA;
+  float lenY = max(abs(ec), abs(ca));
+  lenY = 1.0 / max(lenY, 1e-6);
+  float dirY = lE - lA;
+  dir.y += dirY * w;
+  lenY = clamp(abs(dirY) * lenY, 0.0, 1.0);
+  lenY *= lenY;
+  len += lenY * w;
+}
 
-  vec4 sample0 = texture2D(uTexture, offset.xz);
-  vec4 sample1 = texture2D(uTexture, offset.yz);
-  vec4 sample2 = texture2D(uTexture, offset.xw);
-  vec4 sample3 = texture2D(uTexture, offset.yw);
-  float sx = sums.x / (sums.x + sums.y);
-  float sy = sums.z / (sums.z + sums.y);
-  return mix(mix(sample3, sample2, sx), mix(sample1, sample0, sx), sy);
+// FsrEasuTapF : poids Lanczos-2 anisotrope (approximation sans sin/sqrt).
+void easuTap(inout vec3 aC, inout float aW, vec2 off, vec2 dir, vec2 len,
+             float lob, float clp, vec3 c) {
+  vec2 v;
+  v.x = (off.x * dir.x) + (off.y * dir.y);
+  v.y = (off.x * (-dir.y)) + (off.y * dir.x);
+  v *= len;
+  float d2 = v.x * v.x + v.y * v.y;
+  d2 = min(d2, clp);
+  float wB = (2.0 / 5.0) * d2 - 1.0;
+  float wA = lob * d2 - 1.0;
+  wB *= wB;
+  wA *= wA;
+  wB = (25.0 / 16.0) * wB - (25.0 / 16.0 - 1.0);
+  float w = wB * wA;
+  aC += c * w;
+  aW += w;
+}
+
+vec3 easuFetch(vec2 base, vec2 off) {
+  return texture2D(uTexture, (base + off + 0.5) * uSourceTexel).rgb;
+}
+
+vec3 sampleEasu(vec2 uv) {
+  // Position dans l'espace pixel d'entrée (constantes FsrEasuCon réduites).
+  vec2 pp = uv * uSourceSize - 0.5;
+  vec2 fp = floor(pp);
+  pp -= fp;
+
+  // 12 taps en losange :
+  //    b c
+  //  e f g h
+  //  i j k l
+  //    n o
+  vec3 bC = easuFetch(fp, vec2( 0.0, -1.0));
+  vec3 cC = easuFetch(fp, vec2( 1.0, -1.0));
+  vec3 eC = easuFetch(fp, vec2(-1.0,  0.0));
+  vec3 fC = easuFetch(fp, vec2( 0.0,  0.0));
+  vec3 gC = easuFetch(fp, vec2( 1.0,  0.0));
+  vec3 hC = easuFetch(fp, vec2( 2.0,  0.0));
+  vec3 iC = easuFetch(fp, vec2(-1.0,  1.0));
+  vec3 jC = easuFetch(fp, vec2( 0.0,  1.0));
+  vec3 kC = easuFetch(fp, vec2( 1.0,  1.0));
+  vec3 lC = easuFetch(fp, vec2( 2.0,  1.0));
+  vec3 nC = easuFetch(fp, vec2( 0.0,  2.0));
+  vec3 oC = easuFetch(fp, vec2( 1.0,  2.0));
+
+  float bL = easuLuma(bC);
+  float cL = easuLuma(cC);
+  float eL = easuLuma(eC);
+  float fL = easuLuma(fC);
+  float gL = easuLuma(gC);
+  float hL = easuLuma(hC);
+  float iL = easuLuma(iC);
+  float jL = easuLuma(jC);
+  float kL = easuLuma(kC);
+  float lL = easuLuma(lC);
+  float nL = easuLuma(nC);
+  float oL = easuLuma(oC);
+
+  // Direction + longueur : 4 croix pondérées par les poids bilinéaires.
+  vec2 dir = vec2(0.0);
+  float len = 0.0;
+  easuSet(dir, len, (1.0 - pp.x) * (1.0 - pp.y), bL, eL, fL, gL, jL);
+  easuSet(dir, len, pp.x * (1.0 - pp.y),         cL, fL, gL, hL, kL);
+  easuSet(dir, len, (1.0 - pp.x) * pp.y,         fL, iL, jL, kL, nL);
+  easuSet(dir, len, pp.x * pp.y,                 gL, jL, kL, lL, oL);
+
+  // Normalisation (nettoyage près de zéro, comme la référence).
+  vec2 dir2 = dir * dir;
+  float dirR = dir2.x + dir2.y;
+  bool zro = dirR < (1.0 / 32768.0);
+  dirR = inversesqrt(max(dirR, 1e-12));
+  dirR = zro ? 1.0 : dirR;
+  dir.x = zro ? 1.0 : dir.x;
+  dir *= dirR;
+
+  // Mise en forme de la longueur + étirement du noyau le long de l'arête.
+  len = len * 0.5;
+  len *= len;
+  float stretch = (dir.x * dir.x + dir.y * dir.y)
+    / max(max(abs(dir.x), abs(dir.y)), 1e-6);
+  vec2 len2 = vec2(1.0 + (stretch - 1.0) * len, 1.0 - 0.5 * len);
+  float lob = 0.5 + ((1.0 / 4.0 - 0.04) - 0.5) * len;
+  float clp = 1.0 / lob;
+
+  // Accumulation des 12 taps + min/max des 4 plus proches (anti-ringing).
+  vec3 min4 = min(min(fC, gC), min(jC, kC));
+  vec3 max4 = max(max(fC, gC), max(jC, kC));
+  vec3 aC = vec3(0.0);
+  float aW = 0.0;
+  easuTap(aC, aW, vec2( 0.0, -1.0) - pp, dir, len2, lob, clp, bC);
+  easuTap(aC, aW, vec2( 1.0, -1.0) - pp, dir, len2, lob, clp, cC);
+  easuTap(aC, aW, vec2(-1.0,  1.0) - pp, dir, len2, lob, clp, iC);
+  easuTap(aC, aW, vec2( 0.0,  1.0) - pp, dir, len2, lob, clp, jC);
+  easuTap(aC, aW, vec2( 0.0,  0.0) - pp, dir, len2, lob, clp, fC);
+  easuTap(aC, aW, vec2(-1.0,  0.0) - pp, dir, len2, lob, clp, eC);
+  easuTap(aC, aW, vec2( 1.0,  1.0) - pp, dir, len2, lob, clp, kC);
+  easuTap(aC, aW, vec2( 2.0,  1.0) - pp, dir, len2, lob, clp, lC);
+  easuTap(aC, aW, vec2( 2.0,  0.0) - pp, dir, len2, lob, clp, hC);
+  easuTap(aC, aW, vec2( 1.0,  0.0) - pp, dir, len2, lob, clp, gC);
+  easuTap(aC, aW, vec2( 1.0,  2.0) - pp, dir, len2, lob, clp, oC);
+  easuTap(aC, aW, vec2( 0.0,  2.0) - pp, dir, len2, lob, clp, nC);
+
+  // Normalisation + suppression du ringing.
+  return min(max4, max(min4, aC / aW));
 }
 
 void main() {
   vec2 uv = clamp(vUv, vec2(0.0), vec2(1.0));
   if (uUseBicubic > 0.5) {
-    gl_FragColor = sampleBicubic(uv);
+    gl_FragColor = vec4(sampleEasu(uv), 1.0);
   } else {
     gl_FragColor = texture2D(uTexture, uv);
   }
@@ -116,9 +241,22 @@ void main() {
 `;
 
 /**
- * Passe 2 — accentuation adaptative (inspirée de RCAS/FidelityFX).
- * Le gain de netteté est borné par le contraste local : pas de halos sur les
- * aplats, pas de bruit amplifié dans les zones granuleuses.
+ * Passe 2 — RCAS (Robust Contrast-Adaptive Sharpening), FSR 1.0.
+ *
+ * Portage fidèle de `FsrRcasF` / `FsrRcasCon` (ffx_fsr1.h, AMD, MIT) :
+ *   - 5 taps en croix (b, d, e, f, h) ;
+ *   - détection de bruit `nz` (variante `FSR_RCAS_DENOISE` activée, comme
+ *     dans les intégrations de référence) : le lobe est atténué là où le
+ *     centre s'écarte de la moyenne de l'anneau sans dynamique locale —
+ *     signature du bruit vidéo, qui ne doit pas être amplifié ;
+ *   - limiteurs `hitMin`/`hitMax` calculés par canal depuis le min/max de
+ *     l'anneau : le lobe négatif ne peut jamais pousser un canal hors de
+ *     [min, max] local → pas de halos sur les aplats ;
+ *   - lobe borné à `-FSR_RCAS_LIMIT` (= 0.25 − 1/16), puis multiplié par
+ *     `uSharpness` qui joue le rôle de `exp2(-stops)` de `FsrRcasCon`
+ *     (le JS fournit déjà une intensité linéaire 0..1, pas des stops).
+ * Adaptations GLSL ES 1.00 : inverses exacts protégés au lieu des RCP
+ * approximatifs saturants d'AMD (écart uniquement numérique).
  */
 const SHARPEN_FRAGMENT_SHADER = `
 precision highp float;
@@ -127,31 +265,57 @@ uniform vec2 uTexel;
 uniform float uSharpness;
 varying vec2 vUv;
 
+// FSR_RCAS_LIMIT (ffx_fsr1.h) : excursion maximale du lobe négatif.
+const float RCAS_LIMIT = 0.25 - (1.0 / 16.0);
+
+float rcasLuma(vec3 c) {
+  return c.b * 0.5 + (c.r * 0.5 + c.g);
+}
+
 void main() {
-  vec3 center = texture2D(uTexture, vUv).rgb;
+  //    b
+  //  d e f
+  //    h
+  vec3 b = texture2D(uTexture, vUv + vec2(0.0, -uTexel.y)).rgb;
+  vec3 d = texture2D(uTexture, vUv + vec2(-uTexel.x, 0.0)).rgb;
+  vec3 e = texture2D(uTexture, vUv).rgb;
+  vec3 f = texture2D(uTexture, vUv + vec2(uTexel.x, 0.0)).rgb;
+  vec3 h = texture2D(uTexture, vUv + vec2(0.0, uTexel.y)).rgb;
+
   if (uSharpness <= 0.0001) {
-    gl_FragColor = vec4(center, 1.0);
+    gl_FragColor = vec4(e, 1.0);
     return;
   }
 
-  vec3 north = texture2D(uTexture, vUv + vec2(0.0, uTexel.y)).rgb;
-  vec3 south = texture2D(uTexture, vUv - vec2(0.0, uTexel.y)).rgb;
-  vec3 west  = texture2D(uTexture, vUv - vec2(uTexel.x, 0.0)).rgb;
-  vec3 east  = texture2D(uTexture, vUv + vec2(uTexel.x, 0.0)).rgb;
+  float bL = rcasLuma(b);
+  float dL = rcasLuma(d);
+  float eL = rcasLuma(e);
+  float fL = rcasLuma(f);
+  float hL = rcasLuma(h);
 
-  vec3 neighbourMin = min(min(north, south), min(west, east));
-  vec3 neighbourMax = max(max(north, south), max(west, east));
-  vec3 blur = (north + south + west + east) * 0.25;
-  vec3 detail = center - blur;
+  // Détection de bruit (FSR_RCAS_DENOISE).
+  float nz = 0.25 * bL + 0.25 * dL + 0.25 * fL + 0.25 * hL - eL;
+  float rangeMax = max(max(bL, dL), max(max(eL, fL), hL));
+  float rangeMin = min(min(bL, dL), min(min(eL, fL), hL));
+  nz = clamp(abs(nz) / max(rangeMax - rangeMin, 1e-6), 0.0, 1.0);
+  nz = -0.5 * nz + 1.0;
 
-  float localContrast = max(
-    max(neighbourMax.r - neighbourMin.r, neighbourMax.g - neighbourMin.g),
-    neighbourMax.b - neighbourMin.b
-  );
-  float attenuation = clamp(1.0 - localContrast * 1.35, 0.15, 1.0);
-  vec3 sharpened = center + detail * (uSharpness * attenuation);
+  // Min / max de l'anneau (sans le centre), par canal.
+  vec3 mn4 = min(min(b, d), min(f, h));
+  vec3 mx4 = max(max(b, d), max(f, h));
 
-  gl_FragColor = vec4(clamp(sharpened, neighbourMin, neighbourMax), 1.0);
+  // Limiteurs : peakC = (1, -4) dans la référence.
+  vec3 hitMin = min(mn4, e) / max(4.0 * mx4, vec3(1e-6));
+  vec3 hitMax = (1.0 - max(mx4, e)) / max(4.0 * mn4 - 4.0, vec3(1e-6));
+  vec3 lobeRGB = max(-hitMin, hitMax);
+  float lobe = max(-RCAS_LIMIT, min(max(max(lobeRGB.r, lobeRGB.g), lobeRGB.b), 0.0))
+    * uSharpness;
+
+  // Suppression du bruit, puis résolution du noyau à 5 taps.
+  lobe *= nz;
+  float rcpL = 1.0 / (4.0 * lobe + 1.0);
+  vec3 pix = (lobe * b + lobe * d + lobe * h + lobe * f + e) * rcpL;
+  gl_FragColor = vec4(pix, 1.0);
 }
 `;
 
@@ -352,7 +516,7 @@ export class OrvixVideoUpscaler {
     }
   }
 
-  /** Change le mode de traitement ('cas' = standard, 'ultra' = bicubique). */
+  /** Change le mode de traitement ('cas' = bilinéaire + RCAS, 'ultra' = EASU + RCAS). */
   setMode(mode: UpscaleMode) {
     this.mode = mode;
   }
@@ -408,7 +572,10 @@ export class OrvixVideoUpscaler {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
-  /** Force de l'accentuation selon le mode (0 = agrandissement seul). */
+  /**
+   * Intensité RCAS selon le mode (multiplicateur du lobe, rôle de
+   * `exp2(-stops)` chez AMD ; 0 = agrandissement seul).
+   */
   private sharpenStrength(): number {
     if (this.mode === 'ultra') return 0.55;
     if (this.mode === 'cas') return 0.35;
@@ -462,7 +629,17 @@ export class OrvixVideoUpscaler {
       1 / this.sourceWidth,
       1 / this.sourceHeight,
     );
-    gl.uniform1f(this.upscaleProgram.uniforms.uUseBicubic, this.mode === 'ultra' ? 1 : 0);
+    gl.uniform2f(
+      this.upscaleProgram.uniforms.uSourceSize,
+      this.sourceWidth,
+      this.sourceHeight,
+    );
+    // 1 = EASU (mode Ultra), 0 = bilinéaire. Quand le budget GPU de 11 ms a
+    // été dépassé durablement (`degraded`), on replie automatiquement sur le
+    // bilinéaire : mieux vaut une image un peu plus douce qu'une lecture
+    // qui perd des images.
+    const useEasu = this.mode === 'ultra' && !this.degraded;
+    gl.uniform1f(this.upscaleProgram.uniforms.uUseBicubic, useEasu ? 1 : 0);
     gl.uniform1i(this.upscaleProgram.uniforms.uTexture, 0);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 

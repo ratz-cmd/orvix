@@ -20,13 +20,14 @@ import type { TopLevelSourceId } from '../../types/sourcePriority';
  * Exporté pour réutilisation par M6 (overrides dialog).
  *
  * Liste ordonnée comme `DEFAULT_MOVIES_TV_ORDER` (épine Movix) pour que les
- * paliers soient lisibles d'un coup d'œil : sources VF d'abord, palier
- * sous-titré français, puis lecteurs anglophones de secours.
+ * paliers soient lisibles d'un coup d'œil : sources VF d'abord, puis palier
+ * sous-titré français.
  *
- * **Honnêteté des libellés** : les 7 lecteurs de secours sont des lecteurs
- * tiers anglophones (audio original). Ils étaient annoncés « 1080p VF » /
- * « 1080p FR », ce qui poussait les membres à les activer en croyant obtenir
- * l'audio français. Ils sont désormais explicitement marqués VO.
+ * **Schéma v10 — 100 % français** : les 7 lecteurs anglophones (`videasy`,
+ * `peachify`, `autoembed`, `embedsu`, `superembed`, `vidsrccc`, `111movies`)
+ * ont été retirés du modèle et n'apparaissent donc plus dans Réglages.
+ * `vostfr` reste le seul filet de sécurité : c'est un lecteur **sous-titré
+ * français** (`player.videasy.net/fr/…`), pas un lecteur anglophone.
  */
 export const SOURCE_LABELS: Record<TopLevelSourceId, string> = {
   // --- Palier 1 : lecture directe et sources françaises VF ---
@@ -44,18 +45,10 @@ export const SOURCE_LABELS: Record<TopLevelSourceId, string> = {
   viper: 'Viper',
   coflix: 'Coflix',
   custom: 'Lecteur Orvix',
-  // --- Palier 2 : sous-titré français ---
+  // --- Palier 2 : sous-titré français (filet de sécurité final) ---
   vox: 'Vox',
   kisskh: 'KissKH',
   vostfr: 'Videasy VOSTFR (Anglais ST-FR)',
-  // --- Palier 3 : lecteurs anglophones, dernier recours ---
-  videasy: 'Videasy (VO — secours anglophone)',
-  peachify: 'Peachify (VO — secours anglophone)',
-  autoembed: 'AutoEmbed (VO — secours anglophone)',
-  embedsu: 'Embed.su (VO — secours anglophone)',
-  superembed: 'SuperEmbed (VO — secours anglophone)',
-  vidsrccc: 'VidSrc (VO — secours anglophone)',
-  '111movies': '111Movies (VO — secours anglophone)',
 };
 
 interface SwitchProps {

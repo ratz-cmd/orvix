@@ -19,8 +19,33 @@ import {
   type HlsQualityPreference,
 } from './hlsQuality';
 
-/** Sous ce seuil, l'image n'est plus considérée comme regardable. */
-export const MINIMUM_ACCEPTABLE_HEIGHT = 480;
+/**
+ * Plancher de qualité **de sélection** : sous ce seuil l'image n'est plus
+ * considérée comme regardable et la piste est écartée dès qu'un niveau HD
+ * (720p) ou Full HD (1080p) existe dans le manifeste.
+ *
+ * Passé de 480 à 720 : le 480p n'est plus une qualité « acceptable », c'est un
+ * secours signalé comme tel à l'utilisateur.
+ */
+export const MINIMUM_ACCEPTABLE_HEIGHT = 720;
+
+/**
+ * Plancher imposé à l'ABR de hls.js (`config.minAutoBitrate`).
+ *
+ * **Volontairement inférieur à `MINIMUM_ACCEPTABLE_HEIGHT`.** Ces deux seuils
+ * ne servent pas le même but et ne doivent pas être confondus :
+ *
+ *   - `MINIMUM_ACCEPTABLE_HEIGHT` décide de la piste chargée au départ et
+ *     déclenche l'avertissement français « cette source plafonne à …p » ;
+ *   - `ABR_FLOOR_HEIGHT` borne la liberté de l'ABR **pendant** la lecture.
+ *
+ * Aligner le second sur le premier (720p) interdirait à hls.js de descendre en
+ * 480p quand le réseau faiblit : le lecteur resterait bloqué sur une piste
+ * qu'il ne peut plus télécharger, donc buffering sans fin — exactement ce que
+ * la consigne produit « pas d'écran noir, pas de buffering infini » interdit.
+ * La descente reste donc possible jusqu'à 480p, jamais en dessous.
+ */
+export const ABR_FLOOR_HEIGHT = 480;
 
 /** Seuil « qualité correcte » visé par défaut quand le manifeste le propose. */
 export const COMFORTABLE_HEIGHT = 720;
@@ -44,8 +69,17 @@ export interface QualityPolicy {
   preference: HlsQualityPreference;
   /** Plafond de sélection (1080p standard, 1440p VIP). */
   targetHeight: number;
-  /** Plancher de sélection : en dessous, la piste n'est prise qu'en secours. */
+  /**
+   * Plancher de **sélection** : en dessous, la piste n'est prise qu'en secours
+   * et la source est signalée comme insuffisante.
+   */
   minHeight: number;
+  /**
+   * Plancher de **l'ABR** pendant la lecture, volontairement plus bas que
+   * `minHeight` pour laisser hls.js descendre quand le réseau faiblit au lieu
+   * de bufferiser indéfiniment. Voir `ABR_FLOOR_HEIGHT`.
+   */
+  abrFloorHeight: number;
 }
 
 export interface QualitySelectionDescription {
@@ -127,7 +161,7 @@ export function getPlaybackTargetHeight(isVip: boolean): number {
   return isVip ? VIP_TARGET_HEIGHT : STANDARD_TARGET_HEIGHT;
 }
 
-/** Vrai quand l'image est sous le seuil regardable (360p, 340p…). */
+/** Vrai quand l'image est sous le seuil regardable (480p, 360p, 340p…). */
 export function isLowQualityHeight(height: number): boolean {
   return height > 0 && height < MINIMUM_ACCEPTABLE_HEIGHT;
 }
@@ -135,6 +169,10 @@ export function isLowQualityHeight(height: number): boolean {
 /**
  * Construit la politique appliquée au lecteur pour un utilisateur donné.
  * La préférence explicite de l'utilisateur reste prioritaire sur le plafond.
+ *
+ * Les deux planchers sont distincts à dessein : `minHeight` (720p) pilote la
+ * sélection de la piste de départ et les avertissements, `abrFloorHeight`
+ * (480p) borne la descente de l'ABR en cours de lecture.
  */
 export function buildQualityPolicy(
   isVip: boolean,
@@ -144,6 +182,7 @@ export function buildQualityPolicy(
     preference,
     targetHeight: getPlaybackTargetHeight(isVip),
     minHeight: MINIMUM_ACCEPTABLE_HEIGHT,
+    abrFloorHeight: ABR_FLOOR_HEIGHT,
   };
 }
 
@@ -151,20 +190,41 @@ export function buildQualityPolicy(
  * Choisit l'index de piste à charger.
  *
  * Ordre de décision :
- *  1. préférence explicite de l'utilisateur (bornée par le plafond du compte) ;
- *  2. meilleure piste **sous le plafond et au-dessus du plancher** ;
- *  3. à défaut, meilleure piste disponible (une source 360p reste jouable,
- *     mais elle est signalée par `describeQualitySelection`).
+ *  1. préférence explicite de l'utilisateur : elle prime toujours, même sous le
+ *     plancher (quelqu'un qui demande 480p sur une connexion lente l'obtient) ;
+ *  2. en automatique, meilleure piste **sous le plafond ET au-dessus du
+ *     plancher** — les niveaux 360p/480p sont donc écartés dès qu'un niveau HD
+ *     (720p) ou Full HD (1080p) existe dans le manifeste ;
+ *  3. à défaut de piste HD, meilleure piste disponible : une source 480p reste
+ *     jouable plutôt que de finir sur un écran noir, mais elle est signalée par
+ *     `describeQualitySelection`.
  */
 export function selectLevelUnderPolicy(
   options: HlsQualityOption[],
   policy: QualityPolicy,
 ): number {
+  if (options.length === 0) return -1;
+
+  // Choix explicite : délégué tel quel, le plancher ne doit pas l'écraser.
+  if (policy.preference !== 'auto') {
+    return selectLevelForPreference(
+      options, policy.preference, policy.targetHeight, policy.minHeight,
+    );
+  }
+
+  const underCap = options.filter(
+    option => option.height > 0 && option.height <= policy.targetHeight,
+  );
+  const atOrAboveFloor = underCap.filter(option => option.height >= policy.minHeight);
+  if (atOrAboveFloor.length > 0) {
+    return atOrAboveFloor.reduce(
+      (best, option) => (option.height > best.height ? option : best),
+    ).index;
+  }
+
+  // Aucune piste au-dessus du plancher : on ne bloque pas la lecture.
   return selectLevelForPreference(
-    options,
-    policy.preference,
-    policy.targetHeight,
-    policy.minHeight,
+    options, policy.preference, policy.targetHeight, policy.minHeight,
   );
 }
 

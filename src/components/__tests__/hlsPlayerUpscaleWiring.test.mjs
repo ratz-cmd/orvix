@@ -60,7 +60,12 @@ test('le plancher de qualité est imposé à la sélection automatique', async (
   const source = await readFile(playerPath, 'utf8');
 
   assert.match(source, /minAutoBitrate: MINIMUM_AUTO_BITRATE/);
-  assert.match(source, /computeMinAutoBitrate\(nextOptions, policy\.minHeight\)/);
+  // Le plancher ABR est découplé du plancher de sélection : `abrFloorHeight`
+  // (480p) borne la descente de hls.js en cours de lecture, `minHeight` (720p)
+  // décide de la piste de départ. Repasser sur `policy.minHeight` ici
+  // interdirait toute descente sous 720p et provoquerait du buffering.
+  assert.match(source, /computeMinAutoBitrate\(nextOptions, policy\.abrFloorHeight\)/);
+  assert.match(source, /computeMinAutoBitrate\(qualitiesRef\.current, policy\.abrFloorHeight\)/);
   assert.match(source, /buildQualityPolicy\(isUserVip\(\), requested\)/);
   assert.match(source, /setQualityFloorNotice\(qualityDescription\.notice\)/);
   assert.match(source, /t\('watch\.qualityFloorTitle'\)/);

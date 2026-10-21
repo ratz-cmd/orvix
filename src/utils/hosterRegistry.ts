@@ -363,3 +363,58 @@ export function detectHoster(
 
   return null;
 }
+
+/**
+ * Hébergeurs autorisés à être chargés dans une `<iframe>` de secours.
+ *
+ * La lecture normale passe par le lecteur natif (M3U8 résolue côté serveur,
+ * zéro pub). Quand aucune M3U8 n'a pu être obtenue et qu'il faut rabattre la
+ * lecture sur le lecteur de l'hébergeur via une iframe, seuls ces quatre
+ * hébergeurs français sont autorisés :
+ *
+ *   1. `seekstreaming`
+ *   2. `lulustream`
+ *   3. `voe` (voe.sx / VoeSx)
+ *   4. `supervideo`
+ *
+ * **Portée** : le filtre s'applique aux listes d'hébergeurs des sources
+ * multi-hébergeurs rendues en iframe (`fstream`). Il ne s'applique PAS :
+ *   - aux sources jouées nativement en M3U8 (`darkino`, `nexus_hls`, `mp4`…) :
+ *     aucune iframe tierce n'est chargée, l'hébergeur d'origine du flux est
+ *     sans objet ;
+ *   - à l'extraction M3U8 : un hébergeur hors liste (vidzy, uqload…) peut
+ *     toujours être *extrait* vers le lecteur natif — c'est même le chemin
+ *     préféré (directive « M3U8 d'abord ») ;
+ *   - aux player-embeds de catalogues français (`wiflix`, `omega`, `j1f`…) :
+ *     ce ne sont pas des hébergeurs de fichiers mais des lecteurs de sites,
+ *     seul vecteur de diffusion de ces sources.
+ */
+export const IFRAME_ALLOWED_HOSTER_IDS = [
+  'seekstreaming', 'lulustream', 'voe', 'supervideo',
+] as const;
+export type IframeAllowedHosterId = typeof IFRAME_ALLOWED_HOSTER_IDS[number];
+
+const IFRAME_ALLOWED_HOSTER_SET: ReadonlySet<string> = new Set(IFRAME_ALLOWED_HOSTER_IDS);
+
+/** Vrai si l'hébergeur (id détecté) peut être chargé dans une iframe de secours. */
+export function isIframeAllowedHosterId(hosterId: string | null | undefined): boolean {
+  return hosterId != null && IFRAME_ALLOWED_HOSTER_SET.has(hosterId);
+}
+
+/**
+ * Ne conserve que les entrées dont l'hébergeur détecté est autorisé en iframe.
+ *
+ * Utilisé sur les listes d'hébergeurs `fstream` (menu + choix automatique de
+ * l'URL d'iframe). Une entrée dont l'hébergeur n'est pas reconnu est écartée :
+ * mieux vaut laisser la cascade passer à la source suivante (ou au natif) que
+ * charger une iframe tierce inconnue.
+ */
+export function filterIframeAllowedHosters<T extends { url: string }>(
+  items: readonly T[],
+  opts: {
+    patternOverrides?: Partial<Record<BuiltinHosterId, string[]>>;
+    customHosters?: Array<{ id: string; patterns: string[] }>;
+  } = {},
+): T[] {
+  return items.filter((item) => isIframeAllowedHosterId(detectHoster(item.url, opts)));
+}

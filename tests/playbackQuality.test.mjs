@@ -153,19 +153,58 @@ test('une source intégralement pourrie reste jouable mais déclenche un avertis
 
 test('le plancher de débit ABR bloque la descente sous 480p', () => {
   const options = hlsQuality.buildHlsQualityOptions(levels(1080, 720, 480, 340, 240));
-  const floor = hlsQuality.computeMinAutoBitrate(options, quality.MINIMUM_ACCEPTABLE_HEIGHT);
+  const floor = hlsQuality.computeMinAutoBitrate(options, quality.ABR_FLOOR_HEIGHT);
 
   const lowestPlayable = Math.max(
-    ...options.filter((option) => option.height >= quality.MINIMUM_ACCEPTABLE_HEIGHT)
+    ...options.filter((option) => option.height >= quality.ABR_FLOOR_HEIGHT)
       .map((option) => option.bitrate),
   );
   const highestForbidden = Math.max(
-    ...options.filter((option) => option.height < quality.MINIMUM_ACCEPTABLE_HEIGHT)
+    ...options.filter((option) => option.height < quality.ABR_FLOOR_HEIGHT)
       .map((option) => option.bitrate),
   );
 
   assert.ok(floor > highestForbidden, 'le plancher dépasse toutes les pistes interdites');
   assert.ok(floor <= lowestPlayable, 'le plancher reste sous la piste la plus légère autorisée');
+});
+
+test('les deux planchers sont découplés : sélection à 720p, ABR libre jusqu’à 480p', () => {
+  // Invariant produit : le plancher de sélection est strictement plus haut que
+  // le plancher ABR. Les confondre interdirait à hls.js de descendre sous 720p
+  // quand le réseau faiblit, donc buffering sans fin.
+  assert.equal(quality.MINIMUM_ACCEPTABLE_HEIGHT, 720);
+  assert.equal(quality.ABR_FLOOR_HEIGHT, 480);
+  assert.ok(quality.ABR_FLOOR_HEIGHT < quality.MINIMUM_ACCEPTABLE_HEIGHT);
+
+  const policy = quality.buildQualityPolicy(false);
+  assert.equal(policy.minHeight, 720);
+  assert.equal(policy.abrFloorHeight, 480);
+});
+
+test('les niveaux sous 720p sont écartés dès qu’une piste HD existe', () => {
+  const policy = quality.buildQualityPolicy(false);
+
+  // 480p présent mais du HD disponible : on refuse le 480p.
+  const mixed = hlsQuality.buildHlsQualityOptions(levels(1080, 720, 480, 360));
+  assert.equal(pickedHeight(mixed, quality.selectLevelUnderPolicy(mixed, policy)), 1080);
+
+  // Rien au-dessus de 720p sauf le 720p lui-même.
+  const onlyHd = hlsQuality.buildHlsQualityOptions(levels(720, 480, 360));
+  assert.equal(pickedHeight(onlyHd, quality.selectLevelUnderPolicy(onlyHd, policy)), 720);
+});
+
+test('une source plafonnée sous 720p reste jouable mais est signalée', () => {
+  const policy = quality.buildQualityPolicy(false);
+
+  // Aucune piste HD : on ne bloque pas la lecture, on prend le 480p.
+  const onlySd = hlsQuality.buildHlsQualityOptions(levels(480, 360, 240));
+  assert.equal(pickedHeight(onlySd, quality.selectLevelUnderPolicy(onlySd, policy)), 480);
+
+  const description = quality.describeQualitySelection(levels(480, 360), policy);
+  assert.equal(description.bestHeight, 480);
+  assert.equal(description.effectiveHeight, 480);
+  assert.equal(description.isLowQuality, true);
+  assert.match(description.notice, /480p/);
 });
 
 test('le plancher de débit reste nul quand il n’y a rien à bloquer', () => {

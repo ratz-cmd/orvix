@@ -66,13 +66,9 @@ const SOURCE_MAIN_TO_TOP_LEVEL: Record<string, TopLevelSourceId> = {
   kisskh_main: 'kisskh',
   bravo_main: 'bravo',
   vostfr_main: 'vostfr',
-  videasy_main: 'videasy',
-  peachify: 'peachify',
-  autoembed: 'autoembed',
-  embedsu: 'embedsu',
-  superembed: 'superembed',
-  vidsrccc: 'vidsrccc',
-  '111movies': '111movies',
+  // Les lecteurs anglophones (`videasy_main`, `peachify`, `autoembed`,
+  // `embedsu`, `superembed`, `vidsrccc`, `111movies`) ont quitté le modèle au
+  // schéma v10 : ils ne sont plus épinglables depuis ce panneau.
   mp4: 'mp4',
   custom: 'custom',
 };
@@ -1457,19 +1453,18 @@ const HLSPlayerSettingsPanel = (props: HLSPlayerSettingsPanelProps) => {
                                       transition={getTransition({ duration: 0.15 })}
                                       className="ml-4 pl-2 border-l-2 border-gray-700 mb-2"
                                     >
+                                      {/* v10 : peachify (lecteur anglophone) supprimé.
+                                          Seul le filet VOSTFR subsiste. */}
                                       {[
-                                        { id: 'peachify', label: 'Peachify VOSTFR (1080p)' },
-                                        { id: 'vostfr', label: 'Videasy VOSTFR (Anglais ST-FR)' },
+                                        { id: 'vostfr', label: t('watch.vostfrPlayer') },
                                       ].map((vostfrSource, index) => {
                                         // IMPORTANT: `!= null` au lieu de truthy check — sinon seasonNumber=0
                                         // (épisode spécial / Spéciaux TMDB) tombe dans le fallback '#' qui fait
                                         // charger la page courante en boucle dans l'iframe.
                                         const sourceUrl = movieId ?
-                                          (vostfrSource.id === 'peachify' ? `https://peachify.top/embed/movie/${movieId}?sub=French&accent=dc2626` :
-                                           `https://player.videasy.net/fr/movie/${movieId}`) :
+                                          `https://player.videasy.net/fr/movie/${movieId}` :
                                           (tvShowId != null && seasonNumber != null && episodeNumber != null) ?
-                                            (vostfrSource.id === 'peachify' ? `https://peachify.top/embed/tv/${tvShowId}/${seasonNumber}/${episodeNumber}?sub=French&accent=dc2626` :
-                                             `https://player.videasy.net/fr/tv/${tvShowId}/${seasonNumber}/${episodeNumber}`) :
+                                            `https://player.videasy.net/fr/tv/${tvShowId}/${seasonNumber}/${episodeNumber}` :
                                             '#'; // Fallback if neither movie nor TV info is present
 
                                         // Active state check for VOSTFR sources in main menu

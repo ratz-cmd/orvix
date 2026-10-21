@@ -270,13 +270,9 @@ const SOURCE_MAIN_TO_TOP_LEVEL: Record<string, TopLevelSourceId> = {
   kisskh_main: 'kisskh',
   bravo_main: 'bravo',
   vostfr_main: 'vostfr',
-  videasy_main: 'videasy',
-  peachify: 'peachify',
-  autoembed: 'autoembed',
-  embedsu: 'embedsu',
-  superembed: 'superembed',
-  vidsrccc: 'vidsrccc',
-  '111movies': '111movies',
+  // Les lecteurs anglophones (`videasy_main`, `peachify`, `autoembed`,
+  // `embedsu`, `superembed`, `vidsrccc`, `111movies`) ont quitté le modèle au
+  // schéma v10 : ils ne sont plus épinglables depuis ce panneau.
   mp4: 'mp4',
   custom: 'custom',
 };
@@ -1340,9 +1336,12 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
   );
 
   useEffect(() => {
+    // v10 : seul le filet VOSTFR est sondé. `peachify` (lecteur anglophone
+    // supprimé du modèle) n'est plus探 ni listé ; l'id `vostfr` correspond à
+    // l'entrée poussée dans `embedSources`, donc les badges de disponibilité
+    // (`available` / `checking` / `unavailable`) s'affichent correctement.
     const list = [
-      { id: 'peachify', url: movieId ? `https://peachify.top/embed/movie/${movieId}?sub=French&accent=dc2626` : `https://peachify.top/embed/tv/${tvShowId}/${seasonNumber}/${episodeNumber}?sub=French&accent=dc2626` },
-      { id: 'videasy', url: movieId ? `https://player.videasy.net/fr/movie/${movieId}` : `https://player.videasy.net/fr/tv/${tvShowId}/${seasonNumber}/${episodeNumber}` },
+      { id: 'vostfr', url: movieId ? `https://player.videasy.net/fr/movie/${movieId}` : `https://player.videasy.net/fr/tv/${tvShowId}/${seasonNumber}/${episodeNumber}` },
     ];
     list.forEach(item => {
       if (movieId || (tvShowId && seasonNumber && episodeNumber)) {
@@ -1712,11 +1711,13 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
     hlsQualityPreferences.set(contentQualityKey, preference);
     if (!hls) return;
 
-    // Politique de qualité : plafond 1440p (VIP) / 1080p, plancher 480p pour
-    // ne jamais se caler sur du 340p quand une meilleure piste existe.
+    // Politique de qualité : plafond 1440p (VIP) / 1080p, plancher de sélection
+    // 720p pour ne jamais se caler sur du 480p quand une piste HD existe. Le
+    // plancher ABR reste à 480p : il borne la descente en cours de lecture sans
+    // provoquer de buffering quand le réseau faiblit.
     const policy = buildQualityPolicy(isUserVip(), preference);
     const target = selectLevelUnderPolicy(qualitiesRef.current, policy);
-    const floor = computeMinAutoBitrate(qualitiesRef.current, policy.minHeight);
+    const floor = computeMinAutoBitrate(qualitiesRef.current, policy.abrFloorHeight);
     if (floor > 0) hls.config.minAutoBitrate = floor;
 
     if (preference === 'auto') {
@@ -3224,60 +3225,32 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
     }
 
     // ==========================================
-    // 2. LECTEURS DE SECOURS (VOSTFR / INTERNATIONAUX)
+    // 2. FILET DE SÉCURITÉ VOSTFR
     // ==========================================
-
-    // Videasy (Secours VOSTFR)
+    // Schéma v10 : les lecteurs anglophones (`videasy` VO, `peachify`,
+    // `autoembed`, `embedsu`, `superembed`, `vidsrccc`, `111movies`) ont été
+    // retirés du modèle et de ce menu. Seul le palier **sous-titré français**
+    // subsiste : `player.videasy.net/fr/…`, qui est la source `vostfr` — un
+    // lecteur VOSTFR, pas un lecteur VO anglophone.
+    // `type: 'vostfr'` (et non `vostfr_main`) : ce dernier est traité comme un
+    // ouvre-sous-menu (L3388/3392) dont le sous-menu est aujourd'hui vide.
+    // Avec `vostfr`, l'entrée joue directement son URL et bénéficie des badges
+    // de disponibilité déjà câblés sur `availability[source.id]`.
     if (movieId) {
       embedSources.push({
-        type: 'videasy',
-        id: 'videasy_main',
-        label: 'Videasy (VOSTFR / Secours)',
-        url: `https://player.videasy.net/movie/${movieId}`,
+        type: 'vostfr',
+        id: 'vostfr',
+        label: t('watch.vostfrPlayer'),
+        url: `https://player.videasy.net/fr/movie/${movieId}`,
       });
     } else if (tvShowId && seasonNumber != null && episodeNumber != null) {
       embedSources.push({
-        type: 'videasy',
-        id: 'videasy_main',
-        label: 'Videasy (VOSTFR / Secours)',
-        url: `https://player.videasy.net/tv/${tvShowId}/${seasonNumber}/${episodeNumber}`,
+        type: 'vostfr',
+        id: 'vostfr',
+        label: t('watch.vostfrPlayer'),
+        url: `https://player.videasy.net/fr/tv/${tvShowId}/${seasonNumber}/${episodeNumber}`,
       });
     }
-
-    // Lecteurs de secours supplémentaires (VOSTFR / Multi)
-    const orvixBackupList = [
-      { id: 'peachify', label: 'Peachify (VOSTFR)' },
-      { id: 'autoembed', label: 'AutoEmbed (Secours VO)' },
-      { id: 'embedsu', label: 'Embed.su (Secours VO)' },
-      { id: 'superembed', label: 'SuperEmbed (Secours VO)' },
-      { id: 'vidsrccc', label: 'VidSrc (Secours VO)' },
-      { id: '111movies', label: '111Movies (Secours VO)' },
-    ];
-
-    orvixBackupList.forEach(item => {
-      let finalUrl = '#';
-      if (movieId) {
-        if (item.id === 'peachify') finalUrl = `https://peachify.top/embed/movie/${movieId}?sub=French&accent=dc2626`;
-        else if (item.id === 'autoembed') finalUrl = `https://player.autoembed.cc/embed/movie/${movieId}`;
-        else if (item.id === 'embedsu') finalUrl = `https://embed.su/embed/movie/${movieId}`;
-        else if (item.id === 'superembed') finalUrl = `https://multiembed.mov/directstream.php?video_id=${movieId}&tmdb=1`;
-        else if (item.id === 'vidsrccc') finalUrl = `https://vidsrc.cc/v2/embed/movie/${movieId}`;
-        else if (item.id === '111movies') finalUrl = `https://111movies.net/movie/${movieId}`;
-      } else if (tvShowId && seasonNumber != null && episodeNumber != null) {
-        if (item.id === 'peachify') finalUrl = `https://peachify.top/embed/tv/${tvShowId}/${seasonNumber}/${episodeNumber}?sub=French&accent=dc2626`;
-        else if (item.id === 'autoembed') finalUrl = `https://player.autoembed.cc/embed/tv/${tvShowId}/${seasonNumber}/${episodeNumber}`;
-        else if (item.id === 'embedsu') finalUrl = `https://embed.su/embed/tv/${tvShowId}/${seasonNumber}/${episodeNumber}`;
-        else if (item.id === 'superembed') finalUrl = `https://multiembed.mov/directstream.php?video_id=${tvShowId}&tmdb=1&s=${seasonNumber}&e=${episodeNumber}`;
-        else if (item.id === 'vidsrccc') finalUrl = `https://vidsrc.cc/v2/embed/tv/${tvShowId}/${seasonNumber}/${episodeNumber}`;
-        else if (item.id === '111movies') finalUrl = `https://111movies.net/tv/${tvShowId}/${seasonNumber}/${episodeNumber}`;
-      }
-      embedSources.push({
-        type: item.id,
-        id: item.id,
-        label: item.label,
-        url: finalUrl,
-      });
-    });
 
     // Add ad-free iframe if available
     if (embedUrl && embedType === 'adfree') {
@@ -3501,7 +3474,7 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
     }, 500);
 
     // Close settings panel for embed sources (keep open for HLS sources to allow quality selection)
-    const embedTypes = ['videasy', 'frembed', 'custom', 'omega', 'coflix', 'vostfr', 'adfree', 'fstream', 'wiflix', 'j1f', 'swiftflow', 'viper', 'vox'];
+    const embedTypes = ['frembed', 'custom', 'omega', 'coflix', 'vostfr', 'adfree', 'fstream', 'wiflix', 'j1f', 'swiftflow', 'viper', 'vox'];
     if (embedTypes.includes(sourceType)) {
       // For embed sources, always close settings
       setShowSettings(false);
@@ -3859,12 +3832,13 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
         setQualities(nextOptions);
 
         const requested = nextOptions.length === 0 ? 'auto' : qualityPreferenceRef.current;
-        // Plafond 1440p pour les VIP (2K), plancher 480p pour tout le monde :
-        // le lecteur ne démarre plus sur une piste 240p/340p s'il en existe
-        // une meilleure dans le manifeste.
+        // Plafond 1440p pour les VIP (2K), plancher de sélection 720p pour tout
+        // le monde : le lecteur ne démarre plus sur une piste 240p/340p/480p
+        // s'il en existe une meilleure dans le manifeste. Le plancher ABR reste
+        // à 480p pour laisser hls.js descendre si le réseau faiblit.
         const policy = buildQualityPolicy(isUserVip(), requested);
         const targetLevel = selectLevelUnderPolicy(nextOptions, policy);
-        const autoFloor = computeMinAutoBitrate(nextOptions, policy.minHeight);
+        const autoFloor = computeMinAutoBitrate(nextOptions, policy.abrFloorHeight);
         hls.config.minAutoBitrate = autoFloor > 0 ? autoFloor : MINIMUM_AUTO_BITRATE;
         const qualityDescription = describeQualitySelection(data.levels, policy);
         setQualityFloorNotice(qualityDescription.notice);
@@ -10516,18 +10490,19 @@ const HLSPlayer = forwardRef<HLSPlayerRef, HLSPlayerProps>(({
                                   transition={{ duration: 0.2, ease: "easeOut" }}
                                   className="ml-4 pl-2 border-l-2 border-gray-700 mb-2"
                                 >
+                                  {/* v10 : peachify (lecteur anglophone) supprimé.
+                                      Il ne reste que le filet VOSTFR — l'URL
+                                      `player.videasy.net/fr/…` est la source
+                                      `vostfr` (sous-titrée français), d'où l'id. */}
                                   {[
-                                        { id: 'peachify', label: 'Peachify VOSTFR (1080p)' },
-                                        { id: 'videasy', label: 'Videasy VOSTFR (Anglais ST-FR)' },
+                                        { id: 'vostfr', label: t('watch.vostfrPlayer') },
                                   ]
                                     .filter((vostfrSource) => availability[vostfrSource.id]?.status !== 'unavailable')
                                     .map((vostfrSource, index) => {
                                     const sourceUrl = movieId ?
-                                      (vostfrSource.id === 'peachify' ? `https://peachify.top/embed/movie/${movieId}?sub=French&accent=dc2626` :
-                                       `https://player.videasy.net/fr/movie/${movieId}`) :
+                                      `https://player.videasy.net/fr/movie/${movieId}` :
                                       (tvShowId != null && seasonNumber != null && episodeNumber != null) ?
-                                      (vostfrSource.id === 'peachify' ? `https://peachify.top/embed/tv/${tvShowId}/${seasonNumber}/${episodeNumber}?sub=French&accent=dc2626` :
-                                       `https://player.videasy.net/fr/tv/${tvShowId}/${seasonNumber}/${episodeNumber}`) :
+                                      `https://player.videasy.net/fr/tv/${tvShowId}/${seasonNumber}/${episodeNumber}` :
                                       '#';
 
                                     // Active state check for VOSTFR sources in main menu

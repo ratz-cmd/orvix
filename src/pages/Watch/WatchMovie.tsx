@@ -16,7 +16,7 @@ import { runExtractionPass } from '../../utils/runExtractionPass';
 import { pickAutoSelectedSource, sortHostersByPriority, type SourceAvailability } from '../../utils/sourceAutoSelect';
 import type { AutoSelectSourceId } from '../../types/sourcePriority';
 import { getSourcePriorityPrefs, subscribeToPriorityChanges } from '../../utils/sourcePriorityPrefs';
-import { detectHoster } from '../../utils/hosterRegistry';
+import { detectHoster, filterIframeAllowedHosters, isIframeAllowedHosterId } from '../../utils/hosterRegistry';
 import { setLastPlayer } from '../../utils/lastPlayerPref';
 import { getTmdbId } from '../../utils/idEncoder';
 import { useWrappedTracker } from '../../hooks/useWrappedTracker';
@@ -224,18 +224,6 @@ interface NightflixSource {
 // comparaisons `selectedSource === 'swiftflux'` étaient rejetées par le
 // compilateur alors que le chemin SwiftFlux est bien vivant à l'exécution.
 type PlayerSourceType = 'primary' | 'vostfr' | 'videasy' | 'peachify' | 'autoembed' | 'embedsu' | 'superembed' | 'vidsrccc' | '111movies' | 'vidsrcsu' | 'vidsrcwtf1' | 'vidsrcwtf5' | 'multi' | 'omega' | 'darkino' | 'mp4' | 'coflix' | 'frembed' | 'custom' | 'nexus_hls' | 'nexus_file' | 'fstream' | 'wiflix' | 'j1f' | 'swiftflow' | 'swiftflux' | 'viper' | 'vidmoly' | 'dropload' | 'adfree' | 'bravo' | 'kisskh' | 'seekstreaming' | 'vox' | number;
-
-/**
- * Lecteurs de repli non francophones (audio original, sans sous-titres
- * français garantis). Ils ferment `DEFAULT_MOVIES_TV_ORDER` et ne sont atteints
- * par la cascade qu'après épuisement des sources VF puis du palier VOSTFR.
- *
- * Sert uniquement à informer l'utilisateur via un bandeau non bloquant : une
- * bascule sur l'un de ces lecteurs ne doit jamais être silencieuse.
- */
-const ANGLOPHONE_FALLBACK_SOURCE_IDS: readonly string[] = [
-  'videasy', 'peachify', 'autoembed', 'embedsu', 'superembed', 'vidsrccc', '111movies',
-];
 
 function formatPremidSourceDetail(...parts: Array<string | null | undefined>) {
   const normalizedParts = parts
@@ -1481,8 +1469,17 @@ const WatchMovie: React.FC = () => {
         console.log('❌ No FStream sources available');
       }
 
-      setFstreamSources(fstreamProcessedSources);
-      console.log(' [WatchMovie] FStream sources set:', fstreamProcessedSources.length, fstreamProcessedSources);
+      // Liste blanche iframe : seuls les hébergeurs français autorisés
+      // (seekstreaming, lulustream, voe, supervideo) apparaissent dans le
+      // menu fstream. Les autres hébergeurs restent exploitables via
+      // l'extraction M3U8 (lecteur natif), jamais en iframe.
+      const prefsFsMenu = getSourcePriorityPrefs();
+      const iframeAllowedFstream = filterIframeAllowedHosters(fstreamProcessedSources, {
+        patternOverrides: prefsFsMenu.patternOverrides,
+        customHosters: prefsFsMenu.customHosters,
+      });
+      setFstreamSources(iframeAllowedFstream);
+      console.log(' [WatchMovie] FStream sources set:', iframeAllowedFstream.length, iframeAllowedFstream);
 
       // Ajouter les sources HLS FStream aux sources finales avec tri par qualité HD
       if (fstreamHlsSources.length > 0) {
@@ -1936,7 +1933,15 @@ const WatchMovie: React.FC = () => {
               })),
               { category: 'moviesTv', topLevel: 'fstream' },
             );
-            const targetUrl = sortedFstreamLocal[0].url;
+            // Liste blanche iframe : première entrée dont l'hébergeur est
+            // autorisé en iframe. Aucune → la cascade passe à la source
+            // suivante (un hébergeur hors liste reste extractible en M3U8,
+            // mais n'est jamais chargé dans une iframe).
+            const iframeTarget = sortedFstreamLocal.find(
+              (entry) => isIframeAllowedHosterId((entry as { type?: string }).type),
+            );
+            if (!iframeTarget) return false;
+            const targetUrl = iframeTarget.url;
             setSelectedSource('fstream');
             setSelectedFstreamSource(0);
             setEmbedUrl(targetUrl);
@@ -2243,17 +2248,10 @@ const WatchMovie: React.FC = () => {
           { id: 'custom', hasData: customLinks.length > 0 },
           // 2. Palier sous-titré français : toujours disponible, l'URL est
           //    construite depuis l'id TMDB (`player.videasy.net/fr/...`).
-          //    Placé avant les lecteurs anglophones par l'ordre par défaut.
+          //    `vostfr` est le filet de sécurité final (schéma v10) : les 7
+          //    lecteurs anglophones ont été retirés du modèle, il n'existe plus
+          //    aucun palier derrière celui-ci.
           { id: 'vostfr', hasData: true },
-          // 3. Lecteurs anglophones — tout dernier recours automatique, jamais
-          //    devant une source française ni devant le palier VOSTFR.
-          { id: 'videasy', hasData: true },
-          { id: 'peachify', hasData: true },
-          { id: 'autoembed', hasData: true },
-          { id: 'embedsu', hasData: true },
-          { id: 'superembed', hasData: true },
-          { id: 'vidsrccc', hasData: true },
-          { id: '111movies', hasData: true },
           // Sources sans fetch dédié côté film (vox = WatchTv uniquement).
           { id: 'vox', hasData: false },
         ];
@@ -3054,11 +3052,9 @@ const WatchMovie: React.FC = () => {
    * lecteur réellement monté, y compris après un changement de source manuel
    * depuis le menu. `null` dès qu'une source francophone (VF) est active.
    */
-  const fallbackTier: 'vostfr' | 'anglophone' | null = (() => {
-    if (typeof selectedSource !== 'string') return null;
-    if (selectedSource === 'vostfr') return 'vostfr';
-    return ANGLOPHONE_FALLBACK_SOURCE_IDS.includes(selectedSource) ? 'anglophone' : null;
-  })();
+  // v10 : les lecteurs anglophones ont été supprimés du modèle — le seul
+  // palier de repli possible est le VOSTFR (sous-titres français).
+  const fallbackTier: 'vostfr' | null = selectedSource === 'vostfr' ? 'vostfr' : null;
   const showFallbackNotice = fallbackTier !== null && !fallbackNoticeDismissed;
 
   return (
@@ -3134,22 +3130,16 @@ const WatchMovie: React.FC = () => {
             role="status"
             className="fixed top-4 left-1/2 -translate-x-1/2 z-[10001] w-[calc(100%-2rem)] max-w-2xl pointer-events-auto"
           >
-            <div className={`flex items-start gap-3 rounded-lg border px-4 py-3 shadow-2xl backdrop-blur-sm ${
-              fallbackTier === 'vostfr'
-                ? 'bg-amber-950/90 border-amber-600/60'
-                : 'bg-red-950/90 border-red-600/60'
-            }`}>
+            <div className="flex items-start gap-3 rounded-lg border px-4 py-3 shadow-2xl backdrop-blur-sm bg-amber-950/90 border-amber-600/60">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className={`h-5 w-5 shrink-0 mt-0.5 ${fallbackTier === 'vostfr' ? 'text-amber-400' : 'text-red-400'}`}
+                className="h-5 w-5 shrink-0 mt-0.5 text-amber-400"
                 fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <p className="flex-1 text-sm text-gray-100">
-                {fallbackTier === 'vostfr'
-                  ? t('watch.fallbackVostfrNotice')
-                  : t('watch.fallbackAnglophoneNotice')}
+                {t('watch.fallbackVostfrNotice')}
               </p>
               <div className="flex shrink-0 items-center gap-2">
                 <button
